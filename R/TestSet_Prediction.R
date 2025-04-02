@@ -17,5 +17,6 @@ TestSet_Prediction <- function(x, m, Tess, Dim, Pred) {
     NewTessIndexes <- Cell_Indexes(x, Tess[[j]], Dim[[j]])
     Prediction <- Prediction + Pred[[j]][NewTessIndexes]
   }
+  
   return(Prediction)
 }

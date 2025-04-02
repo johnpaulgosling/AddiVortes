@@ -31,7 +31,6 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200, burn_in = 200, nu = 6, q 
     xScaled[, i] <- (x[, i] - (max(x[, i]) + min(x[, i])) / 2) / (max(x[, i]) - min(x[, i]))
   }
 
-
   for (i in 1:length(XTest[1, ])) {
     XTest[, i] <- (XTest[, i] - (max(x[, i]) + min(x[, i])) / 2) / (max(x[, i]) - min(x[, i]))
   }
