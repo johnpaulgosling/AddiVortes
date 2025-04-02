@@ -11,11 +11,11 @@
 #' @return A vector with the predictions.
 #'
 #' @export
-TestSet_Prediction<-function(x,m,Tess,Dim,Pred){
-  Prediction=rep(0,length(x[,1]));
-  for (j in 1:m){
-    NewTessIndexes=Cell_Indexes(x,Tess[[j]],Dim[[j]]);
-    Prediction=Prediction+Pred[[j]][NewTessIndexes]
+TestSet_Prediction <- function(x, m, Tess, Dim, Pred) {
+  Prediction <- rep(0, length(x[, 1]))
+  for (j in 1:m) {
+    NewTessIndexes <- Cell_Indexes(x, Tess[[j]], Dim[[j]])
+    Prediction <- Prediction + Pred[[j]][NewTessIndexes]
   }
   return(Prediction)
 }

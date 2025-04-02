@@ -13,7 +13,7 @@ Sample_Sigma_Squared(yScaled, nu, lambda, SumOfAllTess)
 
 \item{lambda}{The prior scale parameter.}
 
-\item{SumOfAllTess}{The sum of all the tesselations.}
+\item{SumOfAllTess}{The sum of all the tessellations.}
 }
 \value{
 SigmaSquared The sampled sigma squared.

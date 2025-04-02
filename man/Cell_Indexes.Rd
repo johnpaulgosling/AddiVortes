@@ -14,8 +14,8 @@ Cell_Indexes(x, Tess, Dim)
 \item{Dim}{The dimensions of the tessellation.}
 }
 \value{
-The row (the center) of the tessellation that each obseravtion falls within.
+The row (the center) of the tessellation that each observation falls within.
 }
 \description{
-A function that gives the row (the center) of the tessellation that each obseravtion falls within.
+A function that gives the row (the center) of the tessellation that each observation falls within.
 }

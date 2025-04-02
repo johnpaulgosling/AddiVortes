@@ -10,6 +10,6 @@
 #' @return The squared difference between sigma squared hat and the inverse gamma function.
 #'
 #' @export
-fitting_function<- function(lambda,q,nu,sigmaSquared_hat){
-  return((sigmaSquared_hat- qinvgamma(q, shape=nu/2, rate=nu*lambda/2))^2)
+fitting_function <- function(lambda, q, nu, sigmaSquared_hat) {
+  return((sigmaSquared_hat - qinvgamma(q, shape = nu / 2, rate = nu * lambda / 2))^2)
 }

@@ -1,4 +1,3 @@
-Rcpp::compileAttributes()
 devtools::build()
 devtools::document()
 

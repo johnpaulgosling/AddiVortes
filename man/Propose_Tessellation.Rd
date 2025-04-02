@@ -21,5 +21,5 @@ Propose_Tessellation(x, j, Tess, Dim, var)
 A list containing the new tessellation, the new dimension matrix and the modification made.
 }
 \description{
-Propose a new tessellation by adding, removing, changing or swopping dimensions or centers.
+Propose a new tessellation by adding, removing, changing or swapping dimensions or centers.
 }
