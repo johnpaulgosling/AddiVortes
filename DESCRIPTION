@@ -1,12 +1,12 @@
 Package: AddiVortes
-Title: AddiVortes
-Version: 0.0.11
+Title: (Bayesian) Additive Voronoi Tessellatio
+Version: 0.0.12
 Date: 2025-04-02
 Authors@R: 
-    person("Adam", "Stone", , "adam.stone2@durham.ac.uk", role = c("aut", "cre"))
-    person("John Paul", "Gosling", , "john-paul.gosling@durham.ac.uk", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0002-4072-3022"))
-Description: What the package does (one paragraph).
+    c(person("Adam", "Stone", , "adam.stone2@durham.ac.uk", role = c("aut", "cre")),
+      person("John Paul", "Gosling", , "john-paul.gosling@durham.ac.uk", role = c("aut"),
+             comment = c(ORCID = "0000-0002-4072-3022")))
+Description: An implementation of the (Bayesian) Additive Voronoi Tessellation (AddiVortes) algorithm in R.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
