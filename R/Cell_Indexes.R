@@ -1,5 +1,12 @@
-library('FNN')
-
+#' @title Cell_Indexes
+#'
+#' @description A function that gives the row (the center) of the tessellation that each obseravtion falls within.
+#'
+#' @param x The covariate matrix.
+#' @param Tess The tessellation.
+#' @param Dim The dimensions of the tessellation.
+#'
+#' @return The row (the center) of the tessellation that each obseravtion falls within.
 Cell_Indexes<-function(x,Tess,Dim){ #Gives the row (the center) of the tessellation that each obseravtion falls within.
   if (length(Tess[,1])==1){ #only 1 centre
     CellsForGivenTess=rep(1,length(x[,1]))
