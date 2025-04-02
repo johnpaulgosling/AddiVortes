@@ -1,6 +1,6 @@
 #' @title Propose_Tessellation
 #'
-#' @description Propose a new tessellation by adding, removing, changing or swopping dimensions or centers.
+#' @description Propose a new tessellation by adding, removing, changing or swapping dimensions or centers.
 #'
 #' @param x A matrix of covariates.
 #' @param j The index of the tessellation to be modified.

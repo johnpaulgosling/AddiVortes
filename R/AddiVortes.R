@@ -100,9 +100,9 @@ AddiVortes<-function(y,x,m = 200 ,max_iter = 1200,burn_in= 200,nu = 6,q =0.85,k 
 
       if (!any(n_ijNew==0)){ #automatically rejects proposed tessellation if there exists a cell with no observations in.
 
-        LOGAcceptenceProb=Acceptence_Probability(xScaled,TessStar,DimStar,j,R_ijOld,n_ijOld,R_ijNew,n_ijNew,SigmaSquared,Modification,SigmaSquaredMu,Omega,lambda_rate) #Gives the log of the acceptence probability.
+        LOGAcceptanceProb=Acceptance_Probability(xScaled,TessStar,DimStar,j,R_ijOld,n_ijOld,R_ijNew,n_ijNew,SigmaSquared,Modification,SigmaSquaredMu,Omega,lambda_rate) #Gives the log of the acceptance probability.
 
-        if (log(runif(n=1, min=0, max=1))<LOGAcceptenceProb){ #Accepts the proposed tessellation is accepted then calculates the new output values for the new tessellation.
+        if (log(runif(n=1, min=0, max=1))<LOGAcceptanceProb){ #Accepts the proposed tessellation is accepted then calculates the new output values for the new tessellation.
           Tess=TessStar
           Dim=DimStar
           Pred[[j]]=Sample_mu_values(j,TessStar,R_ijNew,n_ijNew,SigmaSquaredMu,SigmaSquared)
