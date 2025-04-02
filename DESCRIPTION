@@ -1,9 +1,11 @@
 Package: AddiVortes
-Title: What the Package Does (One Line, Title Case)
+Title: AddiVortes
 Version: 0.0.10
+Date: 2025-04-02
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+    person("Adam", "Stone", , "adam.stone2@durham.ac.uk", role = c("aut", "cre")),
+    person("John Paul", "Gosling", , "john-paul.gosling@durham.ac.uk", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-4072-3022"))
 Description: What the package does (one paragraph).
 License: GPL (>= 3)
 Encoding: UTF-8
