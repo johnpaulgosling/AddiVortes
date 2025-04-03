@@ -124,7 +124,7 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200, burn_in = 200, nu = 6, q 
 
     if (i >= burn_in & (i - burn_in) %% thinning == 0) { # vectors that hold the predictions for each iteration after burn in.
       PredictionMatrix[, 1 + (i - burn_in) / thinning] <- SumOfAllTess
-      TestMatrix[, 1 + (i - burn_in) / thinning] <- Prediction_for_TestSet(XTest, m, Tess, Dim, Pred)
+      TestMatrix[, 1 + (i - burn_in) / thinning] <- TestSet_Prediction(XTest, m, Tess, Dim, Pred)
     }
   }
 
