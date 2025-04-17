@@ -13,14 +13,23 @@
 #'
 #' @export
 Sample_mu_values <- function(j, Tess, R_ijNew, n_ijNew, sigmaSquaredMu, SigmaSquared) {
-  PredSet <- rep(0, length(Tess[[j]][, 1]))
-  for (i in 1:length(Tess[[j]][, 1])) {
-    PredSet[i] <- rnorm(
-      1, sigmaSquaredMu * R_ijNew[i] /
-        (sigmaSquaredMu * n_ijNew[i] + SigmaSquared),
-      ((SigmaSquared * sigmaSquaredMu) /
-        (n_ijNew[i] * sigmaSquaredMu + SigmaSquared))^0.5
-    )
-  }
+  # 1. Get the number of samples needed
+  N <- length(Tess[[j]][, 1]) # Or nrow(Tess[[j]])
+
+  # 2. Calculate the vector of means for rnorm
+  denominator_vec <- sigmaSquaredMu * n_ijNew + SigmaSquared
+  mean_vec <- (sigmaSquaredMu * R_ijNew) / denominator_vec
+
+  # 3. Calculate the vector of standard deviations for rnorm
+  #    Calculate variance first for clarity, then sqrt
+  #    Ensure SigmaSquared, sigmaSquaredMu are non-negative as expected for variances
+  variance_vec <- (SigmaSquared * sigmaSquaredMu) / denominator_vec
+  # Handle potential negative variance if inputs aren't guaranteed non-negative,
+  # though typically variance terms are >= 0. sqrt() will produce NaN for negative input.
+  sd_vec <- sqrt(variance_vec)
+
+  # 4. Call rnorm once with vector arguments
+  PredSet <- rnorm(n = N, mean = mean_vec, sd = sd_vec)
+
   return(PredSet)
 }

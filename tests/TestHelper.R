@@ -27,3 +27,4 @@ toc()
 # Timings
 # v0.0.14 = 87.447 sec elapsed
 # v0.0.15 = 83.912 sec elapsed
+# v0.0.16 = 82.082 sec elapsed
