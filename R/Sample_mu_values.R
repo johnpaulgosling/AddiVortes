@@ -1,6 +1,6 @@
 #' @title Sample_mu_values
 #'
-#' @description This function samples the new output values for the new tessellation.
+#' @description This function samples the new mean output values for the proposed tessellation.
 #'
 #' @param j The index of the tessellation.
 #' @param Tess The tessellation.
@@ -29,7 +29,7 @@ Sample_mu_values <- function(j, Tess, R_ijNew, n_ijNew, sigmaSquaredMu, SigmaSqu
   sd_vec <- sqrt(variance_vec)
 
   # 4. Call rnorm once with vector arguments
-  PredSet <- rnorm(n = N, mean = mean_vec, sd = sd_vec)
-
-  return(PredSet)
+  return(rnorm(n = N,
+               mean = mean_vec,
+               sd = sd_vec))
 }
