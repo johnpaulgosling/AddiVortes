@@ -1,0 +1,47 @@
+library(AddiVortes)
+library(tictoc)
+
+Boston <- read.csv("https://raw.githubusercontent.com/anonymous2738/AddiVortesAlgorithm/DataSets/BostonHousing_Data.csv")
+X_Boston <- as.matrix(Boston[,2:14])
+Y_Boston <- as.numeric(as.matrix(Boston[,15]))
+rm(Boston)
+
+n <- length(Y_Boston)
+
+set.seed(1025)
+TrainSet <- sort(sample.int(n,5*n/6))
+TestSet <- 1:n
+TestSet <- TestSet[! TestSet %in% TrainSet]
+
+tic("Start")
+AddiVortes(Y_Boston[TrainSet],X_Boston[TrainSet,],
+           200,2000,200,6,0.85,3,0.8,3,25,
+           Y_Boston[TestSet],X_Boston[TestSet,],
+           IntialSigma = "Linear")
+toc()
+
+# Iteration 2000 out of 2000
+# In_sample_RMSE Out_of_sample_RMSE
+# 1       1.206556            3.20922
+
+# Timings
+# v0.0.14 = 87.447 sec elapsed
+# v0.0.15 = 83.912 sec elapsed
+
+
+y <- Y_Boston[TrainSet]
+x <- X_Boston[TrainSet,]
+
+# Scaling x and y
+yScaled <- scale_data_internal(y)$scaled_data
+x_scaling_result <- scale_data_internal(x)
+xScaled <- x_scaling_result$scaled_data
+train_centers <- x_scaling_result$centers # Vector of values
+train_ranges <- x_scaling_result$ranges   # Vector of values
+
+# Original
+yScaled_o <- (y - (max(y) + min(y)) / 2) / (max(y) - min(y))
+xScaled_o <- x
+for (i in 1:length(x[1, ])) {
+  xScaled_o[, i] <- (x[, i] - (max(x[, i]) + min(x[, i])) / 2) / (max(x[, i]) - min(x[, i]))
+}

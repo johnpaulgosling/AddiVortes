@@ -25,17 +25,17 @@
 #' @export
 AddiVortes <- function(y, x, m = 200, max_iter = 1200, burn_in = 200, nu = 6, q = 0.85, k = 3, sd = 0.8, Omega = 3, lambda_rate = 25, YTest, XTest, IntialSigma = "Linear", thinning = 1) {
   # Scaling x and y
-  yScaled <- (y - (max(y) + min(y)) / 2) / (max(y) - min(y))
-  xScaled <- x
-  for (i in 1:length(x[1, ])) {
-    xScaled[, i] <- (x[, i] - (max(x[, i]) + min(x[, i])) / 2) / (max(x[, i]) - min(x[, i]))
-  }
+  yScaled <- scale_data_internal(y)$scaled_data
+  x_scaling_result <- scale_data_internal(x)
+  xScaled <- x_scaling_result$scaled_data
+  train_centers <- x_scaling_result$centers # Vector of values
+  train_ranges <- x_scaling_result$ranges   # Vector of values
 
-  for (i in 1:length(XTest[1, ])) {
-    XTest[, i] <- (XTest[, i] - (max(x[, i]) + min(x[, i])) / 2) / (max(x[, i]) - min(x[, i]))
-  }
+  XTest <- apply_scaling_internal(mat = XTest,
+                                   centers = train_centers,
+                                   ranges = train_ranges)
 
-  # Initialize:
+  # Initialise:
   # Prediction Set (A list of vectors with the output values for each tessellation),
   # Dimension set (A list of vectors with the covariates included in the tessellaions);
   # and Tessellation Set (A list of matrices that give the coordinates of the centers in the tessellations)
@@ -129,8 +129,10 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200, burn_in = 200, nu = 6, q 
   }
 
   # finding the mean of the predition over the iterations and then unscaling the predictions.
-  mean_yhat <- (rowSums(PredictionMatrix) / (posterior_samples)) * (max(y) - min(y)) + ((max(y) + min(y)) / 2)
-  mean_yhat_Test <- (rowSums(TestMatrix) / (posterior_samples)) * (max(y) - min(y)) + ((max(y) + min(y)) / 2)
+  mean_yhat <- (rowSums(PredictionMatrix) / (posterior_samples)) *
+    (max(y) - min(y)) + ((max(y) + min(y)) / 2)
+  mean_yhat_Test <- (rowSums(TestMatrix) / (posterior_samples)) *
+    (max(y) - min(y)) + ((max(y) + min(y)) / 2)
 
   return( # Returns the RMSE value for the test samples.
     data.frame(
