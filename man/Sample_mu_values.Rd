@@ -23,5 +23,5 @@ Sample_mu_values(j, Tess, R_ijNew, n_ijNew, sigmaSquaredMu, SigmaSquared)
 The new output values for the new tessellation.
 }
 \description{
-This function samples the new output values for the new tessellation.
+This function samples the new mean output values for the proposed tessellation.
 }

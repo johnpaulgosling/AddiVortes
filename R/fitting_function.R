@@ -11,5 +11,7 @@
 #'
 #' @export
 fitting_function <- function(lambda, q, nu, sigmaSquared_hat) {
-  return((sigmaSquared_hat - qinvgamma(q, shape = nu / 2, rate = nu * lambda / 2))^2)
+  return((sigmaSquared_hat - qinvgamma_internal(q,
+                                                shape = nu / 2,
+                                                rate = nu * lambda / 2))^2)
 }
