@@ -18,8 +18,8 @@ TestSet <- TestSet[! TestSet %in% TrainSet]
 # Code profiling
 profvis({
   # Run the algorithm
-  result <- AddiVortes(X_Boston[TrainSet,], Y_Boston[TrainSet], X_Boston[TestSet,], Y_Boston[TestSet],
-                       nfolds = 5, ntrees = 100, maxdepth = 10, minsize = 5,
-                       alpha = 0.05, beta = 0.05, gamma = 0.05,
-                       verbose = TRUE)
+  result <- AddiVortes(Y_Boston[TrainSet],X_Boston[TrainSet,],
+                       200,2000,200,6,0.85,3,0.8,3,25,
+                       Y_Boston[TestSet],X_Boston[TestSet,],
+                       IntialSigma = "Linear")
 })
