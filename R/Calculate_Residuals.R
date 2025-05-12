@@ -32,23 +32,47 @@ Calculate_Residuals <- function(y, x, j, SumOfAllTess, Tess, Dim,
   R_j <- y - SumOfAllTess
 
   # Initializing Sizes
+  # Determine the number of levels/groups expected
+  num_levels_old <- length(Pred[[j]])
 
-  R_ijOld <- rep(0, length(Pred[[j]]))
-  n_ijOld <- rep(0, length(Pred[[j]]))
-
-  for (i in 1:length(Pred[[j]])) {
-    R_ijOld[i] <- sum(R_j[indexes == i])
-    n_ijOld[i] <- sum(indexes == i)
+  if (num_levels_old > 0) {
+    # Use tabulate for efficient counting of integer occurrences (1 to num_levels_old)
+    n_ijOld <- tabulate(indexes,
+                        nbins = num_levels_old)
+    # Use tapply to sum R_j based on the groups defined by 'indexes'
+    R_ijOld <- tapply(R_j, factor(indexes,
+                                  levels = 1:num_levels_old),
+                      sum, na.rm = TRUE)
+    # Ensure the output is a simple vector (tapply can return an array)
+    R_ijOld <- as.vector(R_ijOld)
+  } else {
+    # Handle empty case
+    n_ijOld <- numeric(0)
+    R_ijOld <- numeric(0)
   }
 
-  R_ijNew <- rep(0, length(TessStar[[j]][, 1]))
-  n_ijNew <- rep(0, length(TessStar[[j]][, 1]))
+  # Determine the number of levels/groups expected (using the length from the original loop)
+  num_levels_new <- length(TessStar[[j]][, 1])
 
-  for (i in 1:length(TessStar[[j]][, 1])) {
-    R_ijNew[i] <- sum(R_j[IndexesStar == i])
-    n_ijNew[i] <- sum(IndexesStar == i)
+  if (num_levels_new > 0) {
+    # Use tabulate for counts
+    n_ijNew <- tabulate(IndexesStar,
+                        nbins = num_levels_new)
+
+    # Use tapply for sums
+    R_ijNew <- tapply(R_j, factor(IndexesStar,
+                                  levels = 1:num_levels_new),
+                      sum, na.rm = TRUE)
+
+    # Ensure vector output
+    R_ijNew <- as.vector(R_ijNew)
+  } else {
+    # Handle empty case
+    n_ijNew <- numeric(0)
+    R_ijNew <- numeric(0)
   }
 
+  # Return the results as a list
   return(list(R_ijOld, n_ijOld,
               R_ijNew, n_ijNew,
               SumOfAllTess, IndexesStar, indexes))
