@@ -1,8 +1,11 @@
 #' @title AddiVortes
 #'
 #' @description
-#' The AddiVortes function is a Bayesian nonparametric regression model that uses a tessellation to model the relationship between the covariates and the output values. The model uses a backfitting algorithm to sample from the posterior distribution of the output values for each tessellation. The function returns the RMSE value for the test samples.
-#'
+#' The AddiVortes function is a Bayesian nonparametric regression model that uses a
+#' tessellation to model the relationship between the covariates and the output values.
+#' The model uses a backfitting algorithm to sample from the posterior distribution of
+#' the output values for each tessellation. The function returns the RMSE value for
+#' the test samples.
 #'
 #' @param y A vector of the output values.
 #' @param x A matrix of the covariates.
@@ -23,8 +26,12 @@
 #' @return The RMSE value for the test samples.
 #'
 #' @export
-AddiVortes <- function(y, x, m = 200, max_iter = 1200, burn_in = 200, nu = 6, q = 0.85, k = 3, sd = 0.8, Omega = 3, lambda_rate = 25, yTest, xTest, IntialSigma = "Linear", thinning = 1) {
-  # Scaling x and y
+AddiVortes <- function(y, x, m = 200, max_iter = 1200,
+                       burn_in = 200, nu = 6, q = 0.85,
+                       k = 3, sd = 0.8, Omega = 3, lambda_rate = 25,
+                       yTest, xTest, IntialSigma = "Linear",
+                       thinning = 1) {
+  #### Scaling x and y ---------------------------------------------------------
   y_scaling_result <- scale_data_internal(y)
   yScaled <- y_scaling_result$scaled_data # Vector of values
   y_center <- y_scaling_result$centers
@@ -40,19 +47,21 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200, burn_in = 200, nu = 6, q 
                                   centers = x_centers,
                                   ranges = x_ranges)
 
+  #### Initialise predictions --------------------------------------------------
   # Initialise:
   # Prediction Set (A list of vectors with the output values for each tessellation),
   # Dimension set (A list of vectors with the covariates included in the tessellations);
   # and Tessellation Set (A list of matrices that give the
-  #                          coordinates of the centres in the tessellations)
+  #                       coordinates of the centres in the tessellations)
   Pred <- rep(list(matrix(mean(yScaled) / m)), m)
-  Dim <- vector(length = m)
-  Tess <- vector(length = m)
-  for (i in 1:m) {
-    Dim[i] <- list(sample(1:length(x[1, ]), 1))
-    Tess[i] <- (list(matrix(rnorm(1, 0, sd))))
-  }
+  Dim <- sapply(1:m, function(ignored_index) {
+    list(sample(1:length(x[1, ]), 1))
+  })
+  Tess <- sapply(1:m, function(ignored_index) {
+    list(matrix(rnorm(1, 0, sd)))
+  })
 
+  #### Set-up MCMC -------------------------------------------------------------
   # Prepare some variables used in the backfitting algorithm
   SumOfAllTess <- rep(mean(yScaled),
                       length(yScaled))
@@ -67,7 +76,7 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200, burn_in = 200, nu = 6, q 
   TestMatrix <- array(dim = c(length(yTest),
                               posterior_samples))
 
-  # finding lambda
+  # Finding lambda
   if (IntialSigma == "Naive") {
     # Usually used if p is greater then n. Uses Standard deviation of y to predict sigma.
     SigmaSquaredHat <- var(yScaled)
@@ -78,8 +87,6 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200, burn_in = 200, nu = 6, q 
     SigmaSquaredHat <- sum(MultiLinear$residuals^2) /
       (length(yScaled) - length(xScaled[1, ]) - 1)
   }
-
-  # Find lambda
   lambda <- optim(
     par = 1,
     fitting_function,
@@ -93,6 +100,7 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200, burn_in = 200, nu = 6, q 
   pbar <- utils::txtProgressBar(min = 0, max = max_iter,
                                 style = 3, width = 50, char = "=")
 
+  #### MCMC Loop ---------------------------------------------------------------
   for (i in 1:max_iter) {
     # Sample Sigma squared using all tessellations to predict the outcome variables
     SigmaSquared <- Sample_Sigma_Squared(yScaled,
@@ -172,14 +180,19 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200, burn_in = 200, nu = 6, q 
     if (i >= burn_in & (i - burn_in) %% thinning == 0) {
       # vectors that hold the predictions for each iteration after burn in.
       PredictionMatrix[, 1 + (i - burn_in) / thinning] <- SumOfAllTess
-      TestMatrix[, 1 + (i - burn_in) / thinning] <- TestSet_Prediction(xTest, m, Tess, Dim, Pred)
+      TestMatrix[, 1 + (i - burn_in) / thinning] <- TestSet_Prediction(xTest,
+                                                                       m,
+                                                                       Tess,
+                                                                       Dim,
+                                                                       Pred)
     }
-  }
+  } # End of MCMC Loop
 
   # Close the progress bar
   close(pbar)
 
-  # finding the mean of the prediction over the iterations and then unscaling the predictions.
+  # Finding the mean of the prediction over the iterations and then unscaling
+  # the predictions.
   mean_yhat <- (rowSums(PredictionMatrix) / (posterior_samples)) * y_range +
     y_center
   mean_yhat_Test <- (rowSums(TestMatrix) / (posterior_samples)) * y_range +

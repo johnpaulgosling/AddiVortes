@@ -23,8 +23,10 @@ toc()
 # Iteration 2000 out of 2000
 # In_sample_RMSE Out_of_sample_RMSE
 # 1       1.206556            3.20922
+# In_sample_RMSE Out_of_sample_RMSE (vecotorised sampling)
+# 1       1.204214           3.237258
 
-# Timings
+# Timings (Office comp)
 # v0.0.14 = 87.447 sec elapsed
 # v0.0.15 = 83.912 sec elapsed
 # v0.0.16 = 82.082 sec elapsed
