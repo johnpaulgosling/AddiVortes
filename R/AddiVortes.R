@@ -122,7 +122,8 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200,
 
       # Calculate the n-vector of partial residuals derived from a fitting process
       # that excludes the jth tessellation and the number of observations in each cell.
-      ResidualsOutput <- Calculate_Residuals(yScaled, xScaled,
+      ResidualsOutput <- Calculate_Residuals(yScaled,
+                                             xScaled,
                                              j,
                                              SumOfAllTess,
                                              Tess,
@@ -136,28 +137,40 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200,
       n_ijOld <- ResidualsOutput[[2]]
       R_ijNew <- ResidualsOutput[[3]]
       n_ijNew <- ResidualsOutput[[4]]
-      # Keeps track of the prediction for all tessellations to help sample sigma squared.
+      # Keeps track of the prediction for all tessellations to help
+      # sample sigma squared.
       SumOfAllTess <- ResidualsOutput[[5]]
-      # Gives the row of each observation for the cell it falls in for the proposed tessellation.
+      # Gives the row of each observation for the cell it falls in for the
+      # proposed tessellation.
       IndexesStar <- ResidualsOutput[[6]]
-      # Gives the row of each observation for the cell it falls in for the original tessellation.
+      # Gives the row of each observation for the cell it falls in for the
+      # original tessellation.
       Indexes <- ResidualsOutput[[7]]
 
       if (!any(n_ijNew == 0)) {
-        # automatically rejects proposed tessellation if there exists a cell with no observations in.
-        LogAcceptanceProb <- Acceptance_Probability(xScaled, TessStar, DimStar,
-                                                    j, R_ijOld, n_ijOld, R_ijNew,
-                                                    n_ijNew, SigmaSquared,
-                                                    Modification, SigmaSquaredMu,
-                                                    Omega, lambda_rate)
+        # Automatically reject proposed tessellation if there exists a cell
+        # with no observations in.
+        LogAcceptanceProb <- Acceptance_Probability(xScaled,
+                                                    TessStar,
+                                                    DimStar,
+                                                    j,
+                                                    R_ijOld, n_ijOld,
+                                                    R_ijNew, n_ijNew,
+                                                    SigmaSquared,
+                                                    Modification,
+                                                    SigmaSquaredMu,
+                                                    Omega,
+                                                    lambda_rate)
 
         if (log(runif(n = 1)) < LogAcceptanceProb) {
           # Accepts the proposed tessellation is accepted then calculates the new
           # output values for the new tessellation.
           Tess <- TessStar
           Dim <- DimStar
-          Pred[[j]] <- Sample_mu_values(j, TessStar, R_ijNew, n_ijNew,
-                                        SigmaSquaredMu, SigmaSquared)
+          Pred[[j]] <- Sample_mu_values(j, TessStar,
+                                        R_ijNew, n_ijNew,
+                                        SigmaSquaredMu,
+                                        SigmaSquared)
           LastTessPred <- Pred[[j]][IndexesStar]
         } else {
           # Rejects the proposed tessellation then calculates new output values

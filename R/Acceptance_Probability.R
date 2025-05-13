@@ -32,14 +32,15 @@ Acceptance_Probability <- function(x, Tess, Dim, j,
   # The Log Likelihood Ratio in the acceptance ratio
   LOGlikelihoodRatio <- 0.5 * (log(prod(n_ijOld * SigmaSquaredMu + SigmaSquared)) -
                                  log(prod(n_ijNew * SigmaSquaredMu + SigmaSquared))) +
-    ((SigmaSquaredMu / (2 * SigmaSquared)) * (sum((R_ijNew^2) /
-                                                    (n_ijNew * SigmaSquaredMu + SigmaSquared)) -
-                                                sum((R_ijOld^2) / (n_ijOld * SigmaSquaredMu + SigmaSquared))))
+    ((SigmaSquaredMu / (2 * SigmaSquared)) *
+       (sum((R_ijNew^2) /
+              (n_ijNew * SigmaSquaredMu + SigmaSquared)) -
+          sum((R_ijOld^2) / (n_ijOld * SigmaSquaredMu + SigmaSquared))))
 
   # Calculating the acceptance probability for
   # "AD"=Adding a dimension, "RD"=Removing a dimension,
-  # "AC"=Adding a center, "RC"=Removing a center,
-  # "Change"=Changing the coordinates of a center and Swopping a dimension.
+  # "AC"=Adding a centre, "RC"=Removing a centre,
+  # "Change"=Changing the coordinates of a centre and swapping a dimension.
   if (Modification == "AD") {
     TessStructure <- (dbinom(d - 1, NumCovariates - 1, Omega / NumCovariates)) /
       (dbinom(d - 2, NumCovariates - 1, Omega / NumCovariates) * (NumCovariates - d + 1))
@@ -53,7 +54,8 @@ Acceptance_Probability <- function(x, Tess, Dim, j,
       AcceptanceProb <- AcceptanceProb + log(2)
     }
   } else if (Modification == "RD") {
-    TessStructure <- (dbinom(d - 1, NumCovariates, Omega / NumCovariates) * (NumCovariates - d)) /
+    TessStructure <- (dbinom(d - 1, NumCovariates, Omega / NumCovariates) *
+                        (NumCovariates - d)) /
       (dbinom(d, NumCovariates, Omega / NumCovariates))
     TransitionRatio <- (d + 1) / (NumCovariates - d)
     AcceptanceProb <- LOGlikelihoodRatio + log(TessStructure) + log(TransitionRatio)
