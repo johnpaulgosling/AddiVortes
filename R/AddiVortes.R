@@ -89,11 +89,12 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200,
   }
   lambda <- optim(
     par = 1,
-    fitting_function,
+    Fitting_Function,
     method = "Brent",
     lower = 0.001,
     upper = 100,
-    q = q, nu = nu, sigmaSquared_hat = SigmaSquaredHat
+    q = q, nu = nu,
+    sigmaSquared_hat = SigmaSquaredHat
   )$par
 
   # Setting up progress bar
@@ -121,9 +122,14 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200,
 
       # Calculate the n-vector of partial residuals derived from a fitting process
       # that excludes the jth tessellation and the number of observations in each cell.
-      ResidualsOutput <- Calculate_Residuals(yScaled, xScaled, j,
-                                             SumOfAllTess, Tess, Dim,
-                                             Pred, TessStar, DimStar,
+      ResidualsOutput <- Calculate_Residuals(yScaled, xScaled,
+                                             j,
+                                             SumOfAllTess,
+                                             Tess,
+                                             Dim,
+                                             Pred,
+                                             TessStar,
+                                             DimStar,
                                              LastTessPred)
       # Old and New refer to the original and proposed tessellations
       R_ijOld <- ResidualsOutput[[1]]
