@@ -32,4 +32,4 @@ toc()
 # v0.0.16 = 82 sec elapsed
 # v0.0.17 = 82 sec elapsed
 # v0.0.20 = 115 sec elapsed
-# v0.0.21 = 118 sec elapsed
+# v0.0.21 = 117 sec elapsed
