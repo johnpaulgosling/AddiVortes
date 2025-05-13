@@ -22,5 +22,5 @@ A list containing the new tessellation, the new dimension matrix and the modific
 }
 \description{
 Propose a new tessellation by adding, removing, changing or
-swapping dimensions or centers.
+swapping dimensions or centres.
 }

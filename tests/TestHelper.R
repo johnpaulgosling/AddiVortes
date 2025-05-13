@@ -27,8 +27,9 @@ toc()
 # 1       1.204214           3.237258
 
 # Timings (Office comp)
-# v0.0.14 = 87.447 sec elapsed
-# v0.0.15 = 83.912 sec elapsed
-# v0.0.16 = 82.082 sec elapsed
-# v0.0.17 = 81.952 sec elapsed
-# v0.0.20 = 115.278 sec elapsed
+# v0.0.14 = 87 sec elapsed
+# v0.0.15 = 84 sec elapsed
+# v0.0.16 = 82 sec elapsed
+# v0.0.17 = 82 sec elapsed
+# v0.0.20 = 115 sec elapsed
+# v0.0.21 = 118 sec elapsed
