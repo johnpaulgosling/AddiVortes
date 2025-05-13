@@ -21,5 +21,6 @@ TestSet_Prediction(x, m, Tess, Dim, Pred)
 A vector with the predictions.
 }
 \description{
-A function that derives a prediction for the output variable give an observation, for one iteration in AddiVortes.
+A function that derives a prediction for the output variable
+give an observation, for one iteration in AddiVortes.
 }

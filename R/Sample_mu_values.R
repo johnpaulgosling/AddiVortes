@@ -1,6 +1,7 @@
 #' @title Sample_mu_values
 #'
-#' @description This function samples the new mean output values for the proposed tessellation.
+#' @description This function samples the new mean output values for
+#' the proposed tessellation.
 #'
 #' @param j The index of the tessellation.
 #' @param Tess The tessellation.

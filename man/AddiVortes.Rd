@@ -57,5 +57,9 @@ AddiVortes(
 The RMSE value for the test samples.
 }
 \description{
-The AddiVortes function is a Bayesian nonparametric regression model that uses a tessellation to model the relationship between the covariates and the output values. The model uses a backfitting algorithm to sample from the posterior distribution of the output values for each tessellation. The function returns the RMSE value for the test samples.
+The AddiVortes function is a Bayesian nonparametric regression model that uses a
+tessellation to model the relationship between the covariates and the output values.
+The model uses a backfitting algorithm to sample from the posterior distribution of
+the output values for each tessellation. The function returns the RMSE value for
+the test samples.
 }

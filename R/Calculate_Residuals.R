@@ -1,6 +1,7 @@
 #' @title Calculate_Residuals
 #'
-#' @description A function that calculates the n-vector of partial residuals derived from a fitting process that excludes the jth tessellation.
+#' @description A function that calculates the n-vector of partial residuals derived from a
+#' fitting process that excludes the jth tessellation.
 #'
 #' @param y The outcome variable.
 #' @param x The covariate matrix.

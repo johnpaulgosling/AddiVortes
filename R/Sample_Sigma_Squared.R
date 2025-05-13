@@ -14,7 +14,8 @@ Sample_Sigma_Squared <- function(yScaled, nu, lambda, SumOfAllTess) {
   n <- length(yScaled)
   SigmaSquared <- rinvgamma_internal(1,
                                      shape = (nu + n) / 2,
-                                     rate = (nu * lambda + sum((yScaled - SumOfAllTess)^2)) / 2)
+                                     rate = (nu * lambda +
+                                               sum((yScaled - SumOfAllTess)^2)) / 2)
 
   return(SigmaSquared)
 }

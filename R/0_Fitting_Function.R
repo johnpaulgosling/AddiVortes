@@ -1,6 +1,7 @@
 #' @title Fitting function
 #'
-#' @description A function that calculates the squared difference between sigma squared hat and the inverse gamma function.
+#' @description A function that calculates the squared difference between sigma squared hat
+#' and the inverse gamma function.
 #'
 #' @param lambda The lambda value.
 #' @param q The q value.
@@ -8,9 +9,10 @@
 #' @param sigmaSquared_hat The sigma squared hat value.
 #'
 #' @return The squared difference between sigma squared hat and the inverse gamma function.
-#'
-#' @export
-fitting_function <- function(lambda, q, nu, sigmaSquared_hat) {
+Fitting_Function <- function(lambda,
+                             q,
+                             nu,
+                             sigmaSquared_hat) {
   return((sigmaSquared_hat - qinvgamma_internal(q,
                                                 shape = nu / 2,
                                                 rate = nu * lambda / 2))^2)

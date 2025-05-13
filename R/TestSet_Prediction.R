@@ -1,6 +1,7 @@
 #' @title TestSet_Prediction
 #'
-#' @description A function that derives a prediction for the output variable give an observation, for one iteration in AddiVortes.
+#' @description A function that derives a prediction for the output variable
+#' give an observation, for one iteration in AddiVortes.
 #'
 #' @param x A matrix with the observations.
 #' @param m The number of iterations in AddiVortes.
@@ -17,6 +18,6 @@ TestSet_Prediction <- function(x, m, Tess, Dim, Pred) {
     NewTessIndexes <- Cell_Indexes(x, Tess[[j]], Dim[[j]])
     Prediction <- Prediction + Pred[[j]][NewTessIndexes]
   }
-  
+
   return(Prediction)
 }

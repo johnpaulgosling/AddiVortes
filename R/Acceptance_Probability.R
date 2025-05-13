@@ -19,8 +19,12 @@
 #' @return The acceptance probability.
 #'
 #' @export
-Acceptance_Probability <- function(x, Tess, Dim, j, R_ijOld, n_ijOld, R_ijNew, n_ijNew, SigmaSquared,
-                                   Modification, SigmaSquaredMu, Omega, lambda_rate) {
+Acceptance_Probability <- function(x, Tess, Dim, j,
+                                   R_ijOld, n_ijOld,
+                                   R_ijNew, n_ijNew,
+                                   SigmaSquared,
+                                   Modification, SigmaSquaredMu,
+                                   Omega, lambda_rate) {
   d <- length(Dim[[j]])
   NumCovariates <- length(x[1, ])
   cStar <- length(Tess[[j]][, 1])
@@ -63,7 +67,8 @@ Acceptance_Probability <- function(x, Tess, Dim, j, R_ijOld, n_ijOld, R_ijNew, n
   } else if (Modification == "AC") {
     TessStructure <- dpois(cStar - 1, lambda_rate) / dpois(cStar - 2, lambda_rate)
     TransitionRatio <- 1 / cStar
-    AcceptanceProb <- LOGlikelihoodRatio + log(TessStructure) + log(TransitionRatio) + 0.5 * log(SigmaSquared)
+    AcceptanceProb <- LOGlikelihoodRatio + log(TessStructure) + log(TransitionRatio) +
+      0.5 * log(SigmaSquared)
 
     # Adjustments.
     if (cStar == 1) {

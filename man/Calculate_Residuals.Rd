@@ -42,5 +42,6 @@ Calculate_Residuals(
 A list containing the residuals of the old tessellation, the number of observations in each cell of the old tessellation, the residuals of the new tessellation, the number of observations in each cell of the new tessellation, the sum of all tessellations, the indexes of the proposed tessellation, and the indexes of the original tessellation.
 }
 \description{
-A function that calculates the n-vector of partial residuals derived from a fitting process that excludes the jth tessellation.
+A function that calculates the n-vector of partial residuals derived from a
+fitting process that excludes the jth tessellation.
 }
