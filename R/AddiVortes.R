@@ -218,9 +218,11 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200,
     y_center
 
   return( # Returns the RMSE value for the test samples.
+    list(AddiVortes_model = list(),
     data.frame(
       In_sample_RMSE = sqrt(mean((y - mean_yhat)^2)),
       Out_of_sample_RMSE = sqrt(mean((yTest - mean_yhat_Test)^2))
     )
+  )
   )
 }
