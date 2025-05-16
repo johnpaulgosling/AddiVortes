@@ -13,8 +13,11 @@ test_that("Simple AddiVortes fit 1", {
                         Y_test,X_test,
                         IntialSigma = "Linear")
 
-  expect_equal(round(results[[1]],3), 0.724)
-  expect_equal(round(results[[2]],3), 1.052)
+  expect_equal(round(results[[2]][[1]],3), 0.724)
+  expect_equal(round(PredictAddiVortes(results[[1]],
+                                       X_test,
+                                       Y_test)[[1]],3),
+               1.052)
 })
 
 test_that("Simple AddiVortes fit 2", {
@@ -25,14 +28,17 @@ test_that("Simple AddiVortes fit 2", {
   Y_test <- rnorm(20, -5, 3)
 
   results <- AddiVortes(Y,X,5,
-             150,50,
-             6,0.85,3,0.8,3,25,
-             Y_test,X_test,
-             IntialSigma = "Linear")
+                        150,50,
+                        6,0.85,3,0.8,3,25,
+                        Y_test,X_test,
+                        IntialSigma = "Linear")
 
 
-  expect_equal(round(results[[1]],3), 2.641)
-  expect_equal(round(results[[2]],3), 3.008)
+  expect_equal(round(results[[2]][[1]],3), 2.641)
+  expect_equal(round(PredictAddiVortes(results[[1]],
+                                       X_test,
+                                       Y_test)[[1]],3),
+               3.008)
 })
 
 test_that("Simple AddiVortes fit 3", {
@@ -43,11 +49,14 @@ test_that("Simple AddiVortes fit 3", {
   Y_test <- runif(100, -1, 3)
 
   results <- AddiVortes(Y,X,10,
-             200,100,
-             6,0.85,3,0.8,3,25,
-             Y_test,X_test,
-             IntialSigma = "Linear")
+                        200,100,
+                        6,0.85,3,0.8,3,25,
+                        Y_test,X_test,
+                        IntialSigma = "Linear")
 
-  expect_equal(round(results[[1]],3), 1.149)
-  expect_equal(round(results[[2]],3), 1.094)
+  expect_equal(round(results[[2]][[1]],3), 1.149)
+  expect_equal(round(PredictAddiVortes(results[[1]],
+                                       X_test,
+                                       Y_test)[[1]],3),
+               1.094)
 })
