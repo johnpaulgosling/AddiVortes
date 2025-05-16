@@ -14,11 +14,19 @@ TestSet <- 1:n
 TestSet <- TestSet[! TestSet %in% TrainSet]
 
 tic("Start")
-AddiVortes(Y_Boston[TrainSet],X_Boston[TrainSet,],
+results <- AddiVortes(Y_Boston[TrainSet],X_Boston[TrainSet,],
            200,2000,200,6,0.85,3,0.8,3,25,
            Y_Boston[TestSet],X_Boston[TestSet,],
            IntialSigma = "Linear")
+preds <- PredictAddiVortes(results[[1]],
+                           X_Boston[TestSet,],
+                           Y_Boston[TestSet])
 toc()
+
+results[[2]][[1]]
+preds[[1]]
+
+plot(Y_Boston[TestSet], preds[[2]])
 
 # Iteration 2000 out of 2000
 # In_sample_RMSE Out_of_sample_RMSE
