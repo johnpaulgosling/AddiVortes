@@ -1,24 +1,23 @@
 library(AddiVortes)
-library(tictoc)
 
-Boston <- read.csv("https://raw.githubusercontent.com/anonymous2738/AddiVortesAlgorithm/DataSets/BostonHousing_Data.csv")
-X_Boston <- as.matrix(Boston[,2:14])
-Y_Boston <- as.numeric(as.matrix(Boston[,15]))
-rm(Boston)
+set.seed(111333)
+X <- matrix(rnorm(100),10,10)
+Y <- rnorm(10)
+X_test <- matrix(rnorm(100),10,10)
+Y_test <- rnorm(10)
 
-n <- length(Y_Boston)
+results <- AddiVortes(Y,X,10,
+                      90,10,
+                      6,0.85,3,0.8,3,25,
+                      Y_test,X_test,
+                      IntialSigma = "Linear")
 
-set.seed(1025)
-TrainSet <- sort(sample.int(n,5*n/6))
-TestSet <- 1:n
-TestSet <- TestSet[! TestSet %in% TrainSet]
+#expect_equal(round(results[[2]][[1]],3), 0.724)
+#expect_equal(round(results[[2]][[2]],3), 1.052)
 
-output_AV <- AddiVortes(Y_Boston[TrainSet],X_Boston[TrainSet,],
-                        200,2000,200,6,0.85,3,0.8,3,25,
-                        Y_Boston[TestSet],X_Boston[TestSet,],
-                        IntialSigma = "Linear")
+preds <- PredictAddiVortes(results[[1]],
+                           X_test,
+                           Y_test)
+preds[[1]]
 
-
-# In_sample_RMSE Out_of_sample_RMSE (vectorised sampling)
-# 1       1.204214           3.237258
-
+plot(Y_test, preds[[2]])

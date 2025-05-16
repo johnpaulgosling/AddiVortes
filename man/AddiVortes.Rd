@@ -54,40 +54,7 @@ AddiVortes(
 \item{thinning}{The thinning rate.}
 }
 \value{
-A list containing two main elements:
-\describe{
-\item{\code{model_object}}{A list containing all necessary components
-for making predictions with the \code{predict_addivortes} function.
-This list includes:
-\itemize{
-\item{\code{m}: The number of tessellations.}
-\item{\code{posterior_Tess}: A list, where each element is the
-state of all tessellation centers (\code{Tess_current}) from a
-thinned posterior MCMC sample.}
-\item{\code{posterior_Dim}: A list, where each element is the
-state of dimension selections (\code{Dim_current}) for each
-tessellation from a thinned posterior MCMC sample.}
-\item{\code{posterior_Pred}: A list, where each element is the
-state of cell prediction values (\code{Pred_current}) for each
-tessellation from a thinned posterior MCMC sample.}
-\item{\code{x_centers}: A vector of mean/center values used for
-scaling the training covariates \code{x}.}
-\item{\code{x_ranges}: A vector of range/scale values used for
-scaling the training covariates \code{x}.}
-\item{\code{y_center}: The mean/center value used for scaling the
-training output \code{y}.}
-\item{\code{y_range}: The range/scale value used for scaling the
-training output \code{y}.}
-\item{\code{x_colnames}: A vector of column names from the input
-\code{x} (NULL if \code{x} had no column names).}
-}}
-\item{\code{In_sample_RMSE}}{The Root Mean Squared Error calculated on the
-training data (\code{y}, \code{x}).}
-\item{\code{Out_of_sample_RMSE}}{The Root Mean Squared Error calculated on
-the test data (\code{yTest}, \code{xTest}). This is \code{NA} if
-\code{yTest} or \code{xTest} were not provided or if no posterior
-samples were stored.}
-}
+The RMSE value for the test samples.
 }
 \description{
 The AddiVortes function is a Bayesian nonparametric regression model that uses a

@@ -42,11 +42,6 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200,
   x_centers <- x_scaling_result$centers # Vector of values
   x_ranges <- x_scaling_result$ranges   # Vector of values
 
-  # Scaling the test set
-  xTest <- apply_scaling_internal(mat = xTest,
-                                  centers = x_centers,
-                                  ranges = x_ranges)
-
   #### Initialise predictions --------------------------------------------------
   # Initialise:
   # Prediction Set (A list of vectors with the output values for each tessellation),
@@ -96,6 +91,20 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200,
     q = q, nu = nu,
     sigmaSquared_hat = SigmaSquaredHat
   )$par
+
+  # Determine number of samples to store
+  num_posterior_samples_to_store <- 0
+  if (max_iter > burn_in) {
+    num_posterior_samples_to_store <- floor((max_iter - burn_in) / thinning)
+  }
+  if (num_posterior_samples_to_store < 0) num_posterior_samples_to_store <- 0
+
+  # Lists to store the states of Tess, Dim, Pred for the model object output
+  output_posterior_Tess <- vector("list", num_posterior_samples_to_store)
+  output_posterior_Dim <- vector("list", num_posterior_samples_to_store)
+  output_posterior_Pred <- vector("list", num_posterior_samples_to_store)
+
+  current_storage_idx <- 1 # Index for the new output lists
 
   # Setting up progress bar
   pbar <- utils::txtProgressBar(min = 0, max = max_iter,
@@ -199,11 +208,16 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200,
     if (i >= burn_in & (i - burn_in) %% thinning == 0) {
       # vectors that hold the predictions for each iteration after burn in.
       PredictionMatrix[, 1 + (i - burn_in) / thinning] <- SumOfAllTess
-      TestMatrix[, 1 + (i - burn_in) / thinning] <- TestSet_Prediction(xTest,
-                                                                       m,
-                                                                       Tess,
-                                                                       Dim,
-                                                                       Pred)
+    }
+
+    # Store the posterior samples
+    if (num_posterior_samples_to_store > 0 && i >= burn_in & (i - burn_in) %% thinning == 0) {
+        # Store the current state of Tess, Dim, Pred
+        output_posterior_Tess[[current_storage_idx]] <- Tess
+        output_posterior_Dim[[current_storage_idx]] <- Dim
+        output_posterior_Pred[[current_storage_idx]] <- Pred
+        current_storage_idx <- current_storage_idx + 1
+    #  }
     }
   } # End of MCMC Loop
 
@@ -214,15 +228,19 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200,
   # the predictions.
   mean_yhat <- (rowSums(PredictionMatrix) / (posterior_samples)) * y_range +
     y_center
-  mean_yhat_Test <- (rowSums(TestMatrix) / (posterior_samples)) * y_range +
-    y_center
 
   return( # Returns the RMSE value for the test samples.
-    list(AddiVortes_model = list(),
-    data.frame(
-      In_sample_RMSE = sqrt(mean((y - mean_yhat)^2)),
-      Out_of_sample_RMSE = sqrt(mean((yTest - mean_yhat_Test)^2))
+    list(AddiVortes_model = list(output_posterior_Tess,
+                                 output_posterior_Dim,
+                                 output_posterior_Pred,
+                                 current_storage_idx,
+                                 x_centers,
+                                 x_ranges,
+                                 y_center,
+                                 y_range),
+         data.frame(
+           In_sample_RMSE = sqrt(mean((y - mean_yhat)^2))
+         )
     )
-  )
   )
 }

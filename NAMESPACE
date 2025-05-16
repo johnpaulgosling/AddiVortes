@@ -3,6 +3,7 @@
 export(Acceptance_Probability)
 export(AddiVortes)
 export(Calculate_Residuals)
+export(PredictAddiVortes)
 export(Propose_Tessellation)
 export(Sample_Sigma_Squared)
 export(Sample_mu_values)
