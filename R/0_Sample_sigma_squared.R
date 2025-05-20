@@ -8,9 +8,8 @@
 #' @param SumOfAllTess The sum of all the tessellations.
 #'
 #' @return SigmaSquared The sampled sigma squared.
-#'
-#' @export
-Sample_Sigma_Squared <- function(yScaled, nu, lambda, SumOfAllTess) {
+Sample_Sigma_Squared <- function(yScaled, nu,
+                                 lambda, SumOfAllTess) {
   n <- length(yScaled)
   SigmaSquared <- rinvgamma_internal(1,
                                      shape = (nu + n) / 2,

@@ -11,9 +11,9 @@
 #' @param SigmaSquared The Sigma squared value.
 #'
 #' @return The new output values for the new tessellation.
-#'
-#' @export
-Sample_mu_values <- function(j, Tess, R_ijNew, n_ijNew, sigmaSquaredMu, SigmaSquared) {
+Sample_mu_values <- function(j, Tess,
+                             R_ijNew, n_ijNew,
+                             sigmaSquaredMu, SigmaSquared) {
   # 1. Get the number of samples needed
   N <- length(Tess[[j]][, 1]) # Or nrow(Tess[[j]])
 
