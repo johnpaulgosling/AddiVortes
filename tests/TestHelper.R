@@ -26,13 +26,29 @@ toc()
 results[[2]][[1]]
 preds[[1]]
 
-plot(Y_Boston[TestSet], preds[[2]])
+# Plot predictions
+plot(Y_Boston[TestSet],
+     preds[[2]],
+     xlab = "True Values",
+     ylab = "Predicted Values",
+     main = "AddiVortes Predictions vs True Values",
+     xlim = c(min(Y_Boston[TestSet]) - 0.1, max(Y_Boston[TestSet]) + 0.1),
+     ylim = c(min(preds[[3]]) - 0.1, max(preds[[3]]) + 0.1),
+     pch = 19, col = "red")
+# Add error lines
+for (i in 1:ncol(preds[[3]])){
+  segments(Y_Boston[TestSet][i], preds[[3]][1,i],
+           Y_Boston[TestSet][i], preds[[3]][2,i],
+           col = "red", lwd = 1.5)
+}
+# Add in the equality line
+abline(a = 0, b = 1, col = "blue", lwd = 2)
 
 # Iteration 2000 out of 2000
 # In_sample_RMSE Out_of_sample_RMSE
-# 1       1.206556            3.20922
+# 1       1.206556           3.20922
 # In_sample_RMSE Out_of_sample_RMSE (vectorised sampling)
-# 1       1.204214           3.237258
+# 1       1.204092           3.237162
 
 # Timings (Office comp)
 # v0.0.14 = 87 sec elapsed
