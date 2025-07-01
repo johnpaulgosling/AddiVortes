@@ -41,16 +41,16 @@ predictAddiVortes <- function(addiVortesModelFit,
   # currentStorageIdx indicates (number of stored samples + 1)
   numStoredSamples     <- addiVortesModelFit[[4]] - 1
 
-  xModelCenters <- addiVortesModelFit[[5]]
+  xModelcentres <- addiVortesModelFit[[5]]
   xModelRanges  <- addiVortesModelFit[[6]]
-  yModelCenter  <- addiVortesModelFit[[7]]
+  yModelcentre  <- addiVortesModelFit[[7]]
   yModelRange   <- addiVortesModelFit[[8]]
 
   # Basic input validation
   if (!is.matrix(xNew)) {
     stop("'xNew' must be a matrix.")
   }
-  if (ncol(xNew) != length(xModelCenters)) {
+  if (ncol(xNew) != length(xModelcentres)) {
     stop("Number of columns in 'xNew' does not match the original training data.")
   }
   if (length(yNew) != nrow(xNew)) {
@@ -65,7 +65,7 @@ predictAddiVortes <- function(addiVortesModelFit,
 
   # Scale the new test covariates using stored scaling parameters
   xNewScaled <- applyScaling_internal(mat = xNew,
-                                     centers = xModelCenters,
+                                     centres = xModelcentres,
                                      ranges = xModelRanges)
 
   # Determine the number of tessellations (m) from the first stored sample
@@ -101,10 +101,10 @@ predictAddiVortes <- function(addiVortesModelFit,
                                  probs = quantiles)
 
   # Unscale the mean predictions
-  meanYhatNewUnscaled <- meanYhatNewScaled * yModelRange + yModelCenter
+  meanYhatNewUnscaled <- meanYhatNewScaled * yModelRange + yModelcentre
 
   # Unscale the quantiles of predictions
-  quantileYhatNewUnscaled <- quantileYhatNewScaled * yModelRange + yModelCenter
+  quantileYhatNewUnscaled <- quantileYhatNewScaled * yModelRange + yModelcentre
 
   # Calculate the Out-of-Sample RMSE for the new test data
   outOfSampleRmse <- sqrt(mean((yNew - meanYhatNewUnscaled)^2))

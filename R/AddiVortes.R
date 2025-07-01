@@ -37,12 +37,12 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
   #### Scaling x and y ---------------------------------------------------------
   yScalingResult <- scaleData_internal(y)
   yScaled <- yScalingResult$scaled_data # Vector of values
-  yCenter <- yScalingResult$centers
+  ycentre <- yScalingResult$centres
   yRange <- yScalingResult$ranges
 
   xScalingResult <- scaleData_internal(x)
   xScaled <- xScalingResult$scaled_data # Matrix of values
-  xCenters <- xScalingResult$centers # Vector of values
+  xcentres <- xScalingResult$centres # Vector of values
   xRanges <- xScalingResult$ranges   # Vector of values
 
   #### Initialise predictions --------------------------------------------------
@@ -237,16 +237,16 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
   # Finding the mean of the prediction over the iterations and then unscaling
   # the predictions.
   meanYhat <- (rowSums(predictionMatrix) / (posteriorSamples)) * yRange +
-    yCenter
+    ycentre
 
   return( # Returns the RMSE value for the test samples.
     list(AddiVortesModel = list(outputPosteriorTess,
                                 outputPosteriorDim,
                                 outputPosteriorPred,
                                 currentStorageIdx,
-                                xCenters,
+                                xcentres,
                                 xRanges,
-                                yCenter,
+                                ycentre,
                                 yRange),
          inSampleRmse = sqrt(mean((y - meanYhat)^2))
     )

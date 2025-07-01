@@ -5,7 +5,7 @@
 #' Determines if the input is vector-like or matrix/data frame-like.
 #' - If vector-like: scales based on the overall range of the vector.
 #' - If matrix/data frame-like: scales each column based on its own range.
-#' Scaling uses `(value - center) / range` where `center = (max+min)/2`
+#' Scaling uses `(value - centre) / range` where `centre = (max+min)/2`
 #' and `range = max-min`. Ignores NA for calculations. Returns 0 for zero-range
 #' data/columns. Non-numeric columns in matrices/data frames are returned
 #' unchanged with a warning.
@@ -14,7 +14,7 @@
 #'
 #' @return A list containing:
 #'   \item{scaled_data}{The scaled object (vector, matrix or data frame matching input type).}
-#'   \item{centers}{The center(s) used (single value for vector input, vector for matrix/df).}
+#'   \item{centres}{The centre(s) used (single value for vector input, vector for matrix/df).}
 #'   \item{ranges}{The range(s) used (single value for vector input, vector for matrix/df).}
 #'
 #' @keywords internal
@@ -34,7 +34,7 @@ scaleData_internal <- function(data) {
     # --- Handle Vector ---
     min_v <- min(data, na.rm = TRUE)
     max_v <- max(data, na.rm = TRUE)
-    center <- (max_v + min_v) / 2
+    centre <- (max_v + min_v) / 2
     range_v <- max_v - min_v
 
     # Break if range is zero
@@ -43,8 +43,8 @@ scaleData_internal <- function(data) {
     }
 
     # Scale the data
-    scaled_data <- (data - center) / range_v
-    centers <- center # Store single value
+    scaled_data <- (data - centre) / range_v
+    centres <- centre # Store single value
     ranges <- range_v   # Store single value
 
   } else {
@@ -55,7 +55,7 @@ scaleData_internal <- function(data) {
 
     # Pre-allocate results
     scaled_mat_work <- matrix(NA_real_, nrow = nrow(mat_work), ncol = num_cols)
-    centers <- numeric(num_cols) # Vector to store centers
+    centres <- numeric(num_cols) # Vector to store centres
     ranges <- numeric(num_cols)  # Vector to store ranges
 
     original_colnames <- colnames(mat_work) # Store original names
@@ -71,16 +71,16 @@ scaleData_internal <- function(data) {
       if (!is.numeric(col_data)) {
         warning("Column ", i, " ('", col_name, "') is not numeric. Returning original column data.", call. = FALSE)
         scaled_mat_work[, i] <- col_data # Keep original non-numeric data
-        centers[i] <- NA # Indicate parameters are not applicable/calculated
+        centres[i] <- NA # Indicate parameters are not applicable/calculated
         ranges[i] <- NA
         next # Move to the next column
       }
 
       min_v <- min(col_data, na.rm = TRUE)
       max_v <- max(col_data, na.rm = TRUE)
-      centers[i] <- (max_v + min_v) / 2
+      centres[i] <- (max_v + min_v) / 2
       ranges[i] <- max_v - min_v
-      scaled_mat_work[, i] <- (col_data - centers[i]) / ranges[i]
+      scaled_mat_work[, i] <- (col_data - centres[i]) / ranges[i]
     }
 
     # Preserve names
@@ -97,13 +97,13 @@ scaleData_internal <- function(data) {
     } else {
       scaled_data <- scaled_mat_work
     }
-    # `centers` and `ranges` are already vectors
+    # `centres` and `ranges` are already vectors
   }
 
   # --- Return Results ---
   return(list(
     scaled_data = scaled_data,
-    centers = centers,
+    centres = centres,
     ranges = ranges
   ))
 }
@@ -112,21 +112,21 @@ scaleData_internal <- function(data) {
 #'
 #' Apply existing scaling parameters to columns of a matrix/data frame
 #'
-#' Scales columns using `(value - center) / range` with *provided* center
+#' Scales columns using `(value - centre) / range` with *provided* centre
 #' and range values (typically from a training set). Handles cases where
 #' the provided range is zero consistently (output is 0). Preserves input
 #' data type (matrix or data frame). Stops if non-numeric columns are encountered
 #' or if scaling parameters are NA for a column.
 #'
 #' @param mat A numeric matrix or data frame to scale.
-#' @param centers A numeric vector of center values to apply (length must match `ncol(mat)`).
+#' @param centres A numeric vector of centre values to apply (length must match `ncol(mat)`).
 #' @param ranges A numeric vector of range values to apply (length must match `ncol(mat)`).
 #'
 #' @return The scaled matrix or data frame.
 #'
 #' @keywords internal
 #' @noRd
-applyScaling_internal <- function(mat, centers, ranges) {
+applyScaling_internal <- function(mat, centres, ranges) {
   is_df <- is.data.frame(mat)
   mat_work <- as.matrix(mat) # Work with matrix representation
 
@@ -137,8 +137,8 @@ applyScaling_internal <- function(mat, centers, ranges) {
   }
 
 
-  if (length(centers) != ncol(mat_work) || length(ranges) != ncol(mat_work)) {
-    stop("Length of 'centers' (", length(centers), ") and 'ranges' (", length(ranges),
+  if (length(centres) != ncol(mat_work) || length(ranges) != ncol(mat_work)) {
+    stop("Length of 'centres' (", length(centres), ") and 'ranges' (", length(ranges),
          ") must match the number of columns in 'mat' (", ncol(mat_work), ").")
   }
 
@@ -162,14 +162,14 @@ applyScaling_internal <- function(mat, centers, ranges) {
     }
 
     # Check if the parameters for this column are valid (not NA)
-    if (is.na(centers[i]) || is.na(ranges[i])) {
+    if (is.na(centres[i]) || is.na(ranges[i])) {
       warning("Scaling parameters for column ", i, " ('", col_name, "') are NA (likely due to non-numeric original training column). Returning original data for this column.", call. = FALSE)
       scaled_mat_work[, i] <- col_data
       next
     }
 
     # Apply scaling using provided centres and ranges
-    scaled_mat_work[, i] <- (col_data - centers[i]) / ranges[i]
+    scaled_mat_work[, i] <- (col_data - centres[i]) / ranges[i]
   }
 
   colnames(scaled_mat_work) <- original_colnames
