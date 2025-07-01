@@ -1,4 +1,4 @@
-#' @title Calculate_Residuals
+#' @title Calculate Residuals
 #'
 #' @description A function that calculates the n-vector of partial residuals derived from a
 #' fitting process that excludes the jth tessellation.
@@ -17,19 +17,19 @@
 #' @return A list containing the residuals of the old tessellation, the number of observations in each cell of the old tessellation, the residuals of the new tessellation, the number of observations in each cell of the new tessellation, the sum of all tessellations, the indexes of the proposed tessellation, and the indexes of the original tessellation.
 #'
 #' @export
-Calculate_Residuals <- function(y, x, j, SumOfAllTess, Tess, Dim,
+calculateResiduals <- function(y, x, j, SumOfAllTess, Tess, Dim,
                                 Pred, TessStar, DimStar, LastTessPred) {
   if (j == 1) {
-    indexes <- Cell_Indexes(x, Tess[[j]], Dim[[j]])
+    indexes <- cellIndices(x, Tess[[j]], Dim[[j]])
     CurrentTessPred <- Pred[[j]][indexes]
     SumOfAllTess <- SumOfAllTess - CurrentTessPred
   } else {
-    indexes <- Cell_Indexes(x, Tess[[j]], Dim[[j]])
+    indexes <- cellIndices(x, Tess[[j]], Dim[[j]])
     CurrentTessPred <- Pred[[j]][indexes]
     SumOfAllTess <- SumOfAllTess + LastTessPred - CurrentTessPred
   }
 
-  IndexesStar <- Cell_Indexes(x, TessStar[[j]], DimStar[[j]])
+  IndexesStar <- cellIndices(x, TessStar[[j]], DimStar[[j]])
   R_j <- y - SumOfAllTess
 
   # Initializing Sizes

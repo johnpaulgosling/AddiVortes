@@ -5,7 +5,7 @@ set.seed(123211)
 test_that("Simple Tesselation", {
   Tess <- list(matrix(0,1,1))
 
-  results <- Sample_mu_values(1, Tess,
+  results <- sampleMuValues(1, Tess,
                               1, 3,
                               1, 1)
 

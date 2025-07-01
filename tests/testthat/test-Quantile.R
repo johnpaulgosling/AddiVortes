@@ -12,7 +12,7 @@ test_that("AddiVortes fit 1 with quantile check", {
                         6,0.85,3,0.8,3,25,
                         Y_test,X_test,
                         IntialSigma = "Linear")
-  predictions <- PredictAddiVortes(results[[1]],
+  predictions <- predictAddiVortes(results[[1]],
                                    X_test,
                                    Y_test,
                                    c(0.5,0.75))
@@ -37,7 +37,7 @@ test_that("AddiVortes fit 2 with reverse quantile check", {
                         6,0.85,3,0.8,3,25,
                         Y_test,X_test,
                         IntialSigma = "Linear")
-  predictions <- PredictAddiVortes(results[[1]],
+  predictions <- predictAddiVortes(results[[1]],
                                    X_test,
                                    Y_test,
                                    c(0.95,0.75))
@@ -58,7 +58,7 @@ test_that("AddiVortes fit 3 with quantile count", {
                         6,0.85,3,0.8,3,25,
                         Y_test,X_test,
                         IntialSigma = "Linear")
-  predictions <- PredictAddiVortes(results[[1]],
+  predictions <- predictAddiVortes(results[[1]],
                                    X_test,
                                    Y_test,
                                    c(0.01,0.2,0.3,0.4,0.95,0.96,0.97))

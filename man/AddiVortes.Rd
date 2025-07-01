@@ -8,14 +8,14 @@ AddiVortes(
   y,
   x,
   m = 200,
-  max_iter = 1200,
-  burn_in = 200,
+  totalMCMCIter = 1200,
+  mcmcBurnIn = 200,
   nu = 6,
   q = 0.85,
   k = 3,
   sd = 0.8,
-  Omega = 3,
-  lambda_rate = 25,
+  omega = 3,
+  lambdaRate = 25,
   yTest,
   xTest,
   IntialSigma = "Linear",
@@ -29,9 +29,9 @@ AddiVortes(
 
 \item{m}{The number of tessellations.}
 
-\item{max_iter}{The number of iterations.}
+\item{totalMCMCIter}{The number of iterations.}
 
-\item{burn_in}{The number of burn in iterations.}
+\item{mcmcBurnIn}{The number of burn in iterations.}
 
 \item{nu}{The degrees of freedom.}
 
@@ -41,9 +41,9 @@ AddiVortes(
 
 \item{sd}{The standard deviation.}
 
-\item{Omega}{The prior probability of adding a dimension.}
+\item{omega}{The prior probability of adding a dimension.}
 
-\item{lambda_rate}{The rate of the Poisson distribution for the number of centers.}
+\item{lambdaRate}{The rate of the Poisson distribution for the number of centers.}
 
 \item{yTest}{A vector of the output values for the test set.}
 
@@ -56,9 +56,9 @@ AddiVortes(
 \value{
 A list containing the following elements:
 \itemize{
-\item \code{AddiVortes_model}: A list containing the posterior samples of the tessellations,
-dimensions, and predictions.
-\item \code{In_sample_RMSE}: The RMSE value for the training samples.
+\item \code{AddiVortesModel}: A list containing the posterior samples of the tessellations,
+   dimensions and predictions.
+\item \code{inSampleRmse}: The RMSE value for the training samples.
 }
 }
 \description{

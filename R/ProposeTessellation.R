@@ -1,4 +1,4 @@
-#' @title Propose_Tessellation
+#' @title Propose Tessellation
 #'
 #' @description Propose a new tessellation by adding, removing, changing or
 #' swapping dimensions or centres.
@@ -12,7 +12,7 @@
 #' @return A list containing the new tessellation, the new dimension matrix and the modification made.
 #'
 #' @export
-Propose_Tessellation <- function(x, j,
+proposeTessellation <- function(x, j,
                                  Tess, Dim, var) {
 
   p <- runif(1, 0, 1) # Randomly sample p to decide the proposed modification to tessellation.

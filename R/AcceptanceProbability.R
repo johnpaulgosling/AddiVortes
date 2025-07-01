@@ -19,7 +19,7 @@
 #' @return The acceptance probability.
 #'
 #' @export
-AcceptanceProbability <- function(x, Tess, Dim, j,
+acceptanceProbability <- function(x, Tess, Dim, j,
                                    R_ijOld, n_ijOld,
                                    R_ijNew, n_ijNew,
                                    SigmaSquared,

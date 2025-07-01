@@ -19,7 +19,7 @@
 #'
 #' @keywords internal
 #' @noRd
-scale_data_internal <- function(data) {
+scaleData_internal <- function(data) {
   if (!is.numeric(data) && !all(sapply(data, is.numeric)) && !is.null(dim(data))) {
     # Allow non-numeric columns in data frames/matrices but check base type
     if(!is.data.frame(data) && !is.matrix(data) && !is.vector(data))
@@ -126,7 +126,7 @@ scale_data_internal <- function(data) {
 #'
 #' @keywords internal
 #' @noRd
-apply_scaling_internal <- function(mat, centers, ranges) {
+applyScaling_internal <- function(mat, centers, ranges) {
   is_df <- is.data.frame(mat)
   mat_work <- as.matrix(mat) # Work with matrix representation
 
