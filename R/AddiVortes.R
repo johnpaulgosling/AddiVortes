@@ -36,12 +36,12 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
                        thinning = 1) {
   #### Scaling x and y ---------------------------------------------------------
   yScalingResult <- scaleData_internal(y)
-  yScaled <- yScalingResult$scaled_data # Vector of values
+  yScaled <- yScalingResult$scaledData # Vector of values
   ycentre <- yScalingResult$centres
   yRange <- yScalingResult$ranges
 
   xScalingResult <- scaleData_internal(x)
-  xScaled <- xScalingResult$scaled_data # Matrix of values
+  xScaled <- xScalingResult$scaledData # Matrix of values
   xcentres <- xScalingResult$centres # Vector of values
   xRanges <- xScalingResult$ranges   # Vector of values
 
