@@ -20,7 +20,7 @@
 #' new test data.
 #' - `mean_yhat_new_unscaled`: The mean predictions for the new test data,
 #'  unscaled to the original scale of the output variable.
-#'  - `quantile_yhat_new_scaled`: A matrix of quantiles of the predictions for the
+#'  - `quantile_yhat_new_unscaled`: A matrix of quantiles of the predictions for the
 #'  new test data, unscaled to the original output variable scale.
 #'
 #' @details
@@ -105,12 +105,12 @@ PredictAddiVortes <- function(addivortes_model_fit,
   mean_yhat_new_unscaled <- mean_yhat_new_scaled * y_model_range + y_model_center
 
   # Unscale the quantiles of predictions
-  quantile_yhat_new_scaled <- quantile_yhat_new_scaled * y_model_range + y_model_center
+  quantile_yhat_new_unscaled <- quantile_yhat_new_scaled * y_model_range + y_model_center
 
   # Calculate the Out-of-Sample RMSE for the new test data
   out_of_sample_RMSE <- sqrt(mean((y_new - mean_yhat_new_unscaled)^2))
 
   return(list(out_of_sample_RMSE,
               mean_yhat_new_unscaled,
-              quantile_yhat_new_scaled))
+              quantile_yhat_new_unscaled))
 }

@@ -4,7 +4,12 @@
 \alias{PredictAddiVortes}
 \title{PredictAddiVortes}
 \usage{
-PredictAddiVortes(addivortes_model_fit, x_new, y_new)
+PredictAddiVortes(
+  addivortes_model_fit,
+  x_new,
+  y_new,
+  quantiles = c(0.025, 0.975)
+)
 }
 \arguments{
 \item{addivortes_model_fit}{The 'AddiVortes_model' list object returned by the
@@ -16,10 +21,19 @@ columns must match the original training data.}
 
 \item{y_new}{A vector of the true output values for the new test set. Must have
 the same number of observations as rows in \code{x_new}.}
+
+\item{quantiles}{A numeric vector of quantiles to compute for the predictions.}
 }
 \value{
-The RMSE value for the new test samples. Returns NA if the model
-contains no posterior samples.
+A list that contains:
+\itemize{
+\item \code{out_of_sample_RMSE}: The Root Mean Squared Error of the predictions on the
+new test data.
+\item \code{mean_yhat_new_unscaled}: The mean predictions for the new test data,
+unscaled to the original scale of the output variable.
+\item \code{quantile_yhat_new_unscaled}: A matrix of quantiles of the predictions for the
+new test data, unscaled to the original output variable scale.
+}
 }
 \description{
 Utilises a fitted AddiVortes model to make predictions on new test data and
