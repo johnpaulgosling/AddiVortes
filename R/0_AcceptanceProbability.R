@@ -14,7 +14,7 @@
 #' @param Modification The type of modification.
 #' @param SigmaSquaredMu The variance of the random effects.
 #' @param Omega The prior probability of adding a dimension.
-#' @param LambdaRate The rate of the Poisson distribution for the number of centers.
+#' @param LambdaRate The rate of the Poisson distribution for the number of centres.
 #'
 #' @return The acceptance probability.
 #'

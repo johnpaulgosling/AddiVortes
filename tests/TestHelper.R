@@ -46,7 +46,7 @@ abline(a = 0, b = 1, col = "blue", lwd = 2)
 
 # Iteration 2000 out of 2000
 # In_sample_RMSE Out_of_sample_RMSE
-# 1       1.206556           3.20922
+# 1       1.206556           3.209220
 # In_sample_RMSE Out_of_sample_RMSE (vectorised sampling)
 # 1       1.204092           3.237162
 
@@ -57,3 +57,4 @@ abline(a = 0, b = 1, col = "blue", lwd = 2)
 # v0.0.17 = 82 sec elapsed
 # v0.0.20 = 115 sec elapsed
 # v0.0.21 = 117 sec elapsed
+# v0.0.29 = 123 sec elapsed

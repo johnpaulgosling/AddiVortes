@@ -14,10 +14,10 @@
 #' @param mcmcBurnIn The number of burn in iterations.
 #' @param nu The degrees of freedom.
 #' @param q The quantile.
-#' @param k The number of centers.
+#' @param k The number of centres.
 #' @param sd The standard deviation.
 #' @param omega The prior probability of adding a dimension.
-#' @param lambdaRate The rate of the Poisson distribution for the number of centers.
+#' @param lambdaRate The rate of the Poisson distribution for the number of centres.
 #' @param yTest A vector of the output values for the test set.
 #' @param xTest A matrix of the covariates for the test set.
 #' @param IntialSigma The method used to calculate the initial variance.

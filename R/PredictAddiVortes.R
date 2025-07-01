@@ -64,7 +64,6 @@ predictAddiVortes <- function(addiVortesModelFit,
   }
 
   # Scale the new test covariates using stored scaling parameters
-  # Assumes applyScaling_internal(mat, centers, ranges) is available
   xNewScaled <- applyScaling_internal(mat = xNew,
                                      centers = xModelCenters,
                                      ranges = xModelRanges)

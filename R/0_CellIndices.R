@@ -1,13 +1,13 @@
 #' @title Cell Indices
 #'
-#' @description A function that gives the row (the center) of the tessellation
+#' @description A function that gives the row (the centre) of the tessellation
 #' that each observation falls within.
 #'
 #' @param x The covariate matrix.
 #' @param Tess The tessellation.
 #' @param Dim The dimensions of the tessellation.
 #'
-#' @return The row (the center) of the tessellation that each observation falls within.
+#' @return The row (the centre) of the tessellation that each observation falls within.
 #' @keywords internal
 #' @noRd
 #'
