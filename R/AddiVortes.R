@@ -20,10 +20,13 @@
 #' @param lambda_rate The rate of the Poisson distribution for the number of centers.
 #' @param yTest A vector of the output values for the test set.
 #' @param xTest A matrix of the covariates for the test set.
-#' @param IntialSigma The method used to calculate the initial sigma.
+#' @param IntialSigma The method used to calculate the initial variance.
 #' @param thinning The thinning rate.
 #'
-#' @return The RMSE value for the test samples.
+#' @return A list containing the following elements:
+#' - `AddiVortes_model`: A list containing the posterior samples of the tessellations,
+#'  dimensions, and predictions.
+#' - `In_sample_RMSE`: The RMSE value for the training samples.
 #'
 #' @export
 AddiVortes <- function(y, x, m = 200, max_iter = 1200,
@@ -212,12 +215,12 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200,
 
     # Store the posterior samples
     if (num_posterior_samples_to_store > 0 && i >= burn_in & (i - burn_in) %% thinning == 0) {
-        # Store the current state of Tess, Dim, Pred
-        output_posterior_Tess[[current_storage_idx]] <- Tess
-        output_posterior_Dim[[current_storage_idx]] <- Dim
-        output_posterior_Pred[[current_storage_idx]] <- Pred
-        current_storage_idx <- current_storage_idx + 1
-    #  }
+      # Store the current state of Tess, Dim, Pred
+      output_posterior_Tess[[current_storage_idx]] <- Tess
+      output_posterior_Dim[[current_storage_idx]] <- Dim
+      output_posterior_Pred[[current_storage_idx]] <- Pred
+      current_storage_idx <- current_storage_idx + 1
+      #  }
     }
   } # End of MCMC Loop
 
@@ -238,9 +241,7 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200,
                                  x_ranges,
                                  y_center,
                                  y_range),
-         data.frame(
-           In_sample_RMSE = sqrt(mean((y - mean_yhat)^2))
-         )
+         In_sample_RMSE = sqrt(mean((y - mean_yhat)^2))
     )
   )
 }

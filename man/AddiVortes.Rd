@@ -49,12 +49,17 @@ AddiVortes(
 
 \item{xTest}{A matrix of the covariates for the test set.}
 
-\item{IntialSigma}{The method used to calculate the initial sigma.}
+\item{IntialSigma}{The method used to calculate the initial variance.}
 
 \item{thinning}{The thinning rate.}
 }
 \value{
-The RMSE value for the test samples.
+A list containing the following elements:
+\itemize{
+\item \code{AddiVortes_model}: A list containing the posterior samples of the tessellations,
+dimensions, and predictions.
+\item \code{In_sample_RMSE}: The RMSE value for the training samples.
+}
 }
 \description{
 The AddiVortes function is a Bayesian nonparametric regression model that uses a

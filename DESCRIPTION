@@ -1,7 +1,7 @@
 Package: AddiVortes
 Title: (Bayesian) Additive Voronoi Tessellations
-Version: 0.0.24
-Date: 2025-05-12
+Version: 0.0.25
+Date: 2025-07-01
 Authors@R: 
     c(person("Adam", "Stone", , "adam.stone2@durham.ac.uk", role = c("aut", "cre")),
       person("John Paul", "Gosling", , "john-paul.gosling@durham.ac.uk", role = c("aut"),
