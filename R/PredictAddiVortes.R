@@ -13,9 +13,15 @@
 #'              columns must match the original training data.
 #' @param y_new A vector of the true output values for the new test set. Must have
 #'              the same number of observations as rows in `x_new`.
+#' @param quantiles A numeric vector of quantiles to compute for the predictions.
 #'
-#' @return The RMSE value for the new test samples. Returns NA if the model
-#'         contains no posterior samples.
+#' @return A list that contains:
+#' - `out_of_sample_RMSE`: The Root Mean Squared Error of the predictions on the
+#' new test data.
+#' - `mean_yhat_new_unscaled`: The mean predictions for the new test data,
+#'  unscaled to the original scale of the output variable.
+#'  - `quantile_yhat_new_scaled`: A matrix of quantiles of the predictions for the
+#'  new test data, unscaled to the original output variable scale.
 #'
 #' @details
 #' This function requires the helper functions `apply_scaling_internal` and
@@ -25,7 +31,8 @@
 #' @export
 PredictAddiVortes <- function(addivortes_model_fit,
                               x_new,
-                              y_new) {
+                              y_new,
+                              quantiles = c(0.025, 0.975)) {
 
   # Extract components from the fitted model object
   posterior_Tess_samples <- addivortes_model_fit[[1]]
@@ -90,12 +97,20 @@ PredictAddiVortes <- function(addivortes_model_fit,
   # Calculate the mean of predictions across all posterior samples (still scaled)
   mean_yhat_new_scaled <- rowSums(NewTestDataPredictionsMatrix) / num_stored_samples
 
+  # Calculate the specified quantiles of the predictions
+  quantile_yhat_new_scaled <- apply(NewTestDataPredictionsMatrix, 1, quantile,
+                                    probs = quantiles)
+
   # Unscale the mean predictions
   mean_yhat_new_unscaled <- mean_yhat_new_scaled * y_model_range + y_model_center
+
+  # Unscale the quantiles of predictions
+  quantile_yhat_new_scaled <- quantile_yhat_new_scaled * y_model_range + y_model_center
 
   # Calculate the Out-of-Sample RMSE for the new test data
   out_of_sample_RMSE <- sqrt(mean((y_new - mean_yhat_new_unscaled)^2))
 
   return(list(out_of_sample_RMSE,
-              mean_yhat_new_unscaled))
+              mean_yhat_new_unscaled,
+              quantile_yhat_new_scaled))
 }
