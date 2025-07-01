@@ -14,23 +14,23 @@
 #' @param Modification The type of modification.
 #' @param SigmaSquaredMu The variance of the random effects.
 #' @param Omega The prior probability of adding a dimension.
-#' @param lambda_rate The rate of the Poisson distribution for the number of centers.
+#' @param LambdaRate The rate of the Poisson distribution for the number of centers.
 #'
 #' @return The acceptance probability.
 #'
 #' @export
-Acceptance_Probability <- function(x, Tess, Dim, j,
+AcceptanceProbability <- function(x, Tess, Dim, j,
                                    R_ijOld, n_ijOld,
                                    R_ijNew, n_ijNew,
                                    SigmaSquared,
                                    Modification, SigmaSquaredMu,
-                                   Omega, lambda_rate) {
+                                   Omega, LambdaRate) {
   d <- length(Dim[[j]])
   NumCovariates <- length(x[1, ])
   cStar <- length(Tess[[j]][, 1])
 
   # The Log Likelihood Ratio in the acceptance ratio
-  LOGlikelihoodRatio <- 0.5 * (log(prod(n_ijOld * SigmaSquaredMu + SigmaSquared)) -
+  LogLikelihoodRatio <- 0.5 * (log(prod(n_ijOld * SigmaSquaredMu + SigmaSquared)) -
                                  log(prod(n_ijNew * SigmaSquaredMu + SigmaSquared))) +
     ((SigmaSquaredMu / (2 * SigmaSquared)) *
        (sum((R_ijNew^2) /
@@ -45,7 +45,7 @@ Acceptance_Probability <- function(x, Tess, Dim, j,
     TessStructure <- (dbinom(d - 1, NumCovariates - 1, Omega / NumCovariates)) /
       (dbinom(d - 2, NumCovariates - 1, Omega / NumCovariates) * (NumCovariates - d + 1))
     TransitionRatio <- (NumCovariates - d + 1) / d
-    AcceptanceProb <- LOGlikelihoodRatio + log(TessStructure) + log(TransitionRatio)
+    AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) + log(TransitionRatio)
 
     # Adjustments.
     if (length(Dim[[j]]) == 1) {
@@ -58,7 +58,7 @@ Acceptance_Probability <- function(x, Tess, Dim, j,
                         (NumCovariates - d)) /
       (dbinom(d, NumCovariates, Omega / NumCovariates))
     TransitionRatio <- (d + 1) / (NumCovariates - d)
-    AcceptanceProb <- LOGlikelihoodRatio + log(TessStructure) + log(TransitionRatio)
+    AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) + log(TransitionRatio)
 
     # Adjustments.
     if (length(Dim[[j]]) == NumCovariates) {
@@ -67,9 +67,9 @@ Acceptance_Probability <- function(x, Tess, Dim, j,
       AcceptanceProb <- AcceptanceProb + log(2)
     }
   } else if (Modification == "AC") {
-    TessStructure <- dpois(cStar - 1, lambda_rate) / dpois(cStar - 2, lambda_rate)
+    TessStructure <- dpois(cStar - 1, LambdaRate) / dpois(cStar - 2, LambdaRate)
     TransitionRatio <- 1 / cStar
-    AcceptanceProb <- LOGlikelihoodRatio + log(TessStructure) + log(TransitionRatio) +
+    AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) + log(TransitionRatio) +
       0.5 * log(SigmaSquared)
 
     # Adjustments.
@@ -77,9 +77,9 @@ Acceptance_Probability <- function(x, Tess, Dim, j,
       AcceptanceProb <- AcceptanceProb + log(1 / 2)
     }
   } else if (Modification == "RC") {
-    TessStructure <- dpois(cStar - 1, lambda_rate) / dpois(cStar, lambda_rate)
+    TessStructure <- dpois(cStar - 1, LambdaRate) / dpois(cStar, LambdaRate)
     TransitionRatio <- cStar + 1
-    AcceptanceProb <- LOGlikelihoodRatio + log(TessStructure) +
+    AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) +
       log(TransitionRatio) - 0.5 * log(SigmaSquared)
 
     # Adjustments.
@@ -89,11 +89,11 @@ Acceptance_Probability <- function(x, Tess, Dim, j,
   } else if (Modification == "Change") {
     TessStructure <- 1
     TransitionRatio <- 1
-    AcceptanceProb <- LOGlikelihoodRatio + log(TessStructure) + log(TransitionRatio)
+    AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) + log(TransitionRatio)
   } else {
     TessStructure <- 1
     TransitionRatio <- 1
-    AcceptanceProb <- LOGlikelihoodRatio + log(TessStructure) + log(TransitionRatio)
+    AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) + log(TransitionRatio)
   }
   return(AcceptanceProb)
 }
