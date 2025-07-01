@@ -20,7 +20,7 @@ PredictAddiVortes(T1_result[[1]],
                   Y_test)[[1]]
 
 #   In_sample_RMSE Out_of_sample_RMSE
-# 1      0.7243137           1.051967
+# 1      0.7216729           1.051648
 
 # Test 2 -----------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ PredictAddiVortes(T2_result[[1]],
                   Y_test)[[1]]
 
 #   In_sample_RMSE Out_of_sample_RMSE
-# 1       2.641155           3.008183
+# 1       2.642812           3.010738
 
 # Test 3 -----------------------------------------------------------------------
 
@@ -64,4 +64,27 @@ PredictAddiVortes(T3_result[[1]],
                   Y_test)[[1]]
 
 #   In_sample_RMSE Out_of_sample_RMSE
-# 1       1.149066           1.093733
+# 1       1.149055           1.093758
+
+# Test 4 -----------------------------------------------------------------------
+
+set.seed(5678)
+X <- matrix(rnorm(10000),1000, 10)
+Y <- runif(1000, -1, 3)
+X_test <- matrix(rnorm(1000),100, 10)
+Y_test <- runif(100, -1, 3)
+
+T4_result <- AddiVortes(Y,X,10,
+                        200,100,
+                        6,0.85,3,0.8,3,25,
+                        Y_test,X_test,
+                        IntialSigma = "Linear",
+                        thinning = 3)
+
+T4_result[[2]]
+PredictAddiVortes(T4_result[[1]],
+                  X_test,
+                  Y_test)[[1]]
+
+#   In_sample_RMSE Out_of_sample_RMSE
+# 1       1.144811           1.080191

@@ -60,15 +60,18 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200,
   })
 
   #### Set-up MCMC -------------------------------------------------------------
-  # Prepare some variables used in the backfitting algorithm
+  # Prepare some variables used in the backfitting algorithm.
+  # We start off with the mean of the scaled y values as the prediction for all
+  # tessellations.
   SumOfAllTess <- rep(mean(yScaled),
                       length(yScaled))
+  # The variance that captures variability around the mean of the scaled y values.
   SigmaSquaredMu <- (0.5 / (k * sqrt(m)))^2
   LastTessPred <- matrix
 
   # Matrices that will hold the samples from the posterior distribution
   # for the training samples and test samples.
-  posterior_samples <- floor((max_iter - burn_in) / thinning) + 1
+  posterior_samples <- floor((max_iter - burn_in) / thinning)
   PredictionMatrix <- array(dim = c(length(y),
                                     posterior_samples))
   TestMatrix <- array(dim = c(length(yTest),
@@ -103,9 +106,12 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200,
   if (num_posterior_samples_to_store < 0) num_posterior_samples_to_store <- 0
 
   # Lists to store the states of Tess, Dim, Pred for the model object output
-  output_posterior_Tess <- vector("list", num_posterior_samples_to_store)
-  output_posterior_Dim <- vector("list", num_posterior_samples_to_store)
-  output_posterior_Pred <- vector("list", num_posterior_samples_to_store)
+  output_posterior_Tess <- vector("list",
+                                  num_posterior_samples_to_store)
+  output_posterior_Dim <- vector("list",
+                                 num_posterior_samples_to_store)
+  output_posterior_Pred <- vector("list",
+                                  num_posterior_samples_to_store)
 
   current_storage_idx <- 1 # Index for the new output lists
 
@@ -208,19 +214,20 @@ AddiVortes <- function(y, x, m = 200, max_iter = 1200,
     # Update the progress bar
     utils::setTxtProgressBar(pbar, i)
 
-    if (i >= burn_in & (i - burn_in) %% thinning == 0) {
+    if (i > burn_in & (i - burn_in) %% thinning == 0) {
       # vectors that hold the predictions for each iteration after burn in.
-      PredictionMatrix[, 1 + (i - burn_in) / thinning] <- SumOfAllTess
+      PredictionMatrix[, (i - burn_in) / thinning] <- SumOfAllTess
     }
 
     # Store the posterior samples
-    if (num_posterior_samples_to_store > 0 && i >= burn_in & (i - burn_in) %% thinning == 0) {
+    if (num_posterior_samples_to_store > 0 &&
+        i > burn_in &
+        (i - burn_in) %% thinning == 0) {
       # Store the current state of Tess, Dim, Pred
       output_posterior_Tess[[current_storage_idx]] <- Tess
       output_posterior_Dim[[current_storage_idx]] <- Dim
       output_posterior_Pred[[current_storage_idx]] <- Pred
       current_storage_idx <- current_storage_idx + 1
-      #  }
     }
   } # End of MCMC Loop
 

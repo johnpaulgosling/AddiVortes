@@ -13,7 +13,7 @@ test_that("Simple AddiVortes fit 1", {
                         Y_test,X_test,
                         IntialSigma = "Linear")
 
-  expect_equal(round(results[[2]][[1]],3), 0.724)
+  expect_equal(round(results[[2]][[1]],3), 0.722)
   expect_equal(round(PredictAddiVortes(results[[1]],
                                        X_test,
                                        Y_test)[[1]],3),
@@ -34,11 +34,11 @@ test_that("Simple AddiVortes fit 2", {
                         IntialSigma = "Linear")
 
 
-  expect_equal(round(results[[2]][[1]],3), 2.641)
+  expect_equal(round(results[[2]][[1]],3), 2.643)
   expect_equal(round(PredictAddiVortes(results[[1]],
                                        X_test,
                                        Y_test)[[1]],3),
-               3.008)
+               3.011)
 })
 
 test_that("Simple AddiVortes fit 3", {
