@@ -25,7 +25,7 @@
 #'
 #' @return A list containing the following elements:
 #' - `AddiVortesModel`: A list containing the posterior samples of the tessellations,
-#'   dimensions and predictions.
+#'   dimensions and predictions.
 #' - `inSampleRmse`: The RMSE value for the training samples.
 #'
 #' @export

@@ -15,7 +15,7 @@ T1_result <- AddiVortes(Y,X,10,
                         IntialSigma = "Linear")
 
 T1_result[[2]]
-Predicts <- PredictAddiVortes(T1_result[[1]],
+Predicts <- predictAddiVortes(T1_result[[1]],
                               X_test,
                               Y_test)
 Predicts[[1]]
@@ -55,7 +55,7 @@ T2_result <- AddiVortes(Y,X,5,
                         IntialSigma = "Linear")
 
 T2_result[[2]]
-PredictAddiVortes(T2_result[[1]],
+predictAddiVortes(T2_result[[1]],
                   X_test,
                   Y_test)[[1]]
 
@@ -77,7 +77,7 @@ T3_result <- AddiVortes(Y,X,10,
                         IntialSigma = "Linear")
 
 T3_result[[2]]
-PredictAddiVortes(T3_result[[1]],
+predictAddiVortes(T3_result[[1]],
                   X_test,
                   Y_test)[[1]]
 
@@ -100,7 +100,7 @@ T4_result <- AddiVortes(Y,X,10,
                         thinning = 3)
 
 T4_result[[2]]
-PredictAddiVortes(T4_result[[1]],
+predictAddiVortes(T4_result[[1]],
                   X_test,
                   Y_test)[[1]]
 
