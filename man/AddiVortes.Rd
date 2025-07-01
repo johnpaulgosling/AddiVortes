@@ -37,13 +37,13 @@ AddiVortes(
 
 \item{q}{The quantile.}
 
-\item{k}{The number of centers.}
+\item{k}{The number of centres.}
 
 \item{sd}{The standard deviation.}
 
 \item{omega}{The prior probability of adding a dimension.}
 
-\item{lambdaRate}{The rate of the Poisson distribution for the number of centers.}
+\item{lambdaRate}{The rate of the Poisson distribution for the number of centres.}
 
 \item{yTest}{A vector of the output values for the test set.}
 
