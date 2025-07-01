@@ -11,7 +11,9 @@
 #'
 #' @return A vector with the predictions.
 #'
-#' @export
+#' @keywords internal
+#' @noRd
+#'
 testSetPrediction <- function(x, m,
                               Tess, Dim, Pred) {
   # Use lapply to iterate from 1 to m

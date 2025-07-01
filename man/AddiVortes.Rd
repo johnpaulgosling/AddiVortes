@@ -57,7 +57,7 @@ AddiVortes(
 A list containing the following elements:
 \itemize{
 \item \code{AddiVortesModel}: A list containing the posterior samples of the tessellations,
-   dimensions and predictions.
+dimensions and predictions.
 \item \code{inSampleRmse}: The RMSE value for the training samples.
 }
 }

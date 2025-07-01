@@ -1,4 +1,4 @@
-#' @title sampleMuVvalues
+#' @title Sample ,u Values
 #'
 #' @description This function samples the new mean output values for
 #' the proposed tessellation.
@@ -11,9 +11,13 @@
 #' @param sigmaSquared The Sigma squared value.
 #'
 #' @return The new output values for the new tessellation.
+#'
+#' @keywords internal
+#' @noRd
+#'
 sampleMuValues <- function(j, Tess,
-                             R_ijNew, n_ijNew,
-                             sigmaSquaredMu, sigmaSquared) {
+                           R_ijNew, n_ijNew,
+                           sigmaSquaredMu, sigmaSquared) {
   # 1. Get the number of samples needed
   N <- length(Tess[[j]][, 1]) # Or nrow(Tess[[j]])
 

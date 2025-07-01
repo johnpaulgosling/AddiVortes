@@ -8,6 +8,9 @@
 #' @param Dim The dimensions of the tessellation.
 #'
 #' @return The row (the center) of the tessellation that each observation falls within.
+#' @keywords internal
+#' @noRd
+#'
 cellIndices <- function(x, Tess, Dim) {
   if (length(Tess[, 1]) == 1) { # only 1 centre
     CellsForGivenTess <- rep(1, length(x[, 1]))

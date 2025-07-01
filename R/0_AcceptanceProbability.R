@@ -18,7 +18,9 @@
 #'
 #' @return The acceptance probability.
 #'
-#' @export
+#' @keywords internal
+#' @noRd
+#'
 acceptanceProbability <- function(x, Tess, Dim, j,
                                    R_ijOld, n_ijOld,
                                    R_ijNew, n_ijNew,

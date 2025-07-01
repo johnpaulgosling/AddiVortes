@@ -8,6 +8,10 @@
 #' @param SumOfAllTess The sum of all the tessellations.
 #'
 #' @return sigmaSquared The sampled sigma squared.
+#'
+#' @keywords internal
+#' @noRd
+#'
 sampleSigmaSquared <- function(yScaled, nu,
                                lambda, SumOfAllTess) {
   n <- length(yScaled)

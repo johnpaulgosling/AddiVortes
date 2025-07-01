@@ -14,9 +14,15 @@
 #' @param DimStar The proposed dimensions.
 #' @param LastTessPred The last tessellation prediction.
 #'
-#' @return A list containing the residuals of the old tessellation, the number of observations in each cell of the old tessellation, the residuals of the new tessellation, the number of observations in each cell of the new tessellation, the sum of all tessellations, the indexes of the proposed tessellation, and the indexes of the original tessellation.
+#' @return A list containing the residuals of the old tessellation,
+#' the number of observations in each cell of the old tessellation,
+#' the residuals of the new tessellation, the number of observations in each cell of the
+#' new tessellation, the sum of all tessellations,
+#' the indexes of the proposed tessellation, and the indexes of the original tessellation.
 #'
-#' @export
+#' @keywords internal
+#' @noRd
+#'
 calculateResiduals <- function(y, x, j, SumOfAllTess, Tess, Dim,
                                 Pred, TessStar, DimStar, LastTessPred) {
   if (j == 1) {

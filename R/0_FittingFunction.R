@@ -9,6 +9,10 @@
 #' @param sigmaSquaredHat The sigma squared hat value.
 #'
 #' @return The squared difference between sigma squared hat and the inverse gamma function.
+#'
+#' @keywords internal
+#' @noRd
+#'
 fittingFunction <- function(lambda,
                             q,
                             nu,

@@ -10,8 +10,9 @@
 #' @param var The variance of the normal distribution used to sample new coordinates.
 #'
 #' @return A list containing the new tessellation, the new dimension matrix and the modification made.
+#' @keywords internal
+#' @noRd
 #'
-#' @export
 proposeTessellation <- function(x, j,
                                  Tess, Dim, var) {
 
