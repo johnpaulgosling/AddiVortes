@@ -15,9 +15,27 @@ T1_result <- AddiVortes(Y,X,10,
                         IntialSigma = "Linear")
 
 T1_result[[2]]
-PredictAddiVortes(T1_result[[1]],
-                  X_test,
-                  Y_test)[[1]]
+Predicts <- PredictAddiVortes(T1_result[[1]],
+                              X_test,
+                              Y_test)
+Predicts[[1]]
+# Plot predictions
+plot(Y_test,
+     Predicts[[2]],
+     xlab = "True Values",
+     ylab = "Predicted Values",
+     main = "AddiVortes Predictions vs True Values",
+     xlim = c(min(Y_test) - 0.1, max(Y_test) + 0.1),
+     ylim = c(min(Predicts[[3]]) - 0.1, max(Predicts[[3]]) + 0.1),
+     pch = 19, col = "red")
+# Add error lines
+for (i in 1:ncol(Predicts[[3]])){
+  segments(Y_test[i], Predicts[[3]][1,i],
+           Y_test[i], Predicts[[3]][2,i],
+           col = "red", lwd = 1.5)
+}
+# Add line of equality
+abline(0, 1, col = "blue", lwd = 2)
 
 #   In_sample_RMSE Out_of_sample_RMSE
 # 1      0.7216729           1.051648
