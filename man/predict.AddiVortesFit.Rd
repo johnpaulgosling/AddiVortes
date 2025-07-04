@@ -7,7 +7,6 @@
 \method{predict}{AddiVortesFit}(
   object,
   newdata,
-  yNew = NULL,
   type = c("response", "quantile"),
   quantiles = c(0.025, 0.975),
   ...
@@ -20,9 +19,6 @@ call to \code{AddiVortes()}.}
 \item{newdata}{A matrix of covariates for the new test set. The number of
 columns must match the original training data.}
 
-\item{yNew}{An optional vector of the true output values for the new test set.
-If provided, the function can calculate the out-of-sample RMSE.}
-
 \item{type}{The type of prediction required. The default, \code{"response"}, gives the
 mean prediction. The alternative, \code{"quantile"}, returns the quantiles
 specified by the \code{quantiles} argument.}
@@ -31,6 +27,9 @@ specified by the \code{quantiles} argument.}
 compute for the predictions when \code{type = "quantile"}.}
 
 \item{...}{Further arguments passed to or from other methods (currently unused).}
+
+\item{yNew}{An optional vector of the true output values for the new test set.
+If provided, the function can calculate the out-of-sample RMSE.}
 }
 \value{
 If \code{type = "response"}, a numeric vector of mean predictions.

@@ -16,8 +16,6 @@ AddiVortes(
   sd = 0.8,
   omega = 3,
   lambdaRate = 25,
-  yTest,
-  xTest,
   IntialSigma = "Linear",
   thinning = 1
 )
@@ -44,10 +42,6 @@ AddiVortes(
 \item{omega}{The prior probability of adding a dimension.}
 
 \item{lambdaRate}{The rate of the Poisson distribution for the number of centres.}
-
-\item{yTest}{A vector of the output values for the test set.}
-
-\item{xTest}{A matrix of the covariates for the test set.}
 
 \item{IntialSigma}{The method used to calculate the initial variance.}
 
