@@ -11,7 +11,6 @@ Y_test <- rnorm(10)
 T1_result <- AddiVortes(Y,X,10,
                         90,10,
                         6,0.85,3,0.8,3,25,
-                        Y_test,X_test,
                         IntialSigma = "Linear")
 
 T1_result[[8]]
@@ -53,7 +52,6 @@ Y_test <- rnorm(20, -5, 3)
 T2_result <- AddiVortes(Y,X,5,
                         150,50,
                         6,0.85,3,0.8,3,25,
-                        Y_test,X_test,
                         IntialSigma = "Linear")
 
 T2_result[[8]]
@@ -75,7 +73,6 @@ Y_test <- runif(100, -1, 3)
 T3_result <- AddiVortes(Y,X,10,
                         200,100,
                         6,0.85,3,0.8,3,25,
-                        Y_test,X_test,
                         IntialSigma = "Linear")
 
 T3_result[[8]]
@@ -97,7 +94,6 @@ Y_test <- runif(100, -1, 3)
 T4_result <- AddiVortes(Y,X,10,
                         200,100,
                         6,0.85,3,0.8,3,25,
-                        Y_test,X_test,
                         IntialSigma = "Linear",
                         thinning = 3)
 

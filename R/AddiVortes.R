@@ -18,8 +18,6 @@
 #' @param sd The standard deviation.
 #' @param omega The prior probability of adding a dimension.
 #' @param lambdaRate The rate of the Poisson distribution for the number of centres.
-#' @param yTest A vector of the output values for the test set.
-#' @param xTest A matrix of the covariates for the test set.
 #' @param IntialSigma The method used to calculate the initial variance.
 #' @param thinning The thinning rate.
 #'
@@ -30,7 +28,7 @@
 AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
                        mcmcBurnIn = 200, nu = 6, q = 0.85,
                        k = 3, sd = 0.8, omega = 3, lambdaRate = 25,
-                       yTest, xTest, IntialSigma = "Linear",
+                       IntialSigma = "Linear",
                        thinning = 1) {
   #### Scaling x and y ---------------------------------------------------------
   yScalingResult <- scaleData_internal(y)
@@ -72,8 +70,6 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
   posteriorSamples <- floor((totalMCMCIter - mcmcBurnIn) / thinning)
   predictionMatrix <- array(dim = c(length(y),
                                     posteriorSamples))
-  testMatrix <- array(dim = c(length(yTest),
-                              posteriorSamples))
   
   # Finding lambda
   if (IntialSigma == "Naive") {
