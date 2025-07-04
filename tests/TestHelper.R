@@ -15,30 +15,32 @@ TestSet <- TestSet[! TestSet %in% TrainSet]
 
 tic("Start")
 results <- AddiVortes(Y_Boston[TrainSet],X_Boston[TrainSet,],
-           200,2000,200,6,0.85,3,0.8,3,25,
-           Y_Boston[TestSet],X_Boston[TestSet,],
-           IntialSigma = "Linear")
-preds <- predictAddiVortes(results[[1]],
-                           X_Boston[TestSet,],
-                           Y_Boston[TestSet])
+                      200,2000,200,6,0.85,3,0.8,3,25,
+                      Y_Boston[TestSet],X_Boston[TestSet,],
+                      IntialSigma = "Linear")
+preds <- predict(results,
+                 X_Boston[TestSet,])
 toc()
 
-results[[2]][[1]]
-preds[[1]]
+results[8]
+sqrt(mean((Y_Boston[TestSet] - preds)^2))
 
 # Plot predictions
 plot(Y_Boston[TestSet],
-     preds[[2]],
+     preds,
      xlab = "True Values",
      ylab = "Predicted Values",
      main = "AddiVortes Predictions vs True Values",
      xlim = c(min(Y_Boston[TestSet]) - 0.1, max(Y_Boston[TestSet]) + 0.1),
-     ylim = c(min(preds[[3]]) - 0.1, max(preds[[3]]) + 0.1),
+     ylim = c(min(preds) - 0.1, max(preds) + 0.1),
      pch = 19, col = "red")
 # Add error lines
-for (i in 1:ncol(preds[[3]])){
-  segments(Y_Boston[TestSet][i], preds[[3]][1,i],
-           Y_Boston[TestSet][i], preds[[3]][2,i],
+preds <- predict(results,
+                 X_Boston[TestSet,],
+                 "quantile")
+for (i in 1:nrow(preds)){
+  segments(Y_Boston[TestSet][i], preds[i,1],
+           Y_Boston[TestSet][i], preds[i,2],
            col = "red", lwd = 1.5)
 }
 # Add in the equality line

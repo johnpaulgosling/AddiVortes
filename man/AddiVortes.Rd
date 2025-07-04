@@ -54,12 +54,8 @@ AddiVortes(
 \item{thinning}{The thinning rate.}
 }
 \value{
-A list containing the following elements:
-\itemize{
-\item \code{AddiVortesModel}: A list containing the posterior samples of the tessellations,
-dimensions and predictions.
-\item \code{inSampleRmse}: The RMSE value for the training samples.
-}
+An AddiVortesFit object containing the posterior samples of the
+tessellations, dimensions and predictions.
 }
 \description{
 The AddiVortes function is a Bayesian nonparametric regression model that uses a

@@ -14,24 +14,26 @@ T1_result <- AddiVortes(Y,X,10,
                         Y_test,X_test,
                         IntialSigma = "Linear")
 
-T1_result[[2]]
-Predicts <- predictAddiVortes(T1_result[[1]],
-                              X_test,
-                              Y_test)
-Predicts[[1]]
+T1_result[[8]]
+Predicts <- predict(T1_result,
+                    X_test)
+PredictsQ <- predict(T1_result,
+                    X_test,
+                    "quantile")
+sqrt(mean((Y_test - Predicts)^2))
 # Plot predictions
 plot(Y_test,
-     Predicts[[2]],
+     Predicts,
      xlab = "True Values",
      ylab = "Predicted Values",
      main = "AddiVortes Predictions vs True Values",
      xlim = c(min(Y_test) - 0.1, max(Y_test) + 0.1),
-     ylim = c(min(Predicts[[3]]) - 0.1, max(Predicts[[3]]) + 0.1),
+     ylim = c(min(PredictsQ) - 0.1, max(PredictsQ) + 0.1),
      pch = 19, col = "red")
 # Add error lines
-for (i in 1:ncol(Predicts[[3]])){
-  segments(Y_test[i], Predicts[[3]][1,i],
-           Y_test[i], Predicts[[3]][2,i],
+for (i in 1:nrow(PredictsQ)){
+  segments(Y_test[i], PredictsQ[i,1],
+           Y_test[i], PredictsQ[i,2],
            col = "red", lwd = 1.5)
 }
 # Add line of equality
@@ -54,10 +56,10 @@ T2_result <- AddiVortes(Y,X,5,
                         Y_test,X_test,
                         IntialSigma = "Linear")
 
-T2_result[[2]]
-predictAddiVortes(T2_result[[1]],
-                  X_test,
-                  Y_test)[[1]]
+T2_result[[8]]
+Predicts <- predict(T2_result,
+                    X_test)
+sqrt(mean((Y_test - Predicts)^2))
 
 #   In_sample_RMSE Out_of_sample_RMSE
 # 1       2.642812           3.010738
@@ -76,10 +78,10 @@ T3_result <- AddiVortes(Y,X,10,
                         Y_test,X_test,
                         IntialSigma = "Linear")
 
-T3_result[[2]]
-predictAddiVortes(T3_result[[1]],
-                  X_test,
-                  Y_test)[[1]]
+T3_result[[8]]
+Predicts <- predict(T3_result,
+                    X_test)
+sqrt(mean((Y_test - Predicts)^2))
 
 #   In_sample_RMSE Out_of_sample_RMSE
 # 1       1.149055           1.093758
@@ -100,9 +102,9 @@ T4_result <- AddiVortes(Y,X,10,
                         thinning = 3)
 
 T4_result[[2]]
-predictAddiVortes(T4_result[[1]],
-                  X_test,
-                  Y_test)[[1]]
+Predicts <- predict(T3_result,
+                    X_test)
+sqrt(mean((Y_test - Predicts)^2))
 
 #   In_sample_RMSE Out_of_sample_RMSE
 # 1       1.144811           1.080191
