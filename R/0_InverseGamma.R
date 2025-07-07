@@ -89,7 +89,7 @@ rinvgamma_internal <- function(n, shape, rate = 1, scale = 1/rate) {
 #' distribution such that $P(X \le x) = p$ is given by $x = 1 / Q_Y(p, lower.tail=FALSE)$.
 #' It relies on `stats::qgamma`.
 #'
-#' @param p Numeric vector of probabilities. Values outside $[0, 1]$ (or the
+#' @param p Numeric vector of probabilities. Values outside $\left[0, 1\right]$ (or the
 #'  corresponding range if `log.p = TRUE`) will result in `NaN`.
 #' @param shape Numeric, the shape parameter ($a$). Must be positive.
 #' @param rate Numeric, the rate parameter ($b$). Must be positive.
@@ -175,7 +175,7 @@ qinvgamma_internal <- function(p, shape, rate = 1, scale = 1/rate, lower.tail = 
   quantiles_gamma_upper <- stats::qgamma(p,
                                          shape = shape,
                                          rate = actual_rate,
-                                         lower.tail = FALSE, # Key part: P(Y >= y) = p
+                                         lower.tail = !lower.tail, # Key part: P(Y >= y) = p
                                          log.p = log.p)
 
   # Inverse relationship

@@ -27,9 +27,6 @@ specified by the \code{quantiles} argument.}
 compute for the predictions when \code{type = "quantile"}.}
 
 \item{...}{Further arguments passed to or from other methods (currently unused).}
-
-\item{yNew}{An optional vector of the true output values for the new test set.
-If provided, the function can calculate the out-of-sample RMSE.}
 }
 \value{
 If \code{type = "response"}, a numeric vector of mean predictions.

@@ -1,5 +1,5 @@
-library(AddiVortes)
-library(tictoc)
+require(AddiVortes)
+require(tictoc)
 
 Boston <- read.csv("https://raw.githubusercontent.com/anonymous2738/AddiVortesAlgorithm/DataSets/BostonHousing_Data.csv")
 X_Boston <- as.matrix(Boston[,2:14])

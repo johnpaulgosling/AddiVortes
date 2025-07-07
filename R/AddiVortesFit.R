@@ -43,8 +43,6 @@ new_AddiVortesFit <- function(posteriorTess, posteriorDim, posteriorPred,
 #'   call to `AddiVortes()`.
 #' @param newdata A matrix of covariates for the new test set. The number of
 #'   columns must match the original training data.
-#' @param yNew An optional vector of the true output values for the new test set.
-#'   If provided, the function can calculate the out-of-sample RMSE.
 #' @param type The type of prediction required. The default, `"response"`, gives the
 #'   mean prediction. The alternative, `"quantile"`, returns the quantiles
 #'   specified by the `quantiles` argument.
