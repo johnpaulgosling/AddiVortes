@@ -1,8 +1,9 @@
 pandoc: 3.1.11
 pkgdown: 2.1.3
 pkgdown_sha: ~
-articles: {}
-last_built: 2025-07-07T14:50Z
+articles:
+  introduction: introduction.html
+last_built: 2025-07-07T15:36Z
 urls:
   reference: https://johnpaulgosling.github.io/AddiVortes/reference
   article: https://johnpaulgosling.github.io/AddiVortes/articles
