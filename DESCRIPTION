@@ -1,6 +1,6 @@
 Package: AddiVortes
 Title: (Bayesian) Additive Voronoi Tessellations
-Version: 0.1.4
+Version: 0.1.5
 Date: 2025-07-07
 Authors@R: 
     c(person("Adam", "Stone", , "adam.stone2@durham.ac.uk", role = c("aut", "cre")),
@@ -18,3 +18,4 @@ Suggests:
 LinkingTo: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+URL: https://johnpaulgosling.github.io/AddiVortes/
