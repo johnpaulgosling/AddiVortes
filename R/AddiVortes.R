@@ -35,12 +35,12 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
   yScaled <- yScalingResult$scaledData # Vector of values
   yCentre <- yScalingResult$centres
   yRange <- yScalingResult$ranges
-  
+
   xScalingResult <- scaleData_internal(x)
   xScaled <- xScalingResult$scaledData # Matrix of values
   xCentres <- xScalingResult$centres # Vector of values
-  xRanges <- xScalingResult$ranges   # Vector of values
-  
+  xRanges <- xScalingResult$ranges # Vector of values
+
   #### Initialise predictions --------------------------------------------------
   # Initialise:
   # Prediction Set (A list of vectors with the output values for each tessellation),
@@ -54,23 +54,27 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
   tess <- sapply(1:m, function(ignoredIndex) {
     list(matrix(rnorm(1, 0, sd)))
   })
-  
+
   #### Set-up MCMC -------------------------------------------------------------
   # Prepare some variables used in the backfitting algorithm.
   # We start off with the mean of the scaled y values as the prediction for all
   # tessellations.
-  sumOfAllTess <- rep(mean(yScaled),
-                      length(yScaled))
+  sumOfAllTess <- rep(
+    mean(yScaled),
+    length(yScaled)
+  )
   # The variance that captures variability around the mean of the scaled y values.
   sigmaSquaredMu <- (0.5 / (k * sqrt(m)))^2
   lastTessPred <- matrix
-  
+
   # Matrices that will hold the samples from the posterior distribution
   # for the training samples and test samples.
   posteriorSamples <- floor((totalMCMCIter - mcmcBurnIn) / thinning)
-  predictionMatrix <- array(dim = c(length(y),
-                                    posteriorSamples))
-  
+  predictionMatrix <- array(dim = c(
+    length(y),
+    posteriorSamples
+  ))
+
   # Finding lambda
   if (IntialSigma == "Naive") {
     # Usually used if p is greater then n. Uses Standard deviation of y to predict sigma.
@@ -91,59 +95,73 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
     q = q, nu = nu,
     sigmaSquaredHat = sigmaSquaredHat
   )$par
-  
+
   # Determine number of samples to store
   numPosteriorSamplesToStore <- 0
   if (totalMCMCIter > mcmcBurnIn) {
     numPosteriorSamplesToStore <- floor((totalMCMCIter - mcmcBurnIn) / thinning)
   }
   if (numPosteriorSamplesToStore < 0) numPosteriorSamplesToStore <- 0
-  
+
   # Lists to store the states of tess, dim, pred for the model object output
-  outputPosteriorTess <- vector("list",
-                                numPosteriorSamplesToStore)
-  outputPosteriorDim <- vector("list",
-                               numPosteriorSamplesToStore)
-  outputPosteriorPred <- vector("list",
-                                numPosteriorSamplesToStore)
-  
+  outputPosteriorTess <- vector(
+    "list",
+    numPosteriorSamplesToStore
+  )
+  outputPosteriorDim <- vector(
+    "list",
+    numPosteriorSamplesToStore
+  )
+  outputPosteriorPred <- vector(
+    "list",
+    numPosteriorSamplesToStore
+  )
+
   currentStorageIdx <- 1 # Index for the new output lists
-  
+
   # Setting up progress bar
-  pbar <- utils::txtProgressBar(min = 0, max = totalMCMCIter,
-                                style = 3, width = 50, char = "=")
-  
+  pbar <- utils::txtProgressBar(
+    min = 0, max = totalMCMCIter,
+    style = 3, width = 50, char = "="
+  )
+
   #### MCMC Loop ---------------------------------------------------------------
   for (i in 1:totalMCMCIter) {
     # Sample sigma squared using all tessellations to predict the outcome variables
-    sigmaSquared <- sampleSigmaSquared(yScaled,
-                                       nu,
-                                       lambda,
-                                       sumOfAllTess)
-    
+    sigmaSquared <- sampleSigmaSquared(
+      yScaled,
+      nu,
+      lambda,
+      sumOfAllTess
+    )
+
     for (j in 1:m) {
       # Propose new Tessellation
-      newTessOutput <- proposeTessellation(xScaled,
-                                           j,
-                                           tess,
-                                           dim,
-                                           sd)
+      newTessOutput <- proposeTessellation(
+        xScaled,
+        j,
+        tess,
+        dim,
+        sd
+      )
       tessStar <- newTessOutput[[1]]
       dimStar <- newTessOutput[[2]]
       modification <- newTessOutput[[3]]
-      
+
       # Calculate the n-vector of partial residuals derived from a fitting process
       # that excludes the jth tessellation and the number of observations in each cell.
-      residualsOutput <- calculateResiduals(yScaled,
-                                            xScaled,
-                                            j,
-                                            sumOfAllTess,
-                                            tess,
-                                            dim,
-                                            pred,
-                                            tessStar,
-                                            dimStar,
-                                            lastTessPred)
+      residualsOutput <- calculateResiduals(
+        yScaled,
+        xScaled,
+        j,
+        sumOfAllTess,
+        tess,
+        dim,
+        pred,
+        tessStar,
+        dimStar,
+        lastTessPred
+      )
       # Old and New refer to the original and proposed tessellations
       rIjOld <- residualsOutput[[1]]
       nIjOld <- residualsOutput[[2]]
@@ -158,44 +176,52 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
       # Gives the row of each observation for the cell it falls in for the
       # original tessellation.
       indexes <- residualsOutput[[7]]
-      
+
       if (!any(nIjNew == 0)) {
         # Automatically reject proposed tessellation if there exists a cell
         # with no observations in.
-        logAcceptanceProb <- acceptanceProbability(xScaled,
-                                                   tessStar,
-                                                   dimStar,
-                                                   j,
-                                                   rIjOld, nIjOld,
-                                                   rIjNew, nIjNew,
-                                                   sigmaSquared,
-                                                   modification,
-                                                   sigmaSquaredMu,
-                                                   omega,
-                                                   lambdaRate)
-        
+        logAcceptanceProb <- acceptanceProbability(
+          xScaled,
+          tessStar,
+          dimStar,
+          j,
+          rIjOld, nIjOld,
+          rIjNew, nIjNew,
+          sigmaSquared,
+          modification,
+          sigmaSquaredMu,
+          omega,
+          lambdaRate
+        )
+
         if (log(runif(n = 1)) < logAcceptanceProb) {
           # Accepts the proposed tessellation is accepted then calculates the new
           # output values for the new tessellation.
           tess <- tessStar
           dim <- dimStar
-          pred[[j]] <- sampleMuValues(j, tessStar,
-                                      rIjNew, nIjNew,
-                                      sigmaSquaredMu,
-                                      sigmaSquared)
+          pred[[j]] <- sampleMuValues(
+            j, tessStar,
+            rIjNew, nIjNew,
+            sigmaSquaredMu,
+            sigmaSquared
+          )
           lastTessPred <- pred[[j]][indexesStar]
         } else {
           # Rejects the proposed tessellation then calculates new output values
           # for the original tessellation.
-          pred[[j]] <- sampleMuValues(j, tess, rIjOld, nIjOld,
-                                      sigmaSquaredMu, sigmaSquared)
+          pred[[j]] <- sampleMuValues(
+            j, tess, rIjOld, nIjOld,
+            sigmaSquaredMu, sigmaSquared
+          )
           lastTessPred <- pred[[j]][indexes]
         }
       } else {
         # Rejects the proposed tessellation then calculates new output values for
         # the original tessellation.
-        pred[[j]] <- sampleMuValues(j, tess, rIjOld, nIjOld,
-                                    sigmaSquaredMu, sigmaSquared)
+        pred[[j]] <- sampleMuValues(
+          j, tess, rIjOld, nIjOld,
+          sigmaSquaredMu, sigmaSquared
+        )
         lastTessPred <- pred[[j]][indexes]
       }
       if (j == m) {
@@ -204,19 +230,19 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
         sumOfAllTess <- sumOfAllTess + lastTessPred
       }
     }
-    
+
     # Update the progress bar
     utils::setTxtProgressBar(pbar, i)
-    
+
     if (i > mcmcBurnIn & (i - mcmcBurnIn) %% thinning == 0) {
       # vectors that hold the predictions for each iteration after burn in.
       predictionMatrix[, (i - mcmcBurnIn) / thinning] <- sumOfAllTess
     }
-    
+
     # Store the posterior samples
     if (numPosteriorSamplesToStore > 0 &&
-        i > mcmcBurnIn &
-        (i - mcmcBurnIn) %% thinning == 0) {
+      i > mcmcBurnIn &
+      (i - mcmcBurnIn) %% thinning == 0) {
       # Store the current state of tess, dim, pred
       outputPosteriorTess[[currentStorageIdx]] <- tess
       outputPosteriorDim[[currentStorageIdx]] <- dim
@@ -224,15 +250,15 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
       currentStorageIdx <- currentStorageIdx + 1
     }
   } # End of MCMC Loop
-  
+
   # Close the progress bar
   close(pbar)
-  
+
   # Finding the mean of the prediction over the iterations and then unscaling
   # the predictions.
   meanYhat <- (rowSums(predictionMatrix) / (posteriorSamples)) * yRange +
     yCentre
-  
+
   # Create and return the AddiVortesFit object
   new_AddiVortesFit(
     posteriorTess = outputPosteriorTess,

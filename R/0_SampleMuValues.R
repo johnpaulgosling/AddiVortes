@@ -34,7 +34,9 @@ sampleMuValues <- function(j, Tess,
   sdVec <- sqrt(varianceVec)
 
   # 4. Call rnorm once with vector arguments
-  return(rnorm(n = N,
-               mean = meanVec,
-               sd = sdVec))
+  return(rnorm(
+    n = N,
+    mean = meanVec,
+    sd = sdVec
+  ))
 }

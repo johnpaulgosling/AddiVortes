@@ -4,20 +4,23 @@
 #' that each observation falls within.
 #'
 #' @param x The covariate matrix.
-#' @param Tess The tessellation.
-#' @param Dim The dimensions of the tessellation.
+#' @param tess The tessellation.
+#' @param dim The dimensions of the tessellation.
 #'
-#' @return The row (the centre) of the tessellation that each observation falls within.
+#' @return The row (the centre) of the tessellation that each observation falls 
+#' within.
 #' @keywords internal
 #' @noRd
 #'
-cellIndices <- function(x, Tess, Dim) {
-  if (length(Tess[, 1]) == 1) { # only 1 centre
+cellIndices <- function(x, tess, dim) {
+  if (length(tess[, 1]) == 1) { # only 1 centre
     CellsForGivenTess <- rep(1, length(x[, 1]))
   } else { # multiple
-    CellsForGivenTess <- knnx.index(Tess,
-                                    matrix(x[, Dim],
-                                           ncol = length(Dim)), 1)
+    CellsForGivenTess <- knnx.index(
+      tess,
+      matrix(x[, dim],
+             ncol = length(dim)
+      ), 1
+    )
   }
-  return(CellsForGivenTess)
-}
+} # Implicit return of CellsForGivenTess

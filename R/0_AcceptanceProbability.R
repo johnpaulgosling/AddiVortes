@@ -7,14 +7,17 @@
 #' @param Dim The dimensions of the tessellation.
 #' @param j The index of the tessellation.
 #' @param R_ijOld The residuals of the old tessellation.
-#' @param n_ijOld The number of observations in each cell of the old tessellation.
+#' @param n_ijOld The number of observations in each cell of the old
+#' tessellation.
 #' @param R_ijNew The residuals of the new tessellation.
-#' @param n_ijNew The number of observations in each cell of the new tessellation.
+#' @param n_ijNew The number of observations in each cell of the new
+#' tessellation.
 #' @param SigmaSquared The variance of the residuals.
 #' @param Modification The type of modification.
 #' @param SigmaSquaredMu The variance of the random effects.
 #' @param Omega The prior probability of adding a dimension.
-#' @param LambdaRate The rate of the Poisson distribution for the number of centres.
+#' @param LambdaRate The rate of the Poisson distribution for the number of
+#' centres.
 #'
 #' @return The acceptance probability.
 #'
@@ -22,33 +25,37 @@
 #' @noRd
 #'
 acceptanceProbability <- function(x, Tess, Dim, j,
-                                   R_ijOld, n_ijOld,
-                                   R_ijNew, n_ijNew,
-                                   SigmaSquared,
-                                   Modification, SigmaSquaredMu,
-                                   Omega, LambdaRate) {
+                                  R_ijOld, n_ijOld,
+                                  R_ijNew, n_ijNew,
+                                  SigmaSquared,
+                                  Modification, SigmaSquaredMu,
+                                  Omega, LambdaRate) {
   d <- length(Dim[[j]])
   NumCovariates <- length(x[1, ])
   cStar <- length(Tess[[j]][, 1])
-
+  
   # The Log Likelihood Ratio in the acceptance ratio
-  LogLikelihoodRatio <- 0.5 * (log(prod(n_ijOld * SigmaSquaredMu + SigmaSquared)) -
-                                 log(prod(n_ijNew * SigmaSquaredMu + SigmaSquared))) +
+  LogLikelihoodRatio <- 0.5 * (log(prod(n_ijOld *
+                                          SigmaSquaredMu + SigmaSquared)) -
+                                 log(prod(n_ijNew *
+                                            SigmaSquaredMu + SigmaSquared))) +
     ((SigmaSquaredMu / (2 * SigmaSquared)) *
        (sum((R_ijNew^2) /
               (n_ijNew * SigmaSquaredMu + SigmaSquared)) -
           sum((R_ijOld^2) / (n_ijOld * SigmaSquaredMu + SigmaSquared))))
-
+  
   # Calculating the acceptance probability for
   # "AD"=Adding a dimension, "RD"=Removing a dimension,
   # "AC"=Adding a centre, "RC"=Removing a centre,
   # "Change"=Changing the coordinates of a centre and swapping a dimension.
   if (Modification == "AD") {
     TessStructure <- (dbinom(d - 1, NumCovariates - 1, Omega / NumCovariates)) /
-      (dbinom(d - 2, NumCovariates - 1, Omega / NumCovariates) * (NumCovariates - d + 1))
+      (dbinom(d - 2, NumCovariates - 1, Omega / NumCovariates) *
+         (NumCovariates - d + 1))
     TransitionRatio <- (NumCovariates - d + 1) / d
-    AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) + log(TransitionRatio)
-
+    AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) +
+      log(TransitionRatio)
+    
     # Adjustments.
     if (length(Dim[[j]]) == 1) {
       AcceptanceProb <- AcceptanceProb + log(1 / 2)
@@ -60,8 +67,9 @@ acceptanceProbability <- function(x, Tess, Dim, j,
                         (NumCovariates - d)) /
       (dbinom(d, NumCovariates, Omega / NumCovariates))
     TransitionRatio <- (d + 1) / (NumCovariates - d)
-    AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) + log(TransitionRatio)
-
+    AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) +
+      log(TransitionRatio)
+    
     # Adjustments.
     if (length(Dim[[j]]) == NumCovariates) {
       AcceptanceProb <- AcceptanceProb + log(1 / 2)
@@ -71,9 +79,10 @@ acceptanceProbability <- function(x, Tess, Dim, j,
   } else if (Modification == "AC") {
     TessStructure <- dpois(cStar - 1, LambdaRate) / dpois(cStar - 2, LambdaRate)
     TransitionRatio <- 1 / cStar
-    AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) + log(TransitionRatio) +
+    AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) +
+      log(TransitionRatio) +
       0.5 * log(SigmaSquared)
-
+    
     # Adjustments.
     if (cStar == 1) {
       AcceptanceProb <- AcceptanceProb + log(1 / 2)
@@ -83,7 +92,7 @@ acceptanceProbability <- function(x, Tess, Dim, j,
     TransitionRatio <- cStar + 1
     AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) +
       log(TransitionRatio) - 0.5 * log(SigmaSquared)
-
+    
     # Adjustments.
     if (cStar == 2) {
       AcceptanceProb <- AcceptanceProb + log(2)
@@ -91,11 +100,13 @@ acceptanceProbability <- function(x, Tess, Dim, j,
   } else if (Modification == "Change") {
     TessStructure <- 1
     TransitionRatio <- 1
-    AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) + log(TransitionRatio)
+    AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) +
+      log(TransitionRatio)
   } else {
     TessStructure <- 1
     TransitionRatio <- 1
-    AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) + log(TransitionRatio)
+    AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) +
+      log(TransitionRatio)
   }
   return(AcceptanceProb)
 }

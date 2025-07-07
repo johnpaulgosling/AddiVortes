@@ -7,7 +7,7 @@ test_that("scaleData_internal scales a numeric vector correctly", {
   # Expected: centre = 25, range = 30
   # (10-25)/30 = -0.5
   # (40-25)/30 = 0.5
-  expect_equal(result$scaledData, c(-0.5, -1/6, 1/6, 0.5))
+  expect_equal(result$scaledData, c(-0.5, -1 / 6, 1 / 6, 0.5))
   expect_equal(result$centres, 25)
   expect_equal(result$ranges, 30)
   expect_type(result, "list")
@@ -39,15 +39,17 @@ test_that("applyScaling_internal applies scaling correctly", {
 
   # Apply to a new "test" set
   testMat <- matrix(c(5, 15, 50, 250), nrow = 2)
-  scaledTestMat <- applyScaling_internal(testMat,
-                                         scalingParams$centres,
-                                         scalingParams$ranges)
+  scaledTestMat <- applyScaling_internal(
+    testMat,
+    scalingParams$centres,
+    scalingParams$ranges
+  )
 
   # Expected for testMat using trainMat params:
   # Col 1 (centre=5, range=10): (5-5)/10=0, (15-5)/10=1
   # Col 2 (centre=150, range=100): (50-150)/100=-1, (250-150)/100=1
   expectedScaled <- matrix(c(0, 1, -1, 1), nrow = 2)
-  expect_true(scaledTestMat[1,1] == expectedScaled[1,1])
+  expect_true(scaledTestMat[1, 1] == expectedScaled[1, 1])
 })
 
 test_that("applyScaling_internal warns for NA parameters", {

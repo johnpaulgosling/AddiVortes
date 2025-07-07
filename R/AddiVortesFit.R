@@ -59,7 +59,7 @@ new_AddiVortesFit <- function(posteriorTess, posteriorDim, posteriorPred,
 #'
 #' @details
 #' This function relies on the internal helper functions `applyScaling_internal`
-#' and `testSetPrediction` being available in the environment, which are used 
+#' and `testSetPrediction` being available in the environment, which are used
 #' by the main `AddiVortes` function.
 #'
 #' @export
@@ -67,10 +67,9 @@ new_AddiVortesFit <- function(posteriorTess, posteriorDim, posteriorPred,
 predict.AddiVortesFit <- function(object, newdata,
                                   type = c("response", "quantile"),
                                   quantiles = c(0.025, 0.975), ...) {
-  
   # Match the type argument
   type <- match.arg(type)
-  
+
   # --- Input Validation ---
   if (!inherits(object, "AddiVortesFit")) {
     stop("`object` must be of class 'AddiVortesFit'.")
@@ -81,30 +80,32 @@ predict.AddiVortesFit <- function(object, newdata,
   if (ncol(newdata) != length(object$xCentres)) {
     stop("Number of columns in `newdata` does not match the original training data.")
   }
-  
+
   # Extract model components from the fitted object
   posteriorTessSamples <- object$posteriorTess
-  posteriorDimSamples  <- object$posteriorDim
+  posteriorDimSamples <- object$posteriorDim
   posteriorPredSamples <- object$posteriorPred
-  numStoredSamples     <- length(posteriorTessSamples)
-  
+  numStoredSamples <- length(posteriorTessSamples)
+
   # Handle cases with no stored samples
   if (numStoredSamples == 0) {
     warning("The AddiVortes model contains no posterior samples. Cannot make predictions.")
     return(NA_real_)
   }
-  
+
   # Scale the new test covariates using stored scaling parameters
-  xNewScaled <- applyScaling_internal(mat = newdata,
-                                      centres = object$xCentres,
-                                      ranges = object$xRanges)
-  
+  xNewScaled <- applyScaling_internal(
+    mat = newdata,
+    centres = object$xCentres,
+    ranges = object$xRanges
+  )
+
   # Determine the number of tessellations (m) from the first stored sample
   mTessellations <- length(posteriorTessSamples[[1]])
-  
+
   # Initialize a matrix to store predictions for each posterior sample
   newTestDataPredictionsMatrix <- array(dim = c(nrow(xNewScaled), numStoredSamples))
-  
+
   # --- Prediction Loop ---
   for (sIdx in 1:numStoredSamples) {
     # Get predictions for the current posterior sample
@@ -117,22 +118,21 @@ predict.AddiVortesFit <- function(object, newdata,
     )
     newTestDataPredictionsMatrix[, sIdx] <- predictionsForSampleS
   }
-  
+
   # --- Process and Unscale Predictions ---
   if (type == "response") {
     # Calculate the mean of predictions across all posterior samples (still scaled)
     meanYhatNewScaled <- rowMeans(newTestDataPredictionsMatrix)
     # Unscale the mean predictions
     predictions <- meanYhatNewScaled * object$yRange + object$yCentre
-    
   } else if (type == "quantile") {
     # Calculate the specified quantiles of the predictions
     quantileYhatNewScaled <- apply(newTestDataPredictionsMatrix, 1, quantile,
-                                   probs = quantiles, na.rm = TRUE)
+      probs = quantiles, na.rm = TRUE
+    )
     # Unscale the quantiles of predictions (transpose for correct dimensions)
     predictions <- t(quantileYhatNewScaled * object$yRange + object$yCentre)
   }
-  
+
   return(predictions)
 }
-

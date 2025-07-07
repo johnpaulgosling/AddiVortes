@@ -14,17 +14,18 @@
 #' @param data A numeric vector, matrix, or data frame.
 #'
 #' @return A list containing:
-#'   \item{scaledData}{The scaled object (vector, matrix or data frame matching input type).}
-#'   \item{centres}{The centre(s) used (single value for vector input, vector for matrix/df).}
-#'   \item{ranges}{The range(s) used (single value for vector input, vector for matrix/df).}
+#'    \item{scaledData}{The scaled object (vector, matrix or data frame matching input type).}
+#'    \item{centres}{The centre(s) used (single value for vector input, vector for matrix/df).}
+#'    \item{ranges}{The range(s) used (single value for vector input, vector for matrix/df).}
 #'
 #' @keywords internal
 #' @noRd
 scaleData_internal <- function(data) {
   if (!is.numeric(data) && !all(sapply(data, is.numeric)) && !is.null(dim(data))) {
     # Allow non-numeric columns in data frames/matrices but check base type
-    if(!is.data.frame(data) && !is.matrix(data) && !is.vector(data))
+    if (!is.data.frame(data) && !is.matrix(data) && !is.vector(data)) {
       stop("'data' must be a numeric vector, matrix, or data frame.")
+    }
     # Further checks inside loop for matrix/df case
   } else if (!is.numeric(data) && is.null(dim(data))) {
     stop("'data' must be a numeric vector.")
@@ -46,8 +47,7 @@ scaleData_internal <- function(data) {
     # Scale the data
     scaledData <- (data - centre) / rangeV
     centres <- centre # Store single value
-    ranges <- rangeV   # Store single value
-
+    ranges <- rangeV # Store single value
   } else {
     # --- Handle Matrix or Data Frame ---
     isDf <- is.data.frame(data)
@@ -57,10 +57,10 @@ scaleData_internal <- function(data) {
     # Pre-allocate results
     scaledMatWork <- matrix(NA_real_, nrow = nrow(matWork), ncol = numCols)
     centres <- numeric(numCols) # Vector to store centres
-    ranges <- numeric(numCols)  # Vector to store ranges
+    ranges <- numeric(numCols) # Vector to store ranges
 
     originalColnames <- colnames(matWork) # Store original names
-    if(is.null(originalColnames) && ncol(matWork) > 0) {
+    if (is.null(originalColnames) && ncol(matWork) > 0) {
       originalColnames <- paste0("V", 1:ncol(matWork)) # Assign default if null
     }
 
@@ -140,14 +140,16 @@ applyScaling_internal <- function(mat, centres, ranges) {
 
 
   if (length(centres) != ncol(matWork) || length(ranges) != ncol(matWork)) {
-    stop("Length of 'centres' (", length(centres), ") and 'ranges' (", length(ranges),
-         ") must match the number of columns in 'mat' (", ncol(matWork), ").")
+    stop(
+      "Length of 'centres' (", length(centres), ") and 'ranges' (", length(ranges),
+      ") must match the number of columns in 'mat' (", ncol(matWork), ")."
+    )
   }
 
   numCols <- ncol(matWork)
   scaledMatWork <- matrix(NA_real_, nrow = nrow(matWork), ncol = numCols)
   originalColnames <- colnames(matWork)
-  if(is.null(originalColnames) && ncol(matWork) > 0) {
+  if (is.null(originalColnames) && ncol(matWork) > 0) {
     originalColnames <- paste0("V", 1:ncol(matWork)) # Assign default if null
   }
 
