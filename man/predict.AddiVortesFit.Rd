@@ -19,8 +19,8 @@ call to \code{AddiVortes()}.}
 \item{newdata}{A matrix of covariates for the new test set. The number of
 columns must match the original training data.}
 
-\item{type}{The type of prediction required. The default, \code{"response"}, gives the
-mean prediction. The alternative, \code{"quantile"}, returns the quantiles
+\item{type}{The type of prediction required. The default \code{"response"} gives the
+mean prediction. The alternative \code{"quantile"} returns the quantiles
 specified by the \code{quantiles} argument.}
 
 \item{quantiles}{A numeric vector of probabilities with values in \link{0, 1} to
@@ -37,11 +37,11 @@ containing the calculated Root Mean Squared Error.
 }
 \description{
 Predicts outcomes for new data using a fitted \code{AddiVortesFit} model object.
-It can return mean predictions, quantiles, and optionally calculate the
+It can return mean predictions, quantiles and optionally calculate the
 Root Mean Squared Error (RMSE) if true outcomes are provided.
 }
 \details{
-This function relies on the internal helper functions \code{applyScaling_internal}
-and \code{testSetPrediction} being available in the environment, which are used
-by the main \code{AddiVortes} function.
+This function relies on the internal helper function \code{applyScaling_internal}
+being available in the environment, which is used by the main
+\code{AddiVortes} function.
 }

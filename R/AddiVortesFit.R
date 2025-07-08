@@ -143,3 +143,102 @@ predict.AddiVortesFit <- function(object, newdata,
   
   return(predictions)
 }
+
+#' @title Plot Method for AddiVortesFit
+#'
+#' @description
+#' Generates diagnostic plots for a fitted `AddiVortesFit` object.
+#' This function creates a scatter plot of the true versus predicted values
+#' for the training set to help visualise model fit.
+#'
+#' @param aModel An object of class `AddiVortesFit`, typically the result of a
+#'   call to `AddiVortes()`.
+#' @param x_train A matrix of the original training covariates.
+#' @param y_train A numeric vector of the original training true outcomes.
+#' @param ... Additional graphical parameters to be passed to the `plot` function
+#'   (e.g., `pch`, `cex`).
+#'
+#' @return
+#' This function is called for its side effect of creating a plot and returns
+#' `NULL` invisibly.
+#'
+#' @details
+#' The function internally calls `predict.AddiVortesFit` on the provided
+#' training data to get the mean predictions. It then plots these predictions
+#' against the true outcome values (`y_train`). A dashed red line with an
+#' intercept of 0 and a slope of 1 is added to the plot to represent a perfect
+#' prediction, making it easy to assess the model's accuracy.
+#'
+#' @importFrom graphics plot abline title
+#' @export
+#' @method plot AddiVortesFit
+#'
+#' @examples
+#' \dontrun{
+#' # Assuming 'fit' is a trained object of class AddiVortesFit,
+#' # and 'x_train_data', 'y_train_data' are your training datasets.
+#'
+#' plot(fit, x_train = x_train_data, y_train = y_train_data)
+#' }
+plot.AddiVortesFit <- function(aModel, x_train, y_train, ...) {
+  # --- Input Validation ---
+  if (!inherits(aModel, "AddiVortesFit")) {
+    stop("`x` must be an object of class 'AddiVortesFit'.")
+  }
+  if (missing(x_train) || missing(y_train)) {
+    stop("`x_train` and `y_train` must be provided to plot true vs. predicted values.")
+  }
+  if (!is.matrix(x_train)) {
+    stop("`x_train` must be a matrix.")
+  }
+  if (!is.numeric(y_train)) {
+    stop("`y_train` must be a numeric vector.")
+  }
+  if (nrow(x_train) != length(y_train)) {
+    stop("The number of rows in `x_train` must match the length of `y_train`.")
+  }
+  
+  # Generate mean predictions for the training set
+  preds <- predict(aModel, 
+                   newdata = x_train,
+                   type = "response")
+  
+  # --- Create the Plot ---
+  # Plot true values vs. predicted values
+  plot(y_train,
+       preds,
+       xlab = "True Values",
+       ylab = "Predicted Values",
+       main = "AddiVortes Predictions vs True Values",
+       xlim = range(c(y_train, preds)),
+       ylim = range(c(y_train, preds)),
+       pch = 19, col = "darkblue"
+  )
+  
+  # Add the line of equality (y = x) for reference
+  abline(a = 0, b = 1, col = "darkred", lwd = 2)
+  
+  # Get quantile predictions to create error bars/intervals
+  preds_quantile <- predict(aModel,
+                            x_train,
+                            "quantile")
+  
+  # Add error segments for each prediction
+  for (i in 1:nrow(preds_quantile)) {
+    segments(y_train, preds_quantile[i, 1],
+             y_train, preds_quantile[i, 2],
+             col = "darkblue", lwd = 1
+    )
+  }
+  
+  # Add legend
+  legend("bottomright",
+         legend=c("Prediction",
+                  "Equality Line"), 
+         col=c("darkblue",
+               "darkred"),
+         lty=1, pch=c(19, NA), lwd=2)
+  
+  # The function is used for plotting alone, so return NULL invisibly
+  invisible(NULL)
+}
