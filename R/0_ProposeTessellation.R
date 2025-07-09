@@ -22,14 +22,14 @@ proposeTessellation <- function(x, j,
   DimStar <- Dim # Let proposed dimension matrix equal original dimension matrix
   TessStar <- Tess # Similar for the tessellation matrix.
   
-  if (p < 0.2 & length(Dim[[j]]) != length(x[1, ]) |
-      length(Dim[[j]]) == 1 & p < 0.4) {
+  if (p < 0.2 && length(Dim[[j]]) != length(x[1, ]) ||
+      length(Dim[[j]]) == 1 && p < 0.4) {
     # Add a dimension if p is less then 0.2 or if p is less then 0.4 when
     # there is only one dimension in the Tessellation due to adjustments.
     
     # Let NumberOfCovariates be a vector from 1 to the number of covariates
     # considered.
-    NumberOfCovariates <- 1:length(x[1, ])
+    NumberOfCovariates <- seq_along(x[1, ])
     # Remove all values that for the covariates that are already in the
     # tessellation.
     NumberOfCovariates <- NumberOfCovariates[-Dim[[j]]]
@@ -43,7 +43,7 @@ proposeTessellation <- function(x, j,
     # Remove a dimension if p is less then 0.4.
     
     # Uniformly sample the dimension to be removed.
-    RemovedDim <- sample(1:length(Dim[[j]]), 1)
+    RemovedDim <- sample(seq_along(Dim[[j]]), 1)
     # Remove the dimension from the dimension matrix.
     DimStar[[j]] <- DimStar[[j]][-RemovedDim]
     # Remove the coordinates in the Tessellation matrix corresponding to the
@@ -52,7 +52,7 @@ proposeTessellation <- function(x, j,
                             ncol = length(DimStar[[j]])
     )
     Modification <- "RD"
-  } else if (p < 0.6 || p < 0.8 & length(Tess[[j]][, 1]) == 1) {
+  } else if (p < 0.6 || p < 0.8 && length(Tess[[j]][, 1]) == 1) {
     # Add a centre if p is less then 0.6 or if p is less then 0.4
     # when there is only one center in the Tessellation due to adjustments.
     
@@ -64,7 +64,7 @@ proposeTessellation <- function(x, j,
     # Add a centre if p is less then 0.8.
     
     # Sample a row.
-    CenterRemoved <- sample(1:length(TessStar[[j]][, 1]), 1)
+    CenterRemoved <- sample(seq_along(TessStar[[j]][, 1]), 1)
     # Remove row sampled.
     TessStar[[j]] <- matrix(TessStar[[j]][-CenterRemoved, ],
                             ncol = length(Dim[[j]])
@@ -77,7 +77,7 @@ proposeTessellation <- function(x, j,
     # Sample a row in the tessellaion matrix and change the coordinates of the
     # centre by sampling from a normal distribution.
     TessStar[[j]][sample(
-      1:length(TessStar[[j]][, 1]),
+      seq_along(TessStar[[j]][, 1]),
       1
     ), ] <- rnorm(length(Dim[[j]]), 0, var)
     Modification <- "Change"
@@ -86,12 +86,12 @@ proposeTessellation <- function(x, j,
     
     # Let NumberOfCovariates be a vector from 1 to the number
     # of covariates considered.
-    NumberOfCovariates <- 1:length(x[1, ])
+    NumberOfCovariates <- seq_along(x[1, ])
     # Remove all values that for the covariates that are already in 
     # the tessellation.
     NumberOfCovariates <- NumberOfCovariates[-Dim[[j]]]
     # Uniformly sample a dimension to change.
-    DimToChange <- sample(1:length(Dim[[j]]), 1)
+    DimToChange <- sample(seq_along(Dim[[j]]), 1)
     # Replace the Dimension to a new uniformly sampled covariate that is not
     # already in the tessellation.
     DimStar[[j]][DimToChange] <- sample(NumberOfCovariates, 1)

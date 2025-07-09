@@ -31,7 +31,6 @@ new_AddiVortesFit <- function(posteriorTess, posteriorDim, posteriorPred,
   )
 }
 
-
 #' @title Predict Method for AddiVortesFit
 #'
 #' @description
@@ -43,19 +42,18 @@ new_AddiVortesFit <- function(posteriorTess, posteriorDim, posteriorPred,
 #'   call to `AddiVortes()`.
 #' @param newdata A matrix of covariates for the new test set. The number of
 #'   columns must match the original training data.
-#' @param type The type of prediction required. The default `"response"` gives the
-#'   mean prediction. The alternative `"quantile"` returns the quantiles
+#' @param type The type of prediction required. The default `"response"` gives 
+#'   the mean prediction. The alternative `"quantile"` returns the quantiles
 #'   specified by the `quantiles` argument.
 #' @param quantiles A numeric vector of probabilities with values in [0, 1] to
 #'   compute for the predictions when `type = "quantile"`.
-#' @param ... Further arguments passed to or from other methods (currently unused).
+#' @param ... Further arguments passed to or from other methods (currently 
+#' unused).
 #'
 #' @return
 #' If `type = "response"`, a numeric vector of mean predictions.
 #' If `type = "quantile"`, a matrix where each row corresponds to an observation
 #' in `newdata` and each column to a quantile.
-#' If `yNew` is provided, the returned object will have an `rmse` attribute
-#' containing the calculated Root Mean Squared Error.
 #'
 #' @details
 #' This function relies on the internal helper function `applyScaling_internal`
@@ -104,7 +102,8 @@ predict.AddiVortesFit <- function(object, newdata,
   mTessellations <- length(posteriorTessSamples[[1]])
   
   # Initialize a matrix to store predictions for each posterior sample
-  newTestDataPredictionsMatrix <- array(dim = c(nrow(xNewScaled), numStoredSamples))
+  newTestDataPredictionsMatrix <- array(dim = c(nrow(xNewScaled),
+                                                numStoredSamples))
   
   # --- Prediction Loop ---
   for (sIdx in 1:numStoredSamples) {
@@ -113,9 +112,10 @@ predict.AddiVortesFit <- function(object, newdata,
     current_dim  <- posteriorDimSamples[[sIdx]]
     current_pred <- posteriorPredSamples[[sIdx]]
     
-    # Get predictions for each of the m tessellations in the current posterior sample
+    # Get preds for each of the m tessellations in current posterior sample
     predictionList <- lapply(1:mTessellations, function(j) {
-      NewTessIndexes <- cellIndices(xNewScaled, current_tess[[j]], current_dim[[j]])
+      NewTessIndexes <- cellIndices(xNewScaled, current_tess[[j]],
+                                    current_dim[[j]])
       current_pred[[j]][NewTessIndexes]
     })
     
@@ -128,7 +128,8 @@ predict.AddiVortesFit <- function(object, newdata,
   
   # --- Process and Unscale Predictions ---
   if (type == "response") {
-    # Calculate the mean of predictions across all posterior samples (still scaled)
+    # Calculate the mean of predictions across all posterior samples 
+    # (still scaled)
     meanYhatNewScaled <- rowMeans(newTestDataPredictionsMatrix)
     # Unscale the mean predictions
     predictions <- meanYhatNewScaled * object$yRange + object$yCentre
@@ -155,8 +156,8 @@ predict.AddiVortesFit <- function(object, newdata,
 #'   call to `AddiVortes()`.
 #' @param x_train A matrix of the original training covariates.
 #' @param y_train A numeric vector of the original training true outcomes.
-#' @param ... Additional graphical parameters to be passed to the `plot` function
-#'   (e.g., `pch`, `cex`).
+#' @param ... Additional graphical parameters to be passed to the `plot` 
+#' function (e.g., `pch`, `cex`).
 #'
 #' @return
 #' This function is called for its side effect of creating a plot and returns
@@ -186,7 +187,8 @@ plot.AddiVortesFit <- function(aModel, x_train, y_train, ...) {
     stop("`x` must be an object of class 'AddiVortesFit'.")
   }
   if (missing(x_train) || missing(y_train)) {
-    stop("`x_train` and `y_train` must be provided to plot true vs. predicted values.")
+    stop(paste0("`x_train` and `y_train` must be provided to plot true",
+                " vs. predicted values."))
   }
   if (!is.matrix(x_train)) {
     stop("`x_train` must be a matrix.")
