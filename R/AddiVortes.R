@@ -122,6 +122,10 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
   # Some precalculations
   numCovariates <- ncol(xScaled)
   covariateIndices <- seq_len(numCovariates)
+  current_indices <- vector("list", m)
+  for(k in 1:m) {
+    current_indices[[k]] <- cellIndices(xScaled, tess[[k]], dim[[k]])
+  }
   
   #### MCMC Loop ---------------------------------------------------------------
   for (i in 1:totalMCMCIter) {
@@ -150,17 +154,22 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
 
       # Calculate the n-vector of partial residuals derived from a fitting process
       # that excludes the jth tessellation and the number of observations in each cell.
+
+      # Retrieve old indices from cache
+      indexes <- current_indices[[j]]
+      # Calculate new indices for the proposal
+      indexesStar <- cellIndices(xScaled, tessStar[[j]], dimStar[[j]])
+      
+      # Call the modified calculateResiduals function
       residualsOutput <- calculateResiduals(
         yScaled,
-        xScaled,
         j,
         sumOfAllTess,
-        tess,
-        dim,
         pred,
         tessStar,
-        dimStar,
-        lastTessPred
+        lastTessPred,
+        indexes,
+        indexesStar
       )
       # Old and New refer to the original and proposed tessellations
       rIjOld <- residualsOutput[[1]]
@@ -200,6 +209,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
           # output values for the new tessellation.
           tess <- tessStar
           dim <- dimStar
+          current_indices[[j]] <- indexesStar
           pred[[j]] <- sampleMuValues(
             j, tessStar,
             rIjNew, nIjNew,
