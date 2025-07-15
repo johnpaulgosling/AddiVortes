@@ -1,4 +1,5 @@
 #include <Rcpp.h>
+// [[Rcpp::depends(Rcpp)]]
 using namespace Rcpp;
 
 // [[Rcpp::export]]
