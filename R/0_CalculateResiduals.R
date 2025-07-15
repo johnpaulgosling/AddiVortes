@@ -33,9 +33,7 @@
 #' @noRd
 calculateResiduals <- function(y, j, SumOfAllTess, Pred, lastTessPred,
                                indexes, indexesStar, num_centres_new) {
-  # This version is no longer passed the temporary TessStar list.
-  # Instead, it receives the number of new centres directly.
-  
+  # This part of the logic remains in R
   if (j == 1) {
     CurrentTessPred <- Pred[[j]][indexes]
     SumOfAllTess <- SumOfAllTess - CurrentTessPred
@@ -45,32 +43,15 @@ calculateResiduals <- function(y, j, SumOfAllTess, Pred, lastTessPred,
   }
   R_j <- y - SumOfAllTess
   
-  # --- Old Tessellation Logic (Unchanged) ---
+  # --- Call the C++ function ---
   num_levels_old <- length(Pred[[j]])
-  n_ijOld <- tabulate(indexes, nbins = num_levels_old)
-  if (num_levels_old > 0) {
-    R_ijOld_vec <- numeric(num_levels_old)
-    res_rowsum_old <- rowsum(R_j, indexes)
-    R_ijOld_vec[as.numeric(rownames(res_rowsum_old))] <- res_rowsum_old[, 1]
-    R_ijOld <- R_ijOld_vec
-  } else {
-    R_ijOld <- numeric(0)
-  }
+  cpp_results <- calculate_residuals_cpp(R_j, indexes, indexesStar,
+                                         num_levels_old, num_centres_new)
   
-  # --- New Tessellation Logic (Refactored) ---
-  n_ijNew <- tabulate(indexesStar, nbins = num_centres_new)
-  if (num_centres_new > 0) {
-    R_ijNew_vec <- numeric(num_centres_new)
-    res_rowsum_new <- rowsum(R_j, indexesStar)
-    R_ijNew_vec[as.numeric(rownames(res_rowsum_new))] <- res_rowsum_new[, 1]
-    R_ijNew <- R_ijNew_vec
-  } else {
-    R_ijNew <- numeric(0)
-  }
-  
+  # --- Return the results in the original list format ---
   return(list(
-    R_ijOld, n_ijOld,
-    R_ijNew, n_ijNew,
+    cpp_results$R_ijOld, cpp_results$n_ijOld,
+    cpp_results$R_ijNew, cpp_results$n_ijNew,
     SumOfAllTess, indexesStar, indexes
   ))
 }
