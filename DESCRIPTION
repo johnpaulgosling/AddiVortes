@@ -1,6 +1,6 @@
 Package: AddiVortes
 Title: (Bayesian) Additive Voronoi Tessellations
-Version: 0.1.11
+Version: 0.1.12
 Date: 2025-07-15
 Authors@R: 
     c(person("Adam", "Stone", , "adam.stone2@durham.ac.uk",

@@ -125,6 +125,10 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
     style = 3, width = 50, char = "="
   )
 
+  # Some precalculations
+  numCovariates <- ncol(xScaled)
+  covariateIndices <- seq_len(numCovariates)
+  
   #### MCMC Loop ---------------------------------------------------------------
   for (i in 1:totalMCMCIter) {
     # Sample sigma squared using all tessellations to predict the outcome variables
@@ -142,7 +146,8 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
         j,
         tess,
         dim,
-        sd
+        sd,
+        covariateIndices
       )
       tessStar <- newTessOutput[[1]]
       dimStar <- newTessOutput[[2]]
@@ -191,7 +196,8 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
           modification,
           sigmaSquaredMu,
           omega,
-          lambdaRate
+          lambdaRate,
+          numCovariates
         )
 
         if (log(runif(n = 1)) < logAcceptanceProb) {
