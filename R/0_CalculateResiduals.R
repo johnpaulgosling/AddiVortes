@@ -1,29 +1,36 @@
-#' @title Calculate Residuals
+#' @title Calculate Partial Residuals for a Tessellation
+#' @description Calculates the vector of partial residuals by excluding the effect
+#'   of the jth tessellation. It then aggregates these residuals and observation
+#'   counts for both the current and the proposed new tessellation structures.
 #'
-#' @description A function that calculates the n-vector of partial residuals
-#' derived from a fitting process that excludes the jth tessellation.
+#' @param y The numeric vector of the outcome or response variable.
+#' @param j The index of the tessellation currently being updated.
+#' @param SumOfAllTess A numeric vector representing the sum of predictions from
+#'   all tessellations.
+#' @param Pred A list where each element contains the predicted values for a
+#'   tessellation.
+#' @param lastTessPred The prediction from the jth tessellation in the previous
+#'   iteration, used to correctly update the sum of all tessellation predictions.
+#' @param indexes A numeric vector of integers mapping each observation to a
+#'   cell in the current tessellation.
+#' @param indexesStar A numeric vector of integers mapping each observation to a
+#'   cell in the proposed new tessellation.
+#' @param num_centres_new The number of centres (cells) in the proposed new
+#'   tessellation.
 #'
-#' @param y The outcome variable.
-#' @param x The covariate matrix.
-#' @param j The index of the tessellation.
-#' @param SumOfAllTess The sum of all tessellations.
-#' @param Tess The tessellation.
-#' @param Dim The dimensions of the tessellation.
-#' @param Pred The prediction set.
-#' @param TessStar The proposed tessellation.
-#' @param DimStar The proposed dimensions.
-#' @param LastTessPred The last tessellation prediction.
-#'
-#' @return A list containing the residuals of the old tessellation,
-#' the number of observations in each cell of the old tessellation,
-#' the residuals of the new tessellation, the number of observations in each
-#' cell of the new tessellation, the sum of all tessellations,
-#' the indexes of the proposed tessellation, and the indexes of the original
-#' tessellation.
+#' @return A list containing seven elements in the following order:
+#'   \enumerate{
+#'     \item A numeric vector of summed residuals for each cell in the current tessellation (`R_ijOld`).
+#'     \item An integer vector of observation counts for each cell in the current tessellation (`n_ijOld`).
+#'     \item A numeric vector of summed residuals for each cell in the proposed tessellation (`R_ijNew`).
+#'     \item An integer vector of observation counts for each cell in the proposed tessellation (`n_ijNew`).
+#'     \item The updated sum of all tessellation predictions (`SumOfAllTess`).
+#'     \item The integer vector of cell indexes for the proposed tessellation (`indexesStar`).
+#'     \item The integer vector of cell indexes for the current tessellation (`indexes`).
+#'   }
 #'
 #' @keywords internal
 #' @noRd
-#'
 calculateResiduals <- function(y, j, SumOfAllTess, Pred, lastTessPred,
                                indexes, indexesStar, num_centres_new) {
   # This version is no longer passed the temporary TessStar list.

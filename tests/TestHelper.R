@@ -57,6 +57,8 @@ abline(a = 0, b = 1, col = "blue", lwd = 2)
 # 1       1.206556           3.209220
 # In_sample_RMSE Out_of_sample_RMSE (vectorised sampling)
 # 1       1.204092           3.237162
+# In_sample_RMSE Out_of_sample_RMSE (computation speed-up)
+# 1       1.172312           3.116504
 
 # Timings (Office comp)
 # v0.0.14 = 87 sec elapsed

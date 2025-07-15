@@ -28,7 +28,7 @@ sqrt(mean((Y_test - Predicts)^2))
 plot(T1_result, X, Y)
 
 #   In_sample_RMSE Out_of_sample_RMSE
-# 1      0.7216729           1.051648
+# 1      0.7855397           1.067654
 
 # Test 2 -----------------------------------------------------------------------
 
@@ -52,7 +52,7 @@ Predicts <- predict(
 sqrt(mean((Y_test - Predicts)^2))
 
 #   In_sample_RMSE Out_of_sample_RMSE
-# 1       2.642812           3.010738
+# 1       2.729654           3.019669
 
 # Test 3 -----------------------------------------------------------------------
 
@@ -76,14 +76,14 @@ Predicts <- predict(
 sqrt(mean((Y_test - Predicts)^2))
 
 #   In_sample_RMSE Out_of_sample_RMSE
-# 1       1.149055           1.093758
+# 1       1.144691           1.10113
 
 # Test 4 -----------------------------------------------------------------------
 library(tictoc)
-set.seed(5678)
+set.seed(567813)
 
-X <- matrix(rnorm(10000), 1000, 10)
-Y <- runif(1000, -1, 3)
+X <- matrix(rnorm(30000), 3000, 10)
+Y <- runif(3000, -1, 3)
 X_test <- matrix(rnorm(1000), 100, 10)
 Y_test <- runif(100, -1, 3)
 
@@ -104,4 +104,4 @@ Predicts <- predict(
 sqrt(mean((Y_test - Predicts)^2))
 
 #   In_sample_RMSE Out_of_sample_RMSE
-# 1       1.139728           1.073087
+# 1       1.142662           1.034406

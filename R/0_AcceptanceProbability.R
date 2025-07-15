@@ -1,30 +1,38 @@
-#' @title Acceptance Probability
+#' @title Calculate Acceptance Probability
+#' @description This function calculates the log of the acceptance probability for a
+#'   proposed modification to a tessellation in a Bayesian model. It is used
+#'   within a Metropolis-Hastings algorithm to decide whether to accept a new
+#'   tessellation.
 #'
-#' @description Calculates the acceptance rate of the proposed tessellation.
+#' @param R_ijOld A numeric vector of residuals for each cell in the current
+#'   tessellation.
+#' @param n_ijOld A numeric vector containing the number of observations in each
+#'   cell of the current tessellation.
+#' @param R_ijNew A numeric vector of residuals for each cell in the proposed
+#'   new tessellation.
+#' @param n_ijNew A numeric vector containing the number of observations in each
+#'   cell of the proposed new tessellation.
+#' @param tess_j_star The proposed new tessellation structure, which is a matrix
+#'   of centres.
+#' @param dim_j_star A vector of integers representing the dimensions included in
+#'   the proposed new tessellation.
+#' @param SigmaSquared The variance of the model's residuals.
+#' @param Modification A character string indicating the type of modification
+#'   proposed. Accepted values are "AD" (Add Dimension), "RD" (Remove
+#'   Dimension), "AC" (Add Centre), "RC" (Remove Centre), "Change" and "Swap".
+#' @param SigmaSquaredMu The variance of the random effects component of the
+#'   model.
+#' @param Omega The prior probability of including a covariate in a
+#'   tessellation's dimension.
+#' @param LambdaRate The rate parameter for the Poisson prior on the number of
+#'   centres in the tessellation.
+#' @param NumCovariates The total number of covariates available in the dataset.
 #'
-#' @param x The covariate matrix.
-#' @param Tess The tessellation.
-#' @param Dim The dimensions of the tessellation.
-#' @param j The index of the tessellation.
-#' @param R_ijOld The residuals of the old tessellation.
-#' @param n_ijOld The number of observations in each cell of the old
-#' tessellation.
-#' @param R_ijNew The residuals of the new tessellation.
-#' @param n_ijNew The number of observations in each cell of the new
-#' tessellation.
-#' @param SigmaSquared The variance of the residuals.
-#' @param Modification The type of modification.
-#' @param SigmaSquaredMu The variance of the random effects.
-#' @param Omega The prior probability of adding a dimension.
-#' @param LambdaRate The rate of the Poisson distribution for the number of
-#' centres.
-#' @param NumCovariates The total number of covariates.
-#'
-#' @return The acceptance probability.
+#' @return The natural logarithm of the acceptance probability for the proposed
+#'   modification.
 #'
 #' @keywords internal
 #' @noRd
-#'
 acceptanceProbability <- function(R_ijOld, n_ijOld,
                                   R_ijNew, n_ijNew,
                                   tess_j_star, dim_j_star, # pass single objects
