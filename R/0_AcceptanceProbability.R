@@ -25,25 +25,23 @@
 #' @keywords internal
 #' @noRd
 #'
-acceptanceProbability <- function(x, Tess, Dim, j,
-                                  R_ijOld, n_ijOld,
+acceptanceProbability <- function(R_ijOld, n_ijOld,
                                   R_ijNew, n_ijNew,
+                                  tess_j_star, dim_j_star, # pass single objects
                                   SigmaSquared,
                                   Modification, SigmaSquaredMu,
-                                  Omega, LambdaRate, NumCovariates) { # <-- ADDED ARGUMENT
-  d <- length(Dim[[j]])
-  cStar <- length(Tess[[j]][, 1])
-  # NumCovariates <- length(x[1, ]) # <-- REMOVED THIS LINE
+                                  Omega, LambdaRate, NumCovariates) {
   
-  LogLikelihoodRatio <- 0.5 * (log(prod(n_ijOld *
-                                          SigmaSquaredMu + SigmaSquared)) -
-                                 log(prod(n_ijNew *
-                                            SigmaSquaredMu + SigmaSquared))) +
+  d <- length(dim_j_star)
+  cStar <- nrow(tess_j_star)
+  
+  LogLikelihoodRatio <- 0.5 * (log(prod(n_ijOld * SigmaSquaredMu + SigmaSquared)) -
+                                 log(prod(n_ijNew * SigmaSquaredMu + SigmaSquared))) +
     ((SigmaSquaredMu / (2 * SigmaSquared)) *
-       (sum((R_ijNew^2) /
-              (n_ijNew * SigmaSquaredMu + SigmaSquared)) -
+       (sum((R_ijNew^2) / (n_ijNew * SigmaSquaredMu + SigmaSquared)) -
           sum((R_ijOld^2) / (n_ijOld * SigmaSquaredMu + SigmaSquared))))
   
+  # This part of the logic remains unchanged from your original
   if (Modification == "AD") {
     TessStructure <- (dbinom(d - 1, NumCovariates - 1, Omega / NumCovariates)) /
       (dbinom(d - 2, NumCovariates - 1, Omega / NumCovariates) *
@@ -51,9 +49,9 @@ acceptanceProbability <- function(x, Tess, Dim, j,
     TransitionRatio <- (NumCovariates - d + 1) / d
     AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) +
       log(TransitionRatio)
-    if (length(Dim[[j]]) == 1) {
+    if (length(dim_j_star) == 1) {
       AcceptanceProb <- AcceptanceProb + log(1 / 2)
-    } else if (length(Dim[[j]]) == NumCovariates - 1) {
+    } else if (length(dim_j_star) == NumCovariates - 1) {
       AcceptanceProb <- AcceptanceProb + log(2)
     }
   } else if (Modification == "RD") {
@@ -63,9 +61,9 @@ acceptanceProbability <- function(x, Tess, Dim, j,
     TransitionRatio <- (d + 1) / (NumCovariates - d)
     AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) +
       log(TransitionRatio)
-    if (length(Dim[[j]]) == NumCovariates) {
+    if (length(dim_j_star) == NumCovariates) {
       AcceptanceProb <- AcceptanceProb + log(1 / 2)
-    } else if (length(Dim[[j]]) == 2) {
+    } else if (length(dim_j_star) == 2) {
       AcceptanceProb <- AcceptanceProb + log(2)
     }
   } else if (Modification == "AC") {
@@ -89,7 +87,7 @@ acceptanceProbability <- function(x, Tess, Dim, j,
     TransitionRatio <- 1
     AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) +
       log(TransitionRatio)
-  } else {
+  } else { # Includes "Swap"
     TessStructure <- 1
     TransitionRatio <- 1
     AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) +

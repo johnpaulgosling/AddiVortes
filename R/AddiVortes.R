@@ -138,64 +138,54 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
     )
 
     for (j in 1:m) {
-      # Propose new Tessellation
+      # Propose new Tessellation for component j
       newTessOutput <- proposeTessellation(
-        xScaled,
-        j,
-        tess,
-        dim,
+        tess[[j]],
+        dim[[j]],
         sd,
         covariateIndices,
         numCovariates
       )
-      tessStar <- newTessOutput[[1]]
-      dimStar <- newTessOutput[[2]]
+      tess_j_star <- newTessOutput[[1]]
+      dim_j_star <- newTessOutput[[2]]
       modification <- newTessOutput[[3]]
-
-      # Calculate the n-vector of partial residuals derived from a fitting process
-      # that excludes the jth tessellation and the number of observations in each cell.
-
+      
       # Retrieve old indices from cache
       indexes <- current_indices[[j]]
       # Calculate new indices for the proposal
-      indexesStar <- cellIndices(xScaled, tessStar[[j]], dimStar[[j]])
+      indexesStar <- cellIndices(xScaled, tess_j_star, dim_j_star)
       
-      # Call the modified calculateResiduals function
+      # Create a temporary full TessStar list for calculateResiduals
+      # This is still needed because of how the function gets nbins
+      TessStar_temp <- tess
+      TessStar_temp[[j]] <- tess_j_star
+      
+      # Call the modified calculateResiduals function from Round 1
       residualsOutput <- calculateResiduals(
         yScaled,
         j,
         sumOfAllTess,
         pred,
-        tessStar,
+        TessStar_temp, # Pass the temporary list here
         lastTessPred,
         indexes,
         indexesStar
       )
-      # Old and New refer to the original and proposed tessellations
+      
       rIjOld <- residualsOutput[[1]]
       nIjOld <- residualsOutput[[2]]
       rIjNew <- residualsOutput[[3]]
       nIjNew <- residualsOutput[[4]]
-      # Keeps track of the prediction for all tessellations to help
-      # sample sigma squared.
       sumOfAllTess <- residualsOutput[[5]]
-      # Gives the row of each observation for the cell it falls in for the
-      # proposed tessellation.
-      indexesStar <- residualsOutput[[6]]
-      # Gives the row of each observation for the cell it falls in for the
-      # original tessellation.
-      indexes <- residualsOutput[[7]]
-
+      # indexesStar is returned at [[6]]
+      # indexes is returned at [[7]]
+      
       if (!any(nIjNew == 0)) {
-        # Automatically reject proposed tessellation if there exists a cell
-        # with no observations in.
+        # Call the new acceptanceProbability function
         logAcceptanceProb <- acceptanceProbability(
-          xScaled,
-          tessStar,
-          dimStar,
-          j,
           rIjOld, nIjOld,
           rIjNew, nIjNew,
+          tess_j_star, dim_j_star, # Pass the single proposed objects
           sigmaSquared,
           modification,
           sigmaSquaredMu,
@@ -203,23 +193,23 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
           lambdaRate,
           numCovariates
         )
-
+        
         if (log(runif(n = 1)) < logAcceptanceProb) {
-          # Accepts the proposed tessellation is accepted then calculates the new
-          # output values for the new tessellation.
-          tess <- tessStar
-          dim <- dimStar
-          current_indices[[j]] <- indexesStar
+          # Accept proposal: update lists IN-PLACE
+          tess[[j]] <- tess_j_star
+          dim[[j]] <- dim_j_star
+          current_indices[[j]] <- indexesStar # Update cache!
+          
           pred[[j]] <- sampleMuValues(
-            j, tessStar,
+            j, tess, # Pass the updated full list
             rIjNew, nIjNew,
             sigmaSquaredMu,
             sigmaSquared
           )
           lastTessPred <- pred[[j]][indexesStar]
+          
         } else {
-          # Rejects the proposed tessellation then calculates new output values
-          # for the original tessellation.
+          # Reject proposal
           pred[[j]] <- sampleMuValues(
             j, tess, rIjOld, nIjOld,
             sigmaSquaredMu, sigmaSquared
@@ -227,17 +217,15 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
           lastTessPred <- pred[[j]][indexes]
         }
       } else {
-        # Rejects the proposed tessellation then calculates new output values for
-        # the original tessellation.
+        # Reject proposal (empty cell)
         pred[[j]] <- sampleMuValues(
           j, tess, rIjOld, nIjOld,
           sigmaSquaredMu, sigmaSquared
         )
         lastTessPred <- pred[[j]][indexes]
       }
+      
       if (j == m) {
-        # If j equals m then adds the last tessellation output values
-        # to give a prediction.
         sumOfAllTess <- sumOfAllTess + lastTessPred
       }
     }
