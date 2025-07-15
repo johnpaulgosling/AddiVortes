@@ -20,7 +20,6 @@ profvis::profvis({
   # Run the algorithm
   result <- AddiVortes(Y_Boston[TrainSet], X_Boston[TrainSet, ],
     200, 2000, 200, 6, 0.85, 3, 0.8, 3, 25,
-    Y_Boston[TestSet], X_Boston[TestSet, ],
     IntialSigma = "Linear"
   )
 })
