@@ -119,12 +119,6 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
 
   currentStorageIdx <- 1 # Index for the new output lists
 
-  # Setting up progress bar
-  pbar <- utils::txtProgressBar(
-    min = 0, max = totalMCMCIter,
-    style = 3, width = 50, char = "="
-  )
-
   # Some precalculations
   numCovariates <- ncol(xScaled)
   covariateIndices <- seq_len(numCovariates)
@@ -237,9 +231,6 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
       }
     }
 
-    # Update the progress bar
-    utils::setTxtProgressBar(pbar, i)
-
     if (i > mcmcBurnIn & (i - mcmcBurnIn) %% thinning == 0) {
       # vectors that hold the predictions for each iteration after burn in.
       predictionMatrix[, (i - mcmcBurnIn) / thinning] <- sumOfAllTess
@@ -256,9 +247,6 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
       currentStorageIdx <- currentStorageIdx + 1
     }
   } # End of MCMC Loop
-
-  # Close the progress bar
-  close(pbar)
 
   # Finding the mean of the prediction over the iterations and then unscaling
   # the predictions.
