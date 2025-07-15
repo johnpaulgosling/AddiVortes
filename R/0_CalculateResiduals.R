@@ -24,25 +24,23 @@
 #' @keywords internal
 #' @noRd
 #'
-calculateResiduals <- function(y, j, SumOfAllTess, Pred, TessStar, LastTessPred,
-                               indexes, indexesStar) {
-  # This function now receives 'indexes' and 'indexesStar' and does no
-  # k-NN searching itself.
+calculateResiduals <- function(y, j, SumOfAllTess, Pred, lastTessPred,
+                               indexes, indexesStar, num_centres_new) {
+  # This version is no longer passed the temporary TessStar list.
+  # Instead, it receives the number of new centres directly.
   
   if (j == 1) {
     CurrentTessPred <- Pred[[j]][indexes]
     SumOfAllTess <- SumOfAllTess - CurrentTessPred
   } else {
     CurrentTessPred <- Pred[[j]][indexes]
-    SumOfAllTess <- SumOfAllTess + LastTessPred - CurrentTessPred
+    SumOfAllTess <- SumOfAllTess + lastTessPred - CurrentTessPred
   }
-  
   R_j <- y - SumOfAllTess
   
-  # Determine the number of levels/groups expected for the old tessellation
+  # --- Old Tessellation Logic (Unchanged) ---
   num_levels_old <- length(Pred[[j]])
   n_ijOld <- tabulate(indexes, nbins = num_levels_old)
-  
   if (num_levels_old > 0) {
     R_ijOld_vec <- numeric(num_levels_old)
     res_rowsum_old <- rowsum(R_j, indexes)
@@ -52,12 +50,10 @@ calculateResiduals <- function(y, j, SumOfAllTess, Pred, TessStar, LastTessPred,
     R_ijOld <- numeric(0)
   }
   
-  # Determine the number of levels/groups expected for the new tessellation
-  num_levels_new <- length(TessStar[[j]][, 1])
-  n_ijNew <- tabulate(indexesStar, nbins = num_levels_new)
-  
-  if (num_levels_new > 0) {
-    R_ijNew_vec <- numeric(num_levels_new)
+  # --- New Tessellation Logic (Refactored) ---
+  n_ijNew <- tabulate(indexesStar, nbins = num_centres_new)
+  if (num_centres_new > 0) {
+    R_ijNew_vec <- numeric(num_centres_new)
     res_rowsum_new <- rowsum(R_j, indexesStar)
     R_ijNew_vec[as.numeric(rownames(res_rowsum_new))] <- res_rowsum_new[, 1]
     R_ijNew <- R_ijNew_vec
@@ -65,7 +61,6 @@ calculateResiduals <- function(y, j, SumOfAllTess, Pred, TessStar, LastTessPred,
     R_ijNew <- numeric(0)
   }
   
-  # Return the results as a list
   return(list(
     R_ijOld, n_ijOld,
     R_ijNew, n_ijNew,

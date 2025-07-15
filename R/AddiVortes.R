@@ -138,7 +138,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
     )
 
     for (j in 1:m) {
-      # Propose new Tessellation for component j
+      # Propose new Tessellation for component j (using Round 3's function)
       newTessOutput <- proposeTessellation(
         tess[[j]],
         dim[[j]],
@@ -155,21 +155,18 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
       # Calculate new indices for the proposal
       indexesStar <- cellIndices(xScaled, tess_j_star, dim_j_star)
       
-      # Create a temporary full TessStar list for calculateResiduals
-      # This is still needed because of how the function gets nbins
-      TessStar_temp <- tess
-      TessStar_temp[[j]] <- tess_j_star
+      # --- The TessStar_temp copy is now gone ---
       
-      # Call the modified calculateResiduals function from Round 1
+      # Call the newly refactored calculateResiduals function
       residualsOutput <- calculateResiduals(
-        yScaled,
-        j,
-        sumOfAllTess,
-        pred,
-        TessStar_temp, # Pass the temporary list here
-        lastTessPred,
-        indexes,
-        indexesStar
+        y = yScaled,
+        j = j,
+        SumOfAllTess = sumOfAllTess,
+        Pred = pred,
+        lastTessPred = lastTessPred,
+        indexes = indexes,
+        indexesStar = indexesStar,
+        num_centres_new = nrow(tess_j_star) # Pass the number of rows directly
       )
       
       rIjOld <- residualsOutput[[1]]
@@ -177,15 +174,13 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
       rIjNew <- residualsOutput[[3]]
       nIjNew <- residualsOutput[[4]]
       sumOfAllTess <- residualsOutput[[5]]
-      # indexesStar is returned at [[6]]
-      # indexes is returned at [[7]]
       
       if (!any(nIjNew == 0)) {
-        # Call the new acceptanceProbability function
+        # Call the acceptanceProbability function (from Round 2)
         logAcceptanceProb <- acceptanceProbability(
           rIjOld, nIjOld,
           rIjNew, nIjNew,
-          tess_j_star, dim_j_star, # Pass the single proposed objects
+          tess_j_star, dim_j_star,
           sigmaSquared,
           modification,
           sigmaSquaredMu,
@@ -198,10 +193,10 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
           # Accept proposal: update lists IN-PLACE
           tess[[j]] <- tess_j_star
           dim[[j]] <- dim_j_star
-          current_indices[[j]] <- indexesStar # Update cache!
+          current_indices[[j]] <- indexesStar
           
           pred[[j]] <- sampleMuValues(
-            j, tess, # Pass the updated full list
+            j, tess,
             rIjNew, nIjNew,
             sigmaSquaredMu,
             sigmaSquared
@@ -229,7 +224,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
         sumOfAllTess <- sumOfAllTess + lastTessPred
       }
     }
-
+    
     if (i > mcmcBurnIn & (i - mcmcBurnIn) %% thinning == 0) {
       # vectors that hold the predictions for each iteration after burn in.
       predictionMatrix[, (i - mcmcBurnIn) / thinning] <- sumOfAllTess
