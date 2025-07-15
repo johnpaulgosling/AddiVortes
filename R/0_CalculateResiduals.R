@@ -18,7 +18,7 @@
 #' the number of observations in each cell of the old tessellation,
 #' the residuals of the new tessellation, the number of observations in each
 #' cell of the new tessellation, the sum of all tessellations,
-#' the indexes of the proposed tessellation, and the indexes of the original 
+#' the indexes of the proposed tessellation, and the indexes of the original
 #' tessellation.
 #'
 #' @keywords internal
@@ -39,54 +39,38 @@ calculateResiduals <- function(y, x, j, SumOfAllTess, Tess, Dim,
   IndexesStar <- cellIndices(x, TessStar[[j]], DimStar[[j]])
   R_j <- y - SumOfAllTess
   
-  # Initializing Sizes
-  # Determine the number of levels/groups expected
+  # Determine the number of levels/groups expected for the old tessellation
   num_levels_old <- length(Pred[[j]])
+  n_ijOld <- tabulate(indexes, nbins = num_levels_old)
   
+  # --- OPTIMISATION START ---
+  # Replaced tapply with a faster rowsum-based approach
   if (num_levels_old > 0) {
-    # Use tabulate for efficient counting of integer occurrences (1 to num_levels_old)
-    n_ijOld <- tabulate(indexes,
-                        nbins = num_levels_old
-    )
-    # Use tapply to sum R_j based on the groups defined by 'indexes'
-    R_ijOld <- tapply(R_j, factor(indexes,
-                                  levels = 1:num_levels_old
-    ),
-    sum,
-    na.rm = TRUE
-    )
-    # Ensure the output is a simple vector (tapply can return an array)
-    R_ijOld <- as.vector(R_ijOld)
+    R_ijOld_vec <- numeric(num_levels_old)
+    res_rowsum_old <- rowsum(R_j, indexes)
+    R_ijOld_vec[as.numeric(rownames(res_rowsum_old))] <- res_rowsum_old[,1]
+    R_ijOld <- R_ijOld_vec
   } else {
-    # Handle empty case
-    n_ijOld <- numeric(0)
     R_ijOld <- numeric(0)
   }
+  # --- OPTIMISATION END ---
   
-  # Determine the number of levels/groups expected (using the length from the original loop)
+  
+  # Determine the number of levels/groups expected for the new tessellation
   num_levels_new <- length(TessStar[[j]][, 1])
+  n_ijNew <- tabulate(IndexesStar, nbins = num_levels_new)
   
+  # --- OPTIMISATION START ---
+  # Replaced tapply with a faster rowsum-based approach
   if (num_levels_new > 0) {
-    # Use tabulate for counts
-    n_ijNew <- tabulate(IndexesStar,
-                        nbins = num_levels_new
-    )
-    
-    # Use tapply for sums
-    R_ijNew <- tapply(R_j, factor(IndexesStar,
-                                  levels = 1:num_levels_new
-    ),
-    sum,
-    na.rm = TRUE
-    )
-    
-    # Ensure vector output
-    R_ijNew <- as.vector(R_ijNew)
+    R_ijNew_vec <- numeric(num_levels_new)
+    res_rowsum_new <- rowsum(R_j, IndexesStar)
+    R_ijNew_vec[as.numeric(rownames(res_rowsum_new))] <- res_rowsum_new[,1]
+    R_ijNew <- R_ijNew_vec
   } else {
-    # Handle empty case
-    n_ijNew <- numeric(0)
     R_ijNew <- numeric(0)
   }
+  # --- OPTIMISATION END ---
   
   # Return the results as a list
   return(list(
