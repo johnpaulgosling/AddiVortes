@@ -49,7 +49,6 @@ acceptanceProbability <- function(R_ijOld, n_ijOld,
        (sum((R_ijNew^2) / (n_ijNew * SigmaSquaredMu + SigmaSquared)) -
           sum((R_ijOld^2) / (n_ijOld * SigmaSquaredMu + SigmaSquared))))
   
-  # This part of the logic remains unchanged from your original
   if (Modification == "AD") {
     TessStructure <- (dbinom(d - 1, NumCovariates - 1, Omega / NumCovariates)) /
       (dbinom(d - 2, NumCovariates - 1, Omega / NumCovariates) *
