@@ -14,8 +14,8 @@ call to \code{AddiVortes()}.}
 
 \item{y_train}{A numeric vector of the original training true outcomes.}
 
-\item{...}{Additional graphical parameters to be passed to the \code{plot} function
-(e.g., \code{pch}, \code{cex}).}
+\item{...}{Additional graphical parameters to be passed to the \code{plot}
+function (e.g., \code{pch}, \code{cex}).}
 }
 \value{
 This function is called for its side effect of creating a plot and returns

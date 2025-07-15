@@ -19,21 +19,20 @@ call to \code{AddiVortes()}.}
 \item{newdata}{A matrix of covariates for the new test set. The number of
 columns must match the original training data.}
 
-\item{type}{The type of prediction required. The default \code{"response"} gives the
-mean prediction. The alternative \code{"quantile"} returns the quantiles
+\item{type}{The type of prediction required. The default \code{"response"} gives
+the mean prediction. The alternative \code{"quantile"} returns the quantiles
 specified by the \code{quantiles} argument.}
 
 \item{quantiles}{A numeric vector of probabilities with values in \link{0, 1} to
 compute for the predictions when \code{type = "quantile"}.}
 
-\item{...}{Further arguments passed to or from other methods (currently unused).}
+\item{...}{Further arguments passed to or from other methods (currently
+unused).}
 }
 \value{
 If \code{type = "response"}, a numeric vector of mean predictions.
 If \code{type = "quantile"}, a matrix where each row corresponds to an observation
 in \code{newdata} and each column to a quantile.
-If \code{yNew} is provided, the returned object will have an \code{rmse} attribute
-containing the calculated Root Mean Squared Error.
 }
 \description{
 Predicts outcomes for new data using a fitted \code{AddiVortesFit} model object.

@@ -10,21 +10,21 @@
 #' @param var The variance of the normal distribution used to sample
 #' new coordinates.
 #' @param covariateIndices A sequence of integers representing the column indices.
+#' @param numCovariates The total number of covariates.
 #'
 #' @return A list containing the new tessellation, the new dimension matrix
 #' and the modification made.
 #' @keywords internal
 #' @noRd
 #'
-proposeTessellation <- function(x, j, Tess, Dim, var, covariateIndices) { # <-- ADDED ARGUMENT
+proposeTessellation <- function(x, j, Tess, Dim, var, covariateIndices, numCovariates) { # <-- ADDED ARGUMENT
   p <- runif(1, 0, 1)
   
   DimStar <- Dim
   TessStar <- Tess
-  if (p < 0.2 && length(Dim[[j]]) != length(x[1, ]) ||
+  if (p < 0.2 && length(Dim[[j]]) != numCovariates || # <-- MODIFIED LINE
       length(Dim[[j]]) == 1 && p < 0.4) {
-    # Let NumberOfCovariates be a vector from 1 to the number of covariates
-    NumberOfCovariates <- covariateIndices[-Dim[[j]]] # <-- MODIFIED LINE
+    NumberOfCovariates <- covariateIndices[-Dim[[j]]]
     DimStar[[j]] <- c(Dim[[j]], sample(NumberOfCovariates, 1))
     TessStar[[j]] <- cbind(Tess[[j]], rnorm(length(Tess[[j]][, 1]), 0, var))
     Modification <- "AD"
@@ -44,15 +44,14 @@ proposeTessellation <- function(x, j, Tess, Dim, var, covariateIndices) { # <-- 
                             ncol = length(Dim[[j]])
     )
     Modification <- "RC"
-  } else if (p < 0.9 || length(Dim[[j]]) == length(x[1, ])) {
+  } else if (p < 0.9 || length(Dim[[j]]) == numCovariates) { # <-- MODIFIED LINE
     TessStar[[j]][sample(
       seq_along(TessStar[[j]][, 1]),
       1
     ), ] <- rnorm(length(Dim[[j]]), 0, var)
     Modification <- "Change"
   } else {
-    # Let NumberOfCovariates be a vector from 1 to the number
-    NumberOfCovariates <- covariateIndices[-Dim[[j]]] # <-- MODIFIED LINE
+    NumberOfCovariates <- covariateIndices[-Dim[[j]]]
     DimToChange <- sample(seq_along(Dim[[j]]), 1)
     DimStar[[j]][DimToChange] <- sample(NumberOfCovariates, 1)
     TessStar[[j]][, DimToChange] <- rnorm(length(Tess[[j]][, 1]), 0, var)

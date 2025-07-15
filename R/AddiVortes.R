@@ -141,7 +141,8 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
         tess,
         dim,
         sd,
-        covariateIndices
+        covariateIndices,
+        numCovariates
       )
       tessStar <- newTessOutput[[1]]
       dimStar <- newTessOutput[[2]]
