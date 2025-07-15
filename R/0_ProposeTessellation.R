@@ -27,59 +27,12 @@
 #'
 #' @keywords internal
 #' @noRd
-proposeTessellation <- function(tess_j, dim_j, var, covariateIndices, numCovariates) {
-  p <- runif(1, 0, 1)
-  d_j_length <- length(dim_j)
-  tess_j_rows <- nrow(tess_j)
+proposeTessellation <- function(tess_j, dim_j, var, covariateIndices,
+                                numCovariates) {
+  # Call the C++ implementation
+  cpp_results <- propose_tessellation_cpp(tess_j, dim_j, var, numCovariates)
   
-  dim_j_star <- dim_j
-  tess_j_star <- tess_j
-  Modification <- "Change" 
-  
-  if (p < 0.2 && d_j_length != numCovariates ||
-      d_j_length == 1 && p < 0.4) {
-    Modification <- "AD"
-    repeat {
-      new_dim <- floor(runif(1) * numCovariates) + 1
-      if (!any(dim_j == new_dim)) break
-    }
-    dim_j_star <- c(dim_j, new_dim)
-    tess_j_star <- cbind(tess_j, rnorm(tess_j_rows, 0, var))
-    
-  } else if (p < 0.4 && d_j_length > 1) {
-    Modification <- "RD"
-    removed_dim_idx <- floor(runif(1) * d_j_length) + 1
-    dim_j_star <- dim_j[-removed_dim_idx]
-    tess_j_star <- tess_j[, -removed_dim_idx, drop = FALSE]
-    
-  } else if (p < 0.6 || (p < 0.8 && tess_j_rows == 1)) {
-    Modification <- "AC"
-    tess_j_star <- rbind(tess_j, rnorm(d_j_length, 0, var))
-    
-  } else if (p < 0.8 && tess_j_rows > 1) {
-    Modification <- "RC"
-    # OPTIMISED LINE
-    center_removed_idx <- floor(runif(1) * tess_j_rows) + 1
-    tess_j_star <- tess_j[-center_removed_idx, , drop = FALSE]
-    
-  } else if (p < 0.9 || d_j_length == numCovariates) {
-    centre_to_change_idx <- floor(runif(1) * tess_j_rows) + 1
-    tess_j_star[centre_to_change_idx, ] <- rnorm(d_j_length, 0, var)
-    
-  } else {
-    Modification <- "Swap"
-    dim_to_change_idx <- floor(runif(1) * d_j_length) + 1
-    repeat {
-      new_dim <- floor(runif(1) * numCovariates) + 1
-      if (!any(dim_j == new_dim)) break
-    }
-    dim_j_star[dim_to_change_idx] <- new_dim
-    tess_j_star[, dim_to_change_idx] <- rnorm(tess_j_rows, 0, var)
-  }
-  
-  if (!is.matrix(tess_j_star)) {
-    tess_j_star <- matrix(tess_j_star, ncol = length(dim_j_star))
-  }
-  
-  return(list(tess_j_star, dim_j_star, Modification))
+  # The C++ function returns a list with named elements that match the
+  # required output structure, so we can return it directly.
+  return(cpp_results)
 }

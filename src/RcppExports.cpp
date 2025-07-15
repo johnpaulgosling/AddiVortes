@@ -25,9 +25,24 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// propose_tessellation_cpp
+List propose_tessellation_cpp(NumericMatrix tess_j, IntegerVector dim_j, double var, int numCovariates);
+RcppExport SEXP _AddiVortes_propose_tessellation_cpp(SEXP tess_jSEXP, SEXP dim_jSEXP, SEXP varSEXP, SEXP numCovariatesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type tess_j(tess_jSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dim_j(dim_jSEXP);
+    Rcpp::traits::input_parameter< double >::type var(varSEXP);
+    Rcpp::traits::input_parameter< int >::type numCovariates(numCovariatesSEXP);
+    rcpp_result_gen = Rcpp::wrap(propose_tessellation_cpp(tess_j, dim_j, var, numCovariates));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_AddiVortes_calculate_residuals_cpp", (DL_FUNC) &_AddiVortes_calculate_residuals_cpp, 5},
+    {"_AddiVortes_propose_tessellation_cpp", (DL_FUNC) &_AddiVortes_propose_tessellation_cpp, 4},
     {NULL, NULL, 0}
 };
 

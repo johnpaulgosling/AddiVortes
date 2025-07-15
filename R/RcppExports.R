@@ -5,3 +5,7 @@ calculate_residuals_cpp <- function(R_j, indexes, indexesStar, num_levels_old, n
     .Call(`_AddiVortes_calculate_residuals_cpp`, R_j, indexes, indexesStar, num_levels_old, num_centres_new)
 }
 
+propose_tessellation_cpp <- function(tess_j, dim_j, var, numCovariates) {
+    .Call(`_AddiVortes_propose_tessellation_cpp`, tess_j, dim_j, var, numCovariates)
+}
+

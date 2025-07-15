@@ -1,6 +1,6 @@
 Package: AddiVortes
 Title: (Bayesian) Additive Voronoi Tessellations
-Version: 0.2.0
+Version: 0.2.1
 Date: 2025-07-15
 Authors@R: 
     c(person("Adam", "Stone", , "adam.stone2@durham.ac.uk",
@@ -19,13 +19,13 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Depends: 
-    FNN (>= 1.1.4.1)
+    FNN (>= 1.1.4.1),
+    Rcpp
 Suggests: 
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
     xml2
-Imports: Rcpp
 LinkingTo: Rcpp
 Config/testthat/edition: 3
 URL: https://johnpaulgosling.github.io/AddiVortes/
