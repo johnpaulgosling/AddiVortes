@@ -138,7 +138,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
     )
 
     for (j in 1:m) {
-      # Propose new Tessellation for component j (using Round 3's function)
+      # Propose new Tessellation for component j
       newTessOutput <- proposeTessellation(
         tess[[j]],
         dim[[j]],
@@ -154,10 +154,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
       indexes <- current_indices[[j]]
       # Calculate new indices for the proposal
       indexesStar <- cellIndices(xScaled, tess_j_star, dim_j_star)
-      
-      # --- The TessStar_temp copy is now gone ---
-      
-      # Call the newly refactored calculateResiduals function
+
       residualsOutput <- calculateResiduals(
         y = yScaled,
         j = j,
@@ -166,7 +163,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
         lastTessPred = lastTessPred,
         indexes = indexes,
         indexesStar = indexesStar,
-        num_centres_new = nrow(tess_j_star) # Pass the number of rows directly
+        num_centres_new = nrow(tess_j_star) 
       )
       
       rIjOld <- residualsOutput[[1]]
@@ -176,7 +173,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
       sumOfAllTess <- residualsOutput[[5]]
       
       if (!any(nIjNew == 0)) {
-        # Call the acceptanceProbability function (from Round 2)
+        # Call the acceptanceProbability function 
         logAcceptanceProb <- acceptanceProbability(
           rIjOld, nIjOld,
           rIjNew, nIjNew,

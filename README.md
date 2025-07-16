@@ -10,7 +10,8 @@ You can install the latest version of AddiVortes from GitHub with:
 
 ```R
 # install.packages("devtools")
-devtools::install_github("johnpaulgosling/AddiVortes")
+devtools::install_github("johnpaulgosling/AddiVortes", 
+                         build_vignettes = TRUE)
 ```
 
 ## Cite us

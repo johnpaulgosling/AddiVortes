@@ -16,7 +16,7 @@ bool in_vector(int value, const std::vector<int>& vec) {
 extern "C" {
   
   // -----------------------------------------------------------------------------
-  // 1. calculate_residuals_cpp (CORRECTED)
+  // 1. calculate_residuals_cpp
   // -----------------------------------------------------------------------------
   SEXP calculate_residuals_cpp(SEXP R_j_sexp, SEXP indexes_sexp,
                                SEXP indexesStar_sexp, SEXP num_levels_old_sexp,
@@ -85,7 +85,7 @@ extern "C" {
   
   
   // -----------------------------------------------------------------------------
-  // 2. propose_tessellation_cpp (Unchanged)
+  // 2. propose_tessellation_cpp
   // -----------------------------------------------------------------------------
   SEXP propose_tessellation_cpp(SEXP tess_j_sexp, SEXP dim_j_sexp, SEXP var_sexp, SEXP num_cov_sexp) {
     

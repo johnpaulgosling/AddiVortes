@@ -1,8 +1,8 @@
 #' @title Calculate Acceptance Probability
-#' @description This function calculates the log of the acceptance probability for a
-#'   proposed modification to a tessellation in a Bayesian model. It is used
-#'   within a Metropolis-Hastings algorithm to decide whether to accept a new
-#'   tessellation.
+#' @description This function calculates the log of the acceptance probability 
+#'   for a proposed modification to a tessellation in a Bayesian model. It is 
+#'   used within a Metropolis-Hastings algorithm to decide whether to accept a 
+#'   new tessellation.
 #'
 #' @param R_ijOld A numeric vector of residuals for each cell in the current
 #'   tessellation.
@@ -35,16 +35,19 @@
 #' @noRd
 acceptanceProbability <- function(R_ijOld, n_ijOld,
                                   R_ijNew, n_ijNew,
-                                  tess_j_star, dim_j_star, # pass single objects
+                                  tess_j_star, dim_j_star,
                                   SigmaSquared,
                                   Modification, SigmaSquaredMu,
-                                  Omega, LambdaRate, NumCovariates) {
+                                  Omega, LambdaRate,
+                                  NumCovariates) {
   
   d <- length(dim_j_star)
   cStar <- nrow(tess_j_star)
   
-  LogLikelihoodRatio <- 0.5 * (log(prod(n_ijOld * SigmaSquaredMu + SigmaSquared)) -
-                                 log(prod(n_ijNew * SigmaSquaredMu + SigmaSquared))) +
+  LogLikelihoodRatio <- 0.5 * (log(prod(n_ijOld * SigmaSquaredMu +
+                                          SigmaSquared)) -
+                                 log(prod(n_ijNew * SigmaSquaredMu +
+                                            SigmaSquared))) +
     ((SigmaSquaredMu / (2 * SigmaSquared)) *
        (sum((R_ijNew^2) / (n_ijNew * SigmaSquaredMu + SigmaSquared)) -
           sum((R_ijOld^2) / (n_ijOld * SigmaSquaredMu + SigmaSquared))))
