@@ -27,12 +27,16 @@
 #'
 #' @keywords internal
 #' @noRd
+#' 
+#' @useDynLib AddiVortes, .registration = TRUE
 proposeTessellation <- function(tess_j, dim_j, var, covariateIndices,
                                 numCovariates) {
-  # Call the C++ implementation
-  cpp_results <- propose_tessellation_cpp(tess_j, dim_j, var, numCovariates)
+  # Call the C++ implementation via the .Call interface
+  results <- .Call("propose_tessellation_cpp",
+                   tess_j,
+                   dim_j,
+                   as.double(var),
+                   as.integer(numCovariates))
   
-  # The C++ function returns a list with named elements that match the
-  # required output structure, so we can return it directly.
-  return(cpp_results)
+  return(results)
 }
