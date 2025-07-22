@@ -15,9 +15,12 @@ bool in_vector(int value, const std::vector<int>& vec) {
 
 extern "C" {
   
-  // -----------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   // 1. calculate_residuals_cpp
-  // -----------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // This function calculates residuals for new centres based on the 
+  // provided indexes.
+  // The R wrapper function is `calculateResiduals`.
   SEXP calculate_residuals_cpp(SEXP R_j_sexp, SEXP indexes_sexp,
                                SEXP indexesStar_sexp, SEXP num_levels_old_sexp,
                                SEXP num_centres_new_sexp) {
@@ -84,9 +87,12 @@ extern "C" {
   }
   
   
-  // -----------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   // 2. propose_tessellation_cpp
-  // -----------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // This function proposes a new tessellation based on the current one,
+  // modifying it according to a set of rules and a random number generator.
+  // The R wrapper function is `proposeTessellation`.
   SEXP propose_tessellation_cpp(SEXP tess_j_sexp, SEXP dim_j_sexp, SEXP var_sexp, SEXP num_cov_sexp) {
     
     // --- Unpack arguments ---

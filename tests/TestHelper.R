@@ -70,3 +70,4 @@ abline(a = 0, b = 1, col = "blue", lwd = 2)
 # v0.0.20 = 115 sec elapsed
 # v0.0.21 = 117 sec elapsed
 # v0.0.29 = 123 sec elapsed
+# v0.2.2 = 49 sec elapsed
