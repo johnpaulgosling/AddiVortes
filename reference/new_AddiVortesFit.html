@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">AddiVortes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -46,6 +46,7 @@
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">new_AddiVortesFit</span><span class="op">(</span></span>
 <span>  <span class="va">posteriorTess</span>,</span>
 <span>  <span class="va">posteriorDim</span>,</span>
+<span>  <span class="va">posteriorSigma</span>,</span>
 <span>  <span class="va">posteriorPred</span>,</span>
 <span>  <span class="va">xCentres</span>,</span>
 <span>  <span class="va">xRanges</span>,</span>
@@ -65,6 +66,10 @@
 
 <dt id="arg-posteriordim">posteriorDim<a class="anchor" aria-label="anchor" href="#arg-posteriordim"></a></dt>
 <dd><p>A list of the posterior samples of the dimensions.</p></dd>
+
+
+<dt id="arg-posteriorsigma">posteriorSigma<a class="anchor" aria-label="anchor" href="#arg-posteriorsigma"></a></dt>
+<dd><p>A list of the posterior samples of the error variance.</p></dd>
 
 
 <dt id="arg-posteriorpred">posteriorPred<a class="anchor" aria-label="anchor" href="#arg-posteriorpred"></a></dt>
