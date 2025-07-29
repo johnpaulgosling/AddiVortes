@@ -1,7 +1,7 @@
 Package: AddiVortes
 Title: (Bayesian) Additive Voronoi Tessellations
-Version: 0.2.2
-Date: 2025-07-16
+Version: 0.2.3
+Date: 2025-07-29
 Authors@R: 
     c(person("Adam", "Stone", , "adam.stone2@durham.ac.uk",
              role = c("aut", "cre"),
@@ -10,7 +10,7 @@ Authors@R:
              role = c("aut"),
              comment = c(ORCID = "0000-0002-4072-3022")))
 Description: Implements the Bayesian Additive Voronoi Tessellation (AddiVortes) 
-    model for non-parametric regression and classification. This package allows 
+    model for non-parametric regression. This package allows 
     users to fit the model estimate posterior distributions and visualise the 
     resulting tessellations. It is particularly useful for spatial data analysis 
     and complex function approximation where the underlying structure is unknown.

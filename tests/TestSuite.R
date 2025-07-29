@@ -103,5 +103,29 @@ Predicts <- predict(
 )
 sqrt(mean((Y_test - Predicts)^2))
 
+T4_result
+summary(T4_result)
+
 #   In_sample_RMSE Out_of_sample_RMSE
 # 1       1.143082           1.034082
+
+# Test 5 -----------------------------------------------------------------------
+library(tictoc)
+set.seed(5677713)
+
+X <- matrix(rnorm(30000), 3000, 10)
+Y <- runif(3000, -1, 20)
+X_test <- matrix(rnorm(1000), 100, 10)
+Y_test <- runif(100, -1, 20)
+
+tic("AddiVortes Test 4")
+T5_result <- AddiVortes(Y, X, 10,
+                        110, 100,
+                        6, 0.85, 3, 0.8, 3, 25,
+                        IntialSigma = "Linear",
+                        thinning = 5
+)
+toc()
+
+T5_result
+summary(T5_result)

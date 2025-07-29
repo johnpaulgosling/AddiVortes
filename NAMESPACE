@@ -2,6 +2,8 @@
 
 S3method(plot,AddiVortesFit)
 S3method(predict,AddiVortesFit)
+S3method(print,AddiVortesFit)
+S3method(summary,AddiVortesFit)
 export(AddiVortes)
 export(new_AddiVortesFit)
 importFrom(FNN,knnx.index)

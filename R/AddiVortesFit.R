@@ -31,6 +31,170 @@ new_AddiVortesFit <- function(posteriorTess, posteriorDim, posteriorPred,
   )
 }
 
+#' @title Print Method for AddiVortesFit
+#'
+#' @description
+#' Prints a summary of a fitted `AddiVortesFit` object, providing information
+#' about the model structure, dimensions, and fit quality similar to the
+#' output of a linear model summary.
+#'
+#' @param x An object of class `AddiVortesFit`, typically the result of a
+#'   call to `AddiVortes()`.
+#' @param ... Further arguments passed to or from other methods (currently 
+#' unused).
+#'
+#' @return
+#' The function is called for its side effect of printing model information
+#' and returns the input object `x` invisibly.
+#'
+#' @details
+#' The print method displays:
+#' - The model formula representation
+#' - Number of covariates and posterior samples
+#' - Number of tessellations used
+#' - In-sample RMSE
+#' - Covariate scaling information
+#'
+#' @export
+#' @method print AddiVortesFit
+print.AddiVortesFit <- function(x, ...) {
+  # --- Input Validation ---
+  if (!inherits(x, "AddiVortesFit")) {
+    stop("`x` must be an object of class 'AddiVortesFit'.")
+  }
+  
+  cat("AddiVortes Model\n")
+  cat("================\n\n")
+  
+  # Model equation representation
+  num_covariates <- length(x$xCentres)
+  covariate_names <- if (is.null(names(x$xCentres))) {
+    paste0("X", 1:num_covariates)
+  } else {
+    names(x$xCentres)
+  }
+  
+  cat("Model Formula:\n")
+  if (num_covariates == 1) {
+    cat("Y ~ f(", covariate_names[1], ")\n\n")
+  } else {
+    formula_str <- paste0("Y ~ f(", paste(covariate_names, collapse = ", "), ")")
+    cat(formula_str, "\n")
+    cat("where f(.) is represented by additive Voronoi tessellations\n\n")
+  }
+  
+  # Model dimensions
+  num_samples <- length(x$posteriorTess)
+  num_tessellations <- if (num_samples > 0) {
+    length(x$posteriorTess[[1]])
+  } else {
+    0
+  }
+  
+  cat("Model Information:\n")
+  cat("Number of covariates:     ", num_covariates, "\n")
+  cat("Number of tessellations:  ", num_tessellations, "\n")
+  cat("Posterior samples:        ", num_samples, "\n")
+  cat("In-sample RMSE:           ", round(x$inSampleRmse, 4), "\n\n")
+  
+  # Scaling information
+  cat("Covariate Scaling:\n")
+  scaling_df <- data.frame(
+    Covariate = covariate_names,
+    Centre = round(x$xCentres, 4),
+    Range = round(x$xRanges, 4)
+  )
+  print(scaling_df, row.names = FALSE)
+  
+  cat("\nOutput Scaling:\n")
+  cat("Centre: ", round(x$yCentre, 4), "\n")
+  cat("Range:  ", round(x$yRange, 4), "\n\n")
+  
+  # Additional model information
+  if (num_samples > 0) {
+    # Get some statistics about the tessellations
+    tess_sizes <- sapply(1:min(5, num_samples), function(i) {
+      sapply(x$posteriorTess[[i]], function(tess) nrow(tess))
+    })
+    
+    if (is.matrix(tess_sizes)) {
+      avg_tess_size <- round(mean(tess_sizes), 1)
+      range_tess_size <- range(tess_sizes)
+    } else {
+      avg_tess_size <- round(mean(tess_sizes), 1)
+      range_tess_size <- range(tess_sizes)
+    }
+    
+    cat("Tessellation Statistics (from first ", min(5, num_samples), " samples):\n")
+    cat("Average cells per tessellation: ", avg_tess_size, "\n")
+    cat("Range of cells per tessellation: [", range_tess_size[1], ", ", 
+        range_tess_size[2], "]\n")
+  } else {
+    cat("No posterior samples available.\n")
+  }
+  
+  # Return the object invisibly
+  invisible(x)
+}
+
+#' @title Summary Method for AddiVortesFit
+#'
+#' @description
+#' Provides a detailed summary of a fitted `AddiVortesFit` object, including
+#' more comprehensive information than the print method.
+#'
+#' @param object An object of class `AddiVortesFit`, typically the result of a
+#'   call to `AddiVortes()`.
+#' @param ... Further arguments passed to or from other methods (currently 
+#' unused).
+#'
+#' @return
+#' The function is called for its side effect of printing detailed model 
+#' information and returns the input object `object` invisibly.
+#'
+#' @export
+#' @method summary AddiVortesFit
+summary.AddiVortesFit <- function(object, ...) {
+  # Call the print method first
+  print(object)
+  
+  # Add additional summary information
+  if (length(object$posteriorTess) > 0) {
+    cat("\nDetailed Posterior Information:\n")
+    cat("===============================\n")
+    
+    # Analyze tessellation complexity across samples
+    all_tess_sizes <- sapply(object$posteriorTess, function(sample) {
+      sapply(sample, function(tess) nrow(tess))
+    })
+    
+    if (is.matrix(all_tess_sizes)) {
+      cat("Tessellation complexity across all samples:\n")
+      for (j in 1:nrow(all_tess_sizes)) {
+        cat("  Tessellation ", j, ": mean = ", round(mean(all_tess_sizes[j,]), 1),
+            ", sd = ", round(sd(all_tess_sizes[j,]), 2), "\n")
+      }
+    }
+    
+    # Dimension information if available
+    if (length(object$posteriorDim) > 0) {
+      dim_info <- sapply(object$posteriorDim, function(sample) {
+        sapply(sample, length)
+      })
+      
+      if (is.matrix(dim_info)) {
+        cat("\nActive dimensions per tessellation:\n")
+        for (j in 1:nrow(dim_info)) {
+          cat("  Tessellation ", j, ": mean = ", round(mean(dim_info[j,]), 1),
+              " dimensions\n")
+        }
+      }
+    }
+  }
+  
+  invisible(object)
+}
+
 #' @title Predict Method for AddiVortesFit
 #'
 #' @description

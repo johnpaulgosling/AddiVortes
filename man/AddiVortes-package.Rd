@@ -5,7 +5,7 @@
 \alias{AddiVortes-package}
 \title{AddiVortes: (Bayesian) Additive Voronoi Tessellations}
 \description{
-Implements the Bayesian Additive Voronoi Tessellation (AddiVortes) model for non-parametric regression and classification. This package allows users to fit the model estimate posterior distributions and visualise the resulting tessellations. It is particularly useful for spatial data analysis and complex function approximation where the underlying structure is unknown.
+Implements the Bayesian Additive Voronoi Tessellation (AddiVortes) model for non-parametric regression. This package allows users to fit the model estimate posterior distributions and visualise the resulting tessellations. It is particularly useful for spatial data analysis and complex function approximation where the underlying structure is unknown.
 }
 \seealso{
 Useful links:
