@@ -116,6 +116,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
     "list",
     numPosteriorSamplesToStore
   )
+  sigmaSquared <- NULL
 
   currentStorageIdx <- 1 # Index for the new output lists
 
@@ -130,7 +131,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
   #### MCMC Loop ---------------------------------------------------------------
   for (i in 1:totalMCMCIter) {
     # Sample sigma squared using all tessellations to predict the outcome variables
-    sigmaSquared <- sampleSigmaSquared(
+    sigmaSquared[i] <- sampleSigmaSquared(
       yScaled,
       nu,
       lambda,
@@ -178,7 +179,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
           rIjOld, nIjOld,
           rIjNew, nIjNew,
           tess_j_star, dim_j_star,
-          sigmaSquared,
+          sigmaSquared[i],
           modification,
           sigmaSquaredMu,
           omega,
@@ -196,7 +197,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
             j, tess,
             rIjNew, nIjNew,
             sigmaSquaredMu,
-            sigmaSquared
+            sigmaSquared[i]
           )
           lastTessPred <- pred[[j]][indexesStar]
           
@@ -204,7 +205,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
           # Reject proposal
           pred[[j]] <- sampleMuValues(
             j, tess, rIjOld, nIjOld,
-            sigmaSquaredMu, sigmaSquared
+            sigmaSquaredMu, sigmaSquared[i]
           )
           lastTessPred <- pred[[j]][indexes]
         }
@@ -212,7 +213,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
         # Reject proposal (empty cell)
         pred[[j]] <- sampleMuValues(
           j, tess, rIjOld, nIjOld,
-          sigmaSquaredMu, sigmaSquared
+          sigmaSquaredMu, sigmaSquared[i]
         )
         lastTessPred <- pred[[j]][indexes]
       }
@@ -248,6 +249,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
   new_AddiVortesFit(
     posteriorTess = outputPosteriorTess,
     posteriorDim = outputPosteriorDim,
+    posteriorSigma = sigmaSquared,
     posteriorPred = outputPosteriorPred,
     xCentres = xCentres,
     xRanges = xRanges,

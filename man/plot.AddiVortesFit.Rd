@@ -4,40 +4,63 @@
 \alias{plot.AddiVortesFit}
 \title{Plot Method for AddiVortesFit}
 \usage{
-\method{plot}{AddiVortesFit}(aModel, x_train, y_train, ...)
+\method{plot}{AddiVortesFit}(
+  x,
+  x_train,
+  y_train,
+  sigma_trace = NULL,
+  which = c(1, 2, 3),
+  ask = FALSE,
+  ...
+)
 }
 \arguments{
-\item{aModel}{An object of class \code{AddiVortesFit}, typically the result of a
+\item{x}{An object of class \code{AddiVortesFit}, typically the result of a
 call to \code{AddiVortes()}.}
 
 \item{x_train}{A matrix of the original training covariates.}
 
 \item{y_train}{A numeric vector of the original training true outcomes.}
 
-\item{...}{Additional graphical parameters to be passed to the \code{plot}
-function (e.g., \code{pch}, \code{cex}).}
+\item{sigma_trace}{An optional numeric vector of sigma values from MCMC samples.
+If not provided, the method will attempt to extract it from the model object.}
+
+\item{which}{A numeric vector specifying which plots to generate:
+1 = Residuals plot, 2 = Sigma trace, 3 = Tessellation complexity trace,
+4 = Predicted vs Observed. Default is c(1, 2, 3).}
+
+\item{ask}{Logical; if TRUE, the user is asked to press Enter before each plot.}
+
+\item{...}{Additional arguments passed to plotting functions.}
 }
 \value{
-This function is called for its side effect of creating a plot and returns
+This function is called for its side effect of creating plots and returns
 \code{NULL} invisibly.
 }
 \description{
-Generates diagnostic plots for a fitted \code{AddiVortesFit} object.
-This function creates a scatter plot of the true versus predicted values
-for the training set to help visualise model fit.
+Generates comprehensive diagnostic plots for a fitted \code{AddiVortesFit} object.
+This function creates multiple diagnostic plots including residuals,
+MCMC traces for sigma, and tessellation complexity over iterations.
 }
 \details{
-The function internally calls \code{predict.AddiVortesFit} on the provided
-training data to get the mean predictions. It then plots these predictions
-against the true outcome values (\code{y_train}). A dashed red line with an
-intercept of 0 and a slope of 1 is added to the plot to represent a perfect
-prediction, making it easy to assess the model's accuracy.
+The function generates up to four diagnostic plots:
+\enumerate{
+\item \strong{Residuals Plot}: Residuals vs fitted values with smoothed trend line
+\item \strong{Sigma Trace}: MCMC trace plot for the error variance parameter
+\item \strong{Tessellation Complexity}: Trace of average tessellation size over iterations
+\item \strong{Predicted vs Observed}: Scatter plot with confidence intervals
+}
 }
 \examples{
 \dontrun{
-# Assuming 'fit' is a trained object of class AddiVortesFit,
-# and 'x_train_data', 'y_train_data' are your training datasets.
-
+# Assuming 'fit' is a trained AddiVortesFit object
 plot(fit, x_train = x_train_data, y_train = y_train_data)
+
+# Show only specific plots
+plot(fit, x_train = x_train_data, y_train = y_train_data, which = c(1, 3))
+
+# With custom sigma trace
+plot(fit, x_train = x_train_data, y_train = y_train_data, 
+     sigma_trace = my_sigma_samples)
 }
 }

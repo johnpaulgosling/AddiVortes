@@ -7,6 +7,7 @@
 new_AddiVortesFit(
   posteriorTess,
   posteriorDim,
+  posteriorSigma,
   posteriorPred,
   xCentres,
   xRanges,
@@ -19,6 +20,8 @@ new_AddiVortesFit(
 \item{posteriorTess}{A list of the posterior samples of the tessellations.}
 
 \item{posteriorDim}{A list of the posterior samples of the dimensions.}
+
+\item{posteriorSigma}{A list of the posterior samples of the error variance.}
 
 \item{posteriorPred}{A list of the posterior samples of the predictions.}
 

@@ -129,3 +129,5 @@ toc()
 
 T5_result
 summary(T5_result)
+plot(T5_result, X, Y,
+     which = 1:4)

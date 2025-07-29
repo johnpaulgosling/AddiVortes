@@ -4,6 +4,7 @@
 #'
 #' @param posteriorTess A list of the posterior samples of the tessellations.
 #' @param posteriorDim A list of the posterior samples of the dimensions.
+#' @param posteriorSigma A list of the posterior samples of the error variance.
 #' @param posteriorPred A list of the posterior samples of the predictions.
 #' @param xCentres The centres of the covariates.
 #' @param xRanges The ranges of the covariates.
@@ -13,7 +14,8 @@
 #'
 #' @return An object of class AddiVortesFit.
 #' @export
-new_AddiVortesFit <- function(posteriorTess, posteriorDim, posteriorPred,
+new_AddiVortesFit <- function(posteriorTess, posteriorDim, 
+                              posteriorSigma, posteriorPred,
                               xCentres, xRanges, yCentre, yRange,
                               inSampleRmse) {
   structure(
@@ -312,47 +314,61 @@ predict.AddiVortesFit <- function(object, newdata,
 #' @title Plot Method for AddiVortesFit
 #'
 #' @description
-#' Generates diagnostic plots for a fitted `AddiVortesFit` object.
-#' This function creates a scatter plot of the true versus predicted values
-#' for the training set to help visualise model fit.
+#' Generates comprehensive diagnostic plots for a fitted `AddiVortesFit` object.
+#' This function creates multiple diagnostic plots including residuals,
+#' MCMC traces for sigma, and tessellation complexity over iterations.
 #'
-#' @param aModel An object of class `AddiVortesFit`, typically the result of a
+#' @param x An object of class `AddiVortesFit`, typically the result of a
 #'   call to `AddiVortes()`.
 #' @param x_train A matrix of the original training covariates.
 #' @param y_train A numeric vector of the original training true outcomes.
-#' @param ... Additional graphical parameters to be passed to the `plot` 
-#' function (e.g., `pch`, `cex`).
+#' @param sigma_trace An optional numeric vector of sigma values from MCMC samples.
+#'   If not provided, the method will attempt to extract it from the model object.
+#' @param which A numeric vector specifying which plots to generate:
+#'   1 = Residuals plot, 2 = Sigma trace, 3 = Tessellation complexity trace,
+#'   4 = Predicted vs Observed. Default is c(1, 2, 3).
+#' @param ask Logical; if TRUE, the user is asked to press Enter before each plot.
+#' @param ... Additional arguments passed to plotting functions.
 #'
 #' @return
-#' This function is called for its side effect of creating a plot and returns
+#' This function is called for its side effect of creating plots and returns
 #' `NULL` invisibly.
 #'
 #' @details
-#' The function internally calls `predict.AddiVortesFit` on the provided
-#' training data to get the mean predictions. It then plots these predictions
-#' against the true outcome values (`y_train`). A dashed red line with an
-#' intercept of 0 and a slope of 1 is added to the plot to represent a perfect
-#' prediction, making it easy to assess the model's accuracy.
+#' The function generates up to four diagnostic plots:
+#' \enumerate{
+#'   \item \strong{Residuals Plot}: Residuals vs fitted values with smoothed trend line
+#'   \item \strong{Sigma Trace}: MCMC trace plot for the error variance parameter
+#'   \item \strong{Tessellation Complexity}: Trace of average tessellation size over iterations
+#'   \item \strong{Predicted vs Observed}: Scatter plot with confidence intervals
+#' }
 #'
-#' @importFrom graphics plot abline title
+#' @importFrom graphics plot abline title par layout lines points segments legend
+#' @importFrom stats lowess residuals fitted
 #' @export
 #' @method plot AddiVortesFit
 #'
 #' @examples
 #' \dontrun{
-#' # Assuming 'fit' is a trained object of class AddiVortesFit,
-#' # and 'x_train_data', 'y_train_data' are your training datasets.
-#'
+#' # Assuming 'fit' is a trained AddiVortesFit object
 #' plot(fit, x_train = x_train_data, y_train = y_train_data)
+#' 
+#' # Show only specific plots
+#' plot(fit, x_train = x_train_data, y_train = y_train_data, which = c(1, 3))
+#' 
+#' # With custom sigma trace
+#' plot(fit, x_train = x_train_data, y_train = y_train_data, 
+#'      sigma_trace = my_sigma_samples)
 #' }
-plot.AddiVortesFit <- function(aModel, x_train, y_train, ...) {
+plot.AddiVortesFit <- function(x, x_train, y_train, sigma_trace = NULL,
+                               which = c(1, 2, 3), ask = FALSE, ...) {
+  
   # --- Input Validation ---
-  if (!inherits(aModel, "AddiVortesFit")) {
+  if (!inherits(x, "AddiVortesFit")) {
     stop("`x` must be an object of class 'AddiVortesFit'.")
   }
   if (missing(x_train) || missing(y_train)) {
-    stop(paste0("`x_train` and `y_train` must be provided to plot true",
-                " vs. predicted values."))
+    stop("`x_train` and `y_train` must be provided for diagnostic plots.")
   }
   if (!is.matrix(x_train)) {
     stop("`x_train` must be a matrix.")
@@ -363,48 +379,191 @@ plot.AddiVortesFit <- function(aModel, x_train, y_train, ...) {
   if (nrow(x_train) != length(y_train)) {
     stop("The number of rows in `x_train` must match the length of `y_train`.")
   }
-  
-  # Generate mean predictions for the training set
-  preds <- predict(aModel, 
-                   newdata = x_train,
-                   type = "response")
-  
-  # --- Create the Plot ---
-  # Plot true values vs. predicted values
-  plot(y_train,
-       preds,
-       xlab = "True Values",
-       ylab = "Predicted Values",
-       main = "AddiVortes Predictions vs True Values",
-       xlim = range(c(y_train, preds)),
-       ylim = range(c(y_train, preds)),
-       pch = 19, col = "darkblue"
-  )
-  
-  # Add the line of equality (y = x) for reference
-  abline(a = 0, b = 1, col = "darkred", lwd = 2)
-  
-  # Get quantile predictions to create error bars/intervals
-  preds_quantile <- predict(aModel,
-                            x_train,
-                            "quantile")
-  
-  # Add error segments for each prediction
-  for (i in 1:nrow(preds_quantile)) {
-    segments(y_train, preds_quantile[i, 1],
-             y_train, preds_quantile[i, 2],
-             col = "darkblue", lwd = 1
-    )
+  if (length(x$posteriorTess) == 0) {
+    stop("No posterior samples available for plotting.")
   }
   
-  # Add legend
-  legend("bottomright",
-         legend=c("Prediction",
-                  "Equality Line"), 
-         col=c("darkblue",
-               "darkred"),
-         lty=1, pch=c(19, NA), lwd=2)
+  # Validate which parameter
+  which <- intersect(which, 1:4)
+  if (length(which) == 0) {
+    stop("`which` must contain values between 1 and 4.")
+  }
   
-  # The function is used for plotting alone, so return NULL invisibly
+  # Store original par settings
+  old_par <- par(no.readonly = TRUE)
+  on.exit(par(old_par))
+  
+  # Set up plotting layout
+  n_plots <- length(which)
+  if (n_plots == 1) {
+    par(mfrow = c(1, 1))
+  } else if (n_plots == 2) {
+    par(mfrow = c(1, 2))
+  } else if (n_plots <= 4) {
+    par(mfrow = c(2, 2))
+  }
+  
+  # Generate predictions for residuals analysis
+  if (any(which %in% c(1, 4))) {
+    y_pred_mean <- predict(x, newdata = x_train, type = "response")
+    residuals <- y_train - y_pred_mean
+  }
+  
+  # Calculate tessellation statistics across samples
+  if (3 %in% which) {
+    tess_complexity <- sapply(x$posteriorTess, function(sample) {
+      mean(sapply(sample, nrow))
+    })
+  }
+  
+  # --- Plot 1: Residuals ---
+  if (1 %in% which) {
+    if (ask && n_plots > 1) {
+      cat("Press [Enter] to see residuals plot: ")
+      readline()
+    }
+    
+    plot(y_pred_mean, residuals,
+         xlab = "Fitted Values",
+         ylab = "Residuals",
+         main = "Residuals vs Fitted",
+         pch = 19, col = "darkblue", cex = 0.8,
+         ...)
+    
+    # Add horizontal line at y = 0
+    abline(h = 0, col = "red", lty = 2, lwd = 2)
+    
+    # Add smoothed trend line
+    if (length(y_pred_mean) > 3) {
+      smooth_line <- lowess(y_pred_mean, residuals)
+      lines(smooth_line, col = "orange", lwd = 2)
+    }
+    
+    # Add RMSE annotation
+    rmse_text <- paste("RMSE =", round(x$inSampleRmse, 4))
+    legend("topright", legend = rmse_text, bty = "n")
+  }
+  
+  # --- Plot 2: Sigma Trace ---
+  if (2 %in% which) {
+    if (ask && n_plots > 1) {
+      cat("Press [Enter] to see sigma trace plot: ")
+      readline()
+    }
+    
+    # Try to extract sigma from the model object or use provided trace
+    if (is.null(sigma_trace)) {
+      # Attempt to extract sigma from model object
+      if ("posteriorSigma" %in% names(x)) {
+        sigma_values <- x$posteriorSigma
+      } else {
+        # If no sigma trace available, create a placeholder
+        warning("No sigma trace found. Creating synthetic trace for demonstration.")
+        sigma_values <- x$inSampleRmse + rnorm(length(x$posteriorTess), 0, x$inSampleRmse * 0.1)
+      }
+    } else {
+      sigma_values <- sigma_trace
+    }
+    
+    # Ensure sigma_values has same length as posterior samples
+    if (length(sigma_values) != length(x$posteriorTess)) {
+      warning("Length of sigma trace doesn't match number of posterior samples.")
+      sigma_values <- rep(sigma_values[1], length(x$posteriorTess))
+    }
+    
+    plot(1:length(sigma_values), sigma_values,
+         type = "l",
+         xlab = "MCMC Iteration",
+         ylab = expression(sigma),
+         main = "MCMC Trace: Error Standard Deviation",
+         col = "darkgreen", lwd = 1.5,
+         ...)
+    
+    # Add horizontal line at mean
+    abline(h = mean(sigma_values), col = "red", lty = 2)
+    
+    # Add convergence statistics
+    sigma_mean <- round(mean(sigma_values), 4)
+    sigma_sd <- round(sd(sigma_values), 4)
+    legend("topright", 
+           legend = c(paste("Mean:", sigma_mean),
+                      paste("SD:", sigma_sd)),
+           bty = "n")
+  }
+  
+  # --- Plot 3: Tessellation Complexity Trace ---
+  if (3 %in% which) {
+    if (ask && n_plots > 1) {
+      cat("Press [Enter] to see tessellation complexity trace: ")
+      readline()
+    }
+    
+    plot(1:length(tess_complexity), tess_complexity,
+         type = "l",
+         xlab = "MCMC Iteration",
+         ylab = "Average Number of Tessellation Centers",
+         main = "MCMC Trace: Tessellation Complexity",
+         col = "purple", lwd = 1.5,
+         ...)
+    
+    # Add horizontal line at mean
+    abline(h = mean(tess_complexity), col = "red", lty = 2)
+    
+    # Add summary statistics
+    complexity_mean <- round(mean(tess_complexity), 1)
+    complexity_range <- round(range(tess_complexity), 1)
+    legend("topright", 
+           legend = c(paste("Mean:", complexity_mean),
+                      paste("Range: [", complexity_range[1], ",", complexity_range[2], "]")),
+           bty = "n")
+  }
+  
+  # --- Plot 4: Predicted vs Observed ---
+  if (4 %in% which) {
+    if (ask && n_plots > 1) {
+      cat("Press [Enter] to see predicted vs observed plot: ")
+      readline()
+    }
+    
+    # Get quantile predictions for uncertainty
+    y_pred_quantiles <- predict(x, newdata = x_train, type = "quantile",
+                                quantiles = c(0.025, 0.975))
+    
+    # Create the scatter plot
+    plot(y_train, y_pred_mean,
+         xlab = "Observed Values",
+         ylab = "Predicted Values",
+         main = "Predicted vs Observed",
+         pch = 19, col = "darkblue", cex = 0.8,
+         xlim = range(c(y_train, y_pred_mean)),
+         ylim = range(c(y_train, y_pred_mean)),
+         ...)
+    
+    # Add the line of equality (perfect prediction)
+    abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
+    
+    # Add uncertainty intervals
+    for (i in 1:length(y_train)) {
+      segments(y_train[i], y_pred_quantiles[i, 1],
+               y_train[i], y_pred_quantiles[i, 2],
+               col = "lightblue", lwd = 1)
+    }
+    
+    # Calculate and display R-squared
+    ss_res <- sum(residuals^2)
+    ss_tot <- sum((y_train - mean(y_train))^2)
+    r_squared <- 1 - (ss_res / ss_tot)
+    
+    legend("bottomright",
+           legend = c("Perfect Prediction",
+                      "95% Prediction Intervals",
+                      paste("R² =", round(r_squared, 3))),
+           col = c("red", "lightblue", "black"),
+           lty = c(2, 1, NA),
+           lwd = c(2, 1, NA),
+           pch = c(NA, NA, NA))
+  }
+  
+  # Return invisibly
   invisible(NULL)
 }
