@@ -22,4 +22,8 @@ profvis::profvis({
     200, 2000, 200, 6, 0.85, 3, 0.8, 3, 25,
     IntialSigma = "Linear"
   )
+  preds <- predict(
+    results,
+    X_Boston[TestSet, ]
+  )
 })
