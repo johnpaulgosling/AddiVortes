@@ -1,3 +1,8 @@
+# AddiVortes 0.3.0
+
+* Implemented nearest neighbour search in C++.
+* Removed dependency on FNN package.
+
 # AddiVortes 0.2.5
 
 ## Package Features
