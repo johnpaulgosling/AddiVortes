@@ -58,3 +58,13 @@ The model uses a backfitting algorithm to sample from the posterior distribution
 the output values for each tessellation. The function returns the RMSE value for
 the test samples.
 }
+\examples{
+\donttest{
+# Simple example with simulated data
+set.seed(123)
+x <- matrix(rnorm(50), 10, 5)
+y <- rnorm(10)
+# Fit model with reduced iterations for quick example
+fit <- AddiVortes(y, x, m = 5, totalMCMCIter = 50, mcmcBurnIn = 10)
+}
+}

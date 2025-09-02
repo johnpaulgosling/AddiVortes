@@ -24,6 +24,16 @@
 #' @return An AddiVortesFit object containing the posterior samples of the
 #' tessellations, dimensions and predictions.
 #'
+#' @examples
+#' \donttest{
+#' # Simple example with simulated data
+#' set.seed(123)
+#' x <- matrix(rnorm(50), 10, 5)
+#' y <- rnorm(10)
+#' # Fit model with reduced iterations for quick example
+#' fit <- AddiVortes(y, x, m = 5, totalMCMCIter = 50, mcmcBurnIn = 10)
+#' }
+#'
 #' @export
 AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
                        mcmcBurnIn = 200, nu = 6, q = 0.85,
