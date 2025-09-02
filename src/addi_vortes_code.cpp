@@ -6,6 +6,7 @@
 #include <string>    // For std::string
 #include <numeric>   // For std::accumulate
 #include <algorithm> // For std::find
+#include <cmath>     // For sqrt
 
 // Helper function to check if a value is in a vector
 bool in_vector(int value, const std::vector<int>& vec) {
@@ -14,6 +15,67 @@ bool in_vector(int value, const std::vector<int>& vec) {
 
 
 extern "C" {
+  
+  // ---------------------------------------------------------------------------
+  // 0. knnx_index_cpp
+  // ---------------------------------------------------------------------------
+  // This function implements k-nearest neighbors index search to replace FNN::knnx.index
+  // The R wrapper function is `knnx.index`.
+  SEXP knnx_index_cpp(SEXP tess_sexp, SEXP query_sexp, SEXP k_sexp) {
+    
+    // --- Unpack arguments ---
+    double* p_tess = REAL(tess_sexp);
+    double* p_query = REAL(query_sexp);
+    int k = INTEGER(k_sexp)[0];
+    
+    int tess_rows = Rf_nrows(tess_sexp);
+    int tess_cols = Rf_ncols(tess_sexp);
+    int query_rows = Rf_nrows(query_sexp);
+    int query_cols = Rf_ncols(query_sexp);
+    
+    // Check dimensions match
+    if (tess_cols != query_cols) {
+      Rf_error("Dimensions of tess and query matrices must match");
+    }
+    
+    // Check k is valid
+    if (k <= 0 || k > tess_rows) {
+      Rf_error("k must be positive and not greater than number of reference points");
+    }
+    
+    // --- Create result matrix ---
+    SEXP result;
+    PROTECT(result = Rf_allocMatrix(INTSXP, query_rows, k));
+    int* p_result = INTEGER(result);
+    
+    // --- Main Logic: For each query point, find k nearest neighbors ---
+    for (int q = 0; q < query_rows; ++q) {
+      
+      // Calculate distances to all tessellation points
+      std::vector<std::pair<double, int>> distances(tess_rows);
+      
+      for (int t = 0; t < tess_rows; ++t) {
+        double dist_sq = 0.0;
+        for (int d = 0; d < tess_cols; ++d) {
+          double diff = p_query[q + d * query_rows] - p_tess[t + d * tess_rows];
+          dist_sq += diff * diff;
+        }
+        distances[t] = std::make_pair(sqrt(dist_sq), t + 1); // +1 for R 1-based indexing
+      }
+      
+      // Sort by distance to get k nearest neighbors
+      std::partial_sort(distances.begin(), distances.begin() + k, distances.end());
+      
+      // Store the indices of k nearest neighbors
+      for (int i = 0; i < k; ++i) {
+        p_result[q + i * query_rows] = distances[i].second;
+      }
+    }
+    
+    UNPROTECT(1);
+    return result;
+  }
+  
   
   // ---------------------------------------------------------------------------
   // 1. calculate_residuals_cpp

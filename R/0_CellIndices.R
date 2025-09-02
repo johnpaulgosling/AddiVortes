@@ -15,7 +15,6 @@
 #' @return A numeric vector of integers where each element corresponds to a row
 #'   in `x` and its value is the row index of the nearest centre in `tess`.
 #'
-#' @importFrom FNN knnx.index
 #' @keywords internal
 #' @noRd
 cellIndices <- function(x, tess, dim) {
@@ -23,7 +22,7 @@ cellIndices <- function(x, tess, dim) {
     CellsForGivenTess <- rep(1, length(x[, 1]))
   } else { # multiple
     CellsForGivenTess <- knnx.index(
-      tess,
+      tess,  # Revert to original - tess should already be in the right dimensions
       matrix(x[, dim],
              ncol = length(dim)
       ), 1
