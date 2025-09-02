@@ -7,6 +7,7 @@
 ^doc$
 ^Meta$
 ^README\.Rmd$
+^NEWS\.md$
 ^cran-comments\.md$
 ^\.travis\.yml$
 ^\.gitlab-ci\.yml$
