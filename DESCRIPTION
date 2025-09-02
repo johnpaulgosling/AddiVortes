@@ -4,13 +4,13 @@ Version: 0.2.4
 Date: 2025-09-02
 Authors@R: 
     c(person("Adam", "Stone", , "adam.stone2@durham.ac.uk",
-             role = c("aut", "cre"),
+             role = c("aut"),
              comment = c(ORCID = "0009-0004-0058-6117")),
       person("John Paul", "Gosling", , "john-paul.gosling@durham.ac.uk",
-             role = c("aut"),
+             role = c("aut", "cre"),
              comment = c(ORCID = "0000-0002-4072-3022")))
-Author: Adam Stone [aut, cre], John Paul Gosling [aut]
-Maintainer: Adam Stone <adam.stone2@durham.ac.uk>
+Author: Adam Stone [aut], John Paul Gosling [aut, cre]
+Maintainer: John Paul Gosling <john-paul.gosling@durham.ac.uk>
 Description: Implements the Bayesian Additive Voronoi Tessellation (AddiVortes) 
     model for non-parametric regression. This package allows 
     users to fit the model, estimate posterior distributions and visualise the 
