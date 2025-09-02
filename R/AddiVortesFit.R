@@ -272,6 +272,11 @@ predict.AddiVortesFit <- function(object, newdata,
                                                 numStoredSamples))
   
   # --- Prediction Loop ---
+  # Set up progress bar
+  pbar <- txtProgressBar(min = 0, max = numStoredSamples,
+                         style = 3, width = 50,
+                         char = "=")
+  
   for (sIdx in 1:numStoredSamples) {
     # --- Inlined testSetPrediction logic ---
     current_tess <- posteriorTessSamples[[sIdx]]
@@ -290,7 +295,13 @@ predict.AddiVortesFit <- function(object, newdata,
     # --- End of inlined logic ---
     
     newTestDataPredictionsMatrix[, sIdx] <- predictionsForSampleS
+    
+    # Update progress bar
+    setTxtProgressBar(pbar, sIdx)
   }
+  
+  # Close progress bar
+  close(pbar)
   
   # --- Process and Unscale Predictions ---
   if (type == "response") {

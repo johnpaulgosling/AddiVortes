@@ -1,3 +1,9 @@
+# AddiVortes 0.2.5
+
+## Package Features
+
+* Added progress bars to MCMC sampling functions and subsequent prediction functions for better user feedback during long computations.
+
 # AddiVortes 0.2.4
 
 ## CRAN Submission Preparation
