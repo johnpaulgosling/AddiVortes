@@ -5,14 +5,16 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>(Bayesian) Additive Voronoi Tessellations • AddiVortes</title>
+<title>AddiVortes: Bayesian Machine Learning Alternative to BART • AddiVortes</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="(Bayesian) Additive Voronoi Tessellations">
-<meta name="description" content="Implements the Bayesian Additive Voronoi Tessellation (AddiVortes) model for non-parametric regression. This package allows users to fit the model, estimate posterior distributions and visualise the resulting tessellations. It is particularly useful for spatial data analysis and complex function approximation where the underlying structure is unknown.">
-<meta property="og:description" content="Implements the Bayesian Additive Voronoi Tessellation (AddiVortes) model for non-parametric regression. This package allows users to fit the model, estimate posterior distributions and visualise the resulting tessellations. It is particularly useful for spatial data analysis and complex function approximation where the underlying structure is unknown.">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="AddiVortes: Bayesian Machine Learning Alternative to BART">
+<meta name="description" content="Bayesian Additive Voronoi Tessellations for machine learning regression. A flexible alternative to BART using spatial tessellations for  non-parametric Bayesian modeling and spatial data analysis.
+">
+<meta property="og:description" content="Bayesian Additive Voronoi Tessellations for machine learning regression. A flexible alternative to BART using spatial tessellations for  non-parametric Bayesian modeling and spatial data analysis.
+">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -22,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="index.html">AddiVortes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,11 +37,10 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/introduction.html">Introduction to AddiVortes</a></li>
-    <li><a class="dropdown-item" href="articles/prediction.html">Prediction with AddiVortes</a></li>
+<li><a class="dropdown-item" href="articles/introduction.html">Machine Learning with AddiVortes</a></li>
+    <li><a class="dropdown-item" href="articles/prediction.html">Bayesian Regression and Prediction</a></li>
   </ul>
 </li>
-<li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -54,10 +55,51 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="addivortes">AddiVortes<a class="anchor" aria-label="anchor" href="#addivortes"></a>
+<div class="page-header"><h1 id="addivortes-bayesian-additive-voronoi-tessellations">AddiVortes: Bayesian Additive Voronoi Tessellations<a class="anchor" aria-label="anchor" href="#addivortes-bayesian-additive-voronoi-tessellations"></a>
 </h1></div>
-<p>Implementing the AddiVortes model in R.</p>
-<p>This package allows for the fitting and evaluation of the AddiVortes model as described in Stone and Gosling (2025).</p>
+<p><a href="https://github.com/johnpaulgosling/AddiVortes/actions" class="external-link"><img src="https://github.com/johnpaulgosling/AddiVortes/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a></p>
+<div class="section level2">
+<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
+</h2>
+<p>AddiVortes implements the <strong>Bayesian Additive Voronoi Tessellation</strong> model for machine learning regression and non-parametric statistical modeling. This R package provides a flexible alternative to <strong>BART (Bayesian Additive Regression Trees)</strong>, using Voronoi tessellations instead of trees for spatial partitioning.</p>
+</div>
+<div class="section level2">
+<h2 id="key-features">Key Features<a class="anchor" aria-label="anchor" href="#key-features"></a>
+</h2>
+<ul>
+<li>
+<strong>Machine Learning Regression</strong>: Advanced Bayesian regression modeling for complex datasets</li>
+<li>
+<strong>Alternative to BART</strong>: Uses Voronoi tessellations instead of trees for more flexible spatial modeling</li>
+<li>
+<strong>Spatial Data Analysis</strong>: Excellent for geographic and spatial datasets</li>
+<li>
+<strong>Non-parametric Modeling</strong>: No assumptions about functional form</li>
+<li>
+<strong>Bayesian Framework</strong>: Full posterior inference with uncertainty quantification</li>
+<li>
+<strong>Complex Function Approximation</strong>: Captures non-linear relationships and interactions</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="applications">Applications<a class="anchor" aria-label="anchor" href="#applications"></a>
+</h2>
+<p>AddiVortes is particularly well-suited for:</p>
+<ul>
+<li>
+<strong>Spatial regression</strong> and geographic data analysis</li>
+<li>
+<strong>Machine learning</strong> tasks requiring interpretable models</li>
+<li>
+<strong>Non-parametric regression</strong> where the functional form is unknown</li>
+<li>
+<strong>Bayesian modeling</strong> with uncertainty quantification</li>
+<li>
+<strong>Complex surface modeling</strong> and function approximation</li>
+<li>
+<strong>Alternative to BART</strong> for researchers seeking different ensemble approaches</li>
+</ul>
+</div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -68,16 +110,57 @@
 <span>                         build_vignettes <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="cite-us">Cite us<a class="anchor" aria-label="anchor" href="#cite-us"></a>
+<h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<p>If you use this package in your work, please cite using the latest citation information:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://johnpaulgosling.github.io/AddiVortes/">AddiVortes</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Load your data</span></span>
+<span><span class="co"># X &lt;- your_predictors</span></span>
+<span><span class="co"># y &lt;- your_response</span></span>
+<span></span>
+<span><span class="co"># Fit the AddiVortes model</span></span>
+<span><span class="co"># model &lt;- AddiVortesFit(X, y)</span></span>
+<span></span>
+<span><span class="co"># Make predictions</span></span>
+<span><span class="co"># predictions &lt;- predict(model, newdata = X_test)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
+</h2>
+<ul>
+<li><a href="https://johnpaulgosling.github.io/AddiVortes/articles/introduction.html">Getting Started Guide</a></li>
+<li><a href="https://johnpaulgosling.github.io/AddiVortes/articles/prediction.html">Prediction Examples</a></li>
+<li><a href="https://johnpaulgosling.github.io/AddiVortes/reference/">Function Reference</a></li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="comparison-with-bart">Comparison with BART<a class="anchor" aria-label="anchor" href="#comparison-with-bart"></a>
+</h2>
+<p>While <strong>BART (Bayesian Additive Regression Trees)</strong> uses tree-based partitioning, <strong>AddiVortes</strong> uses Voronoi tessellations, which can provide:</p>
+<ul>
+<li>More natural spatial partitioning</li>
+<li>Flexible geometric boundaries</li>
+<li>Alternative ensemble approach for machine learning</li>
+<li>Enhanced performance on spatial data</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="cite-us">Cite Us<a class="anchor" aria-label="anchor" href="#cite-us"></a>
+</h2>
+<p>If you use this package in your research, please cite:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"AddiVortes"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <p>Stone, A. and Gosling, J.P. (2025). AddiVortes: (Bayesian) additive Voronoi tessellations. Journal of Computational and Graphical Statistics.</p>
+</div>
+<div class="section level2">
+<h2 id="keywords">Keywords<a class="anchor" aria-label="anchor" href="#keywords"></a>
+</h2>
+<p>Bayesian machine learning, BART alternative, Voronoi tessellation, spatial regression, non-parametric regression, ensemble methods, statistical modeling, R package</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
