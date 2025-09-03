@@ -22,6 +22,10 @@ navbar:
           href: articles/prediction.html
 
 reference:
+  - title: "Package Overview"
+    desc: "Package documentation and overview"
+    contents:
+    - AddiVortes-package
   - title: "Main Functions"
     desc: "Core functions for fitting AddiVortes models"
     contents:
