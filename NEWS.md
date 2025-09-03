@@ -1,3 +1,11 @@
+# AddiVortes 0.3.1
+
+* Enhanced SEO and discoverability with comprehensive keyword optimization across package documentation
+* Added formal Keywords field in DESCRIPTION for better search indexing
+* Updated README.md with clear positioning as BART alternative
+* Optimized vignette titles for machine learning and Bayesian regression search terms
+* Enhanced package documentation with machine learning focus
+
 # AddiVortes 0.3.0
 
 * Implemented nearest neighbour search in C++.

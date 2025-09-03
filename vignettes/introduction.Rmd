@@ -1,10 +1,10 @@
 ---
-title: "Introduction to AddiVortes"
+title: "Machine Learning with AddiVortes: A Bayesian Alternative to BART"
 author: "John Paul Gosling and Adam Stone"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Introduction to AddiVortes}
+  %\VignetteIndexEntry{Machine Learning with AddiVortes: A Bayesian Alternative to BART}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-This vignette provides a basic example of how to use the `AddiVortes` package to model data. We will walk through loading data, training a model and making predictions on a test set.
+This vignette provides a comprehensive example of how to use the `AddiVortes` package for machine learning regression tasks. AddiVortes offers a Bayesian alternative to BART (Bayesian Additive Regression Trees), using Voronoi tessellations for spatial partitioning. We will walk through loading data, training a regression model, and making predictions on a test set using this powerful non-parametric Bayesian approach.
 
 ### 1. Loading the Package and Data
 

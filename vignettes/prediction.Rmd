@@ -1,10 +1,10 @@
 ---
-title: "Prediction with AddiVortes"
+title: "Bayesian Regression and Prediction with AddiVortes"
 author: "John Paul Gosling and Adam Stone"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Prediction with AddiVortes}
+  %\VignetteIndexEntry{Bayesian Regression and Prediction with AddiVortes}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-This vignette demonstrates the prediction capabilities of the `AddiVortes` package. We will create a synthetic dataset with a known underlying structure, fit a model and then evaluate its performance on new, unseen data.
+This vignette demonstrates the Bayesian regression and prediction capabilities of the `AddiVortes` package. As a machine learning alternative to BART, AddiVortes excels at non-parametric regression using Voronoi tessellations. We will create a synthetic dataset with a known underlying structure, fit a Bayesian regression model, and then evaluate its predictive performance on new, unseen data.
 
 ### 1. Generating a synthetic dataset
 

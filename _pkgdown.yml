@@ -2,3 +2,39 @@ url: https://johnpaulgosling.github.io/AddiVortes/
 template:
   bootstrap: 5
 
+home:
+  title: "AddiVortes: Bayesian Machine Learning Alternative to BART"
+  description: >
+    Bayesian Additive Voronoi Tessellations for machine learning regression.
+    A flexible alternative to BART using spatial tessellations for 
+    non-parametric Bayesian modeling and spatial data analysis.
+
+navbar:
+  title: "AddiVortes"
+  left:
+    - text: "Reference"
+      href: reference/index.html
+    - text: "Articles"
+      menu:
+        - text: "Machine Learning with AddiVortes"
+          href: articles/introduction.html
+        - text: "Bayesian Regression and Prediction"
+          href: articles/prediction.html
+
+reference:
+  - title: "Main Functions"
+    desc: "Core functions for fitting AddiVortes models"
+    contents:
+    - AddiVortes
+  - title: "S3 Methods"
+    desc: "Methods for AddiVortesFit objects"
+    contents:
+    - plot.AddiVortesFit
+    - predict.AddiVortesFit
+    - print.AddiVortesFit
+    - summary.AddiVortesFit
+  - title: "Utilities"
+    desc: "Helper functions and constructors"
+    contents:
+    - new_AddiVortesFit
+
