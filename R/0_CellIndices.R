@@ -21,11 +21,10 @@ cellIndices <- function(x, tess, dim) {
   if (length(tess[, 1]) == 1) { # only 1 centre
     CellsForGivenTess <- rep(1, length(x[, 1]))
   } else { # multiple
-    CellsForGivenTess <- knnx.index(
-      tess,  # Revert to original - tess should already be in the right dimensions
-      matrix(x[, dim],
-             ncol = length(dim)
-      ), 1
+    CellsForGivenTess <- knnx_index(tess, 
+                                    matrix(x[, dim],
+                                           ncol = length(dim)
+                                    ), 1
     )
   }
 } # Implicit return of CellsForGivenTess

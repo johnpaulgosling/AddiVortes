@@ -278,7 +278,6 @@ predict.AddiVortesFit <- function(object, newdata,
                          char = "=")
   
   for (sIdx in 1:numStoredSamples) {
-    # --- Inlined testSetPrediction logic ---
     current_tess <- posteriorTessSamples[[sIdx]]
     current_dim  <- posteriorDimSamples[[sIdx]]
     current_pred <- posteriorPredSamples[[sIdx]]
@@ -292,7 +291,6 @@ predict.AddiVortesFit <- function(object, newdata,
     
     # Sum the predictions from all m tessellations for this posterior sample
     predictionsForSampleS <- rowSums(do.call(cbind, predictionList))
-    # --- End of inlined logic ---
     
     newTestDataPredictionsMatrix[, sIdx] <- predictionsForSampleS
     

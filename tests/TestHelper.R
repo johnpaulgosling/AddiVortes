@@ -52,6 +52,11 @@ for (i in 1:nrow(preds)) {
 # Add in the equality line
 abline(a = 0, b = 1, col = "blue", lwd = 2)
 
+# AddiVortes diagnostic plots
+plot(results, X_Boston[TrainSet, ], Y_Boston[TrainSet],
+  which = 1:4
+)
+
 # Iteration 2000 out of 2000
 # In_sample_RMSE Out_of_sample_RMSE
 # 1       1.206556           3.209220

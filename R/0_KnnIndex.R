@@ -1,20 +1,20 @@
-#' @title K-Nearest Neighbors Index Search
-#' @description Find the indices of k nearest neighbors for each query point.
+#' @title K-Nearest Neighbours Index Search
+#' @description Find the indices of k nearest neighbours for each query point.
 #'   This is a replacement for FNN::knnx.index to remove external dependencies.
 #'
-#' @param data A numeric matrix of reference points (tessellation centers) where each
+#' @param data A numeric matrix of reference points (tessellation centres) where each
 #'   row is a point.
 #' @param query A numeric matrix of query points where each row is a point to find
 #'   neighbors for.
-#' @param k An integer specifying the number of nearest neighbors to find.
+#' @param k An integer specifying the number of nearest neighbours to find.
 #'
 #' @return A matrix of integers where each row corresponds to a query point and
-#'   contains the row indices of the k nearest neighbors in the data matrix.
+#'   contains the row indices of the k nearest neighbours in the data matrix.
 #'   For k=1, returns a vector of integers.
 #'
 #' @keywords internal
 #' @noRd
-knnx.index <- function(data, query, k = 1) {
+knnx_index <- function(data, query, k = 1) {
   # Input validation
   if (!is.matrix(data)) data <- as.matrix(data)
   if (!is.matrix(query)) query <- as.matrix(query)
