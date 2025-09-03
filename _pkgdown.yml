@@ -24,6 +24,17 @@ navbar:
 reference:
   - title: "Main Functions"
     desc: "Core functions for fitting AddiVortes models"
+    contents:
+    - AddiVortes
+  - title: "S3 Methods"
+    desc: "Methods for AddiVortesFit objects"
+    contents:
+    - plot.AddiVortesFit
+    - predict.AddiVortesFit
+    - print.AddiVortesFit
+    - summary.AddiVortesFit
   - title: "Utilities"
-    desc: "Helper functions and utilities"
+    desc: "Helper functions and constructors"
+    contents:
+    - new_AddiVortesFit
 
