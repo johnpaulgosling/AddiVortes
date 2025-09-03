@@ -3,25 +3,46 @@
 \docType{package}
 \name{AddiVortes-package}
 \alias{AddiVortes-package}
-\title{AddiVortes: (Bayesian) Additive Voronoi Tessellations}
+\title{AddiVortes: Bayesian Additive Voronoi Tessellations for Machine Learning}
 \description{
-Implements the Bayesian Additive Voronoi Tessellation (AddiVortes) model for non-parametric regression. This package allows users to fit the model estimate posterior distributions and visualise the resulting tessellations. It is particularly useful for spatial data analysis and complex function approximation where the underlying structure is unknown.
+AddiVortes implements Bayesian Additive Voronoi Tessellation models for
+machine learning regression and non-parametric statistical modeling. This
+package provides a flexible alternative to BART (Bayesian Additive Regression
+Trees), using Voronoi tessellations instead of trees for spatial partitioning.
+The method is particularly effective for spatial data analysis, complex
+function approximation, and Bayesian regression modeling.
+}
+\details{
+Key features include:
+\itemize{
+\item Machine learning regression with Bayesian inference
+\item Alternative to BART using Voronoi tessellations
+\item Spatial data analysis and modeling
+\item Non-parametric regression capabilities
+\item Complex function approximation
+\item Uncertainty quantification through posterior inference
+}
+}
+\references{
+Stone, A. and Gosling, J.P. (2025). AddiVortes: (Bayesian) additive Voronoi
+tessellations. Journal of Computational and Graphical Statistics.
 }
 \seealso{
-Useful links:
-\itemize{
-  \item \url{https://johnpaulgosling.github.io/AddiVortes/}
-  \item Report bugs at \url{https://github.com/johnpaulgosling/AddiVortes/issues}
-}
-
+\url{https://johnpaulgosling.github.io/AddiVortes/}
 }
 \author{
-\strong{Maintainer}: Adam Stone \email{adam.stone2@durham.ac.uk} (\href{https://orcid.org/0009-0004-0058-6117}{ORCID})
+\strong{Maintainer}: John Paul Gosling \email{john-paul.gosling@durham.ac.uk} (\href{https://orcid.org/0000-0002-4072-3022}{ORCID})
 
 Authors:
 \itemize{
-  \item John Paul Gosling \email{john-paul.gosling@durham.ac.uk} (\href{https://orcid.org/0000-0002-4072-3022}{ORCID})
+  \item Adam Stone \email{adam.stone2@durham.ac.uk} (\href{https://orcid.org/0009-0004-0058-6117}{ORCID})
 }
 
 }
-\keyword{internal}
+\keyword{BART}
+\keyword{bayesian}
+\keyword{machine-learning}
+\keyword{package}
+\keyword{regression}
+\keyword{spatial}
+\keyword{tessellation}

@@ -67,4 +67,5 @@ y <- rnorm(10)
 # Fit model with reduced iterations for quick example
 fit <- AddiVortes(y, x, m = 5, totalMCMCIter = 50, mcmcBurnIn = 10)
 }
+
 }

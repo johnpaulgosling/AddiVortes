@@ -44,19 +44,3 @@ This function relies on the internal helper function \code{applyScaling_internal
 being available in the environment, which is used by the main
 \code{AddiVortes} function.
 }
-\examples{
-\donttest{
-# Simple example with simulated data
-set.seed(123)
-x_train <- matrix(rnorm(50), 10, 5)
-y_train <- rnorm(10)
-x_test <- matrix(rnorm(25), 5, 5)
-
-# Fit model
-fit <- AddiVortes(y_train, x_train, m = 5, totalMCMCIter = 50, mcmcBurnIn = 10)
-
-# Make predictions
-pred_mean <- predict(fit, x_test, type = "response")
-pred_quantiles <- predict(fit, x_test, type = "quantile")
-}
-}
