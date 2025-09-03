@@ -12,12 +12,17 @@ Authors@R:
 Author: Adam Stone [aut], John Paul Gosling [aut, cre]
 Maintainer: John Paul Gosling <john-paul.gosling@durham.ac.uk>
 Description: Implements the Bayesian Additive Voronoi Tessellation (AddiVortes) 
-    model for non-parametric regression. This package allows 
-    users to fit the model, estimate posterior distributions and visualise the 
-    resulting tessellations. It is particularly useful for spatial data analysis 
-    and complex function approximation where the underlying structure is unknown.
+    model for non-parametric regression and machine learning. This package provides
+    a flexible alternative to BART (Bayesian Additive Regression Trees) using 
+    Voronoi tessellations instead of trees. Users can fit Bayesian regression models,
+    estimate posterior distributions, and visualise the resulting tessellations. 
+    It is particularly useful for spatial data analysis, machine learning regression,
+    complex function approximation, and Bayesian modeling where the underlying 
+    structure is unknown. The method excels at capturing spatial patterns and 
+    non-linear relationships in data.
 License: GPL (>= 3)
 Encoding: UTF-8
+Keywords: Bayesian, machine-learning, regression, BART, spatial-analysis, tessellation, non-parametric
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Depends: 
