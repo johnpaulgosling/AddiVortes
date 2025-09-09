@@ -55,7 +55,8 @@ Next, we fit an `AddiVortes` model to our training data. For this example, we'll
 
 ```{r, results='hide'}
 # Fit the model
-AModel <- AddiVortes(Y, X, m = 50)
+AModel <- AddiVortes(Y, X, m = 50, showProgress = FALSE)
+
 ```
 
 ```{r}
@@ -85,10 +86,12 @@ testY <- testY_underlying + rnorm(length(testY_underlying))
 
 # --- Make Predictions ---
 # Predict the mean response
-preds <- predict(AModel, testX)
+preds <- predict(AModel, testX,
+                 showProgress = FALSE)
 
 # Predict the 90% credible interval (from 0.05 to 0.95 quantiles)
-preds_q <- predict(AModel, testX, "quantile", c(0.05, 0.95))
+preds_q <- predict(AModel, testX,
+                   "quantile", c(0.05, 0.95), showProgress = FALSE)
 ```
 
 ### 4. Visualising Prediction Performance

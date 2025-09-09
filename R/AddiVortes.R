@@ -142,8 +142,13 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
   # Initial message and progress bar setup
   if (showProgress) {
     cat("Fitting AddiVortes model to input data...\n")
-    cat("Input dimensions: ", nrow(xScaled), " observations, ", ncol(xScaled), " covariates\n")
-    cat("Model configuration: ", m, " tessellations, ", totalMCMCIter, " total iterations (", mcmcBurnIn, " burn-in)\n\n")
+    cat("Input dimensions: ", nrow(xScaled),
+        " observations, ", ncol(xScaled),
+        " covariates\n", sep = "")
+    cat("Model configuration: ", m,
+        " tessellations, ", totalMCMCIter,
+        " total iterations (", mcmcBurnIn,
+        " burn-in)\n\n", sep = "")
   }
   
   #### MCMC Loop ---------------------------------------------------------------
@@ -154,7 +159,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
   
   # Start burn-in phase
   if (showProgress && mcmcBurnIn > 0) {
-    cat("Phase 1: Burn-in sampling (", mcmcBurnIn, " iterations)\n")
+    cat("Phase 1: Burn-in sampling (", mcmcBurnIn, " iterations)\n", sep = "")
     pbar_burnin <- txtProgressBar(min = 0, max = mcmcBurnIn,
                                  style = 3, width = 50, char = "=")
   }
@@ -171,7 +176,10 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
           cat("\n")
         }
         if (totalMCMCIter > mcmcBurnIn) {
-          cat("Phase 2: Posterior sampling (", totalMCMCIter - mcmcBurnIn, " iterations)\n")
+          cat("Phase 2: Posterior sampling (",
+              totalMCMCIter - mcmcBurnIn,
+              " iterations)\n",
+              sep = "")
           pbar_sampling <- txtProgressBar(min = 0, max = totalMCMCIter - mcmcBurnIn,
                                          style = 3, width = 50, char = "=")
         }

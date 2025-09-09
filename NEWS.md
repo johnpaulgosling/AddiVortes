@@ -1,4 +1,11 @@
-# AddiVortes 0.3.1
+# AddiVortes News
+
+## AddiVortes 0.3.2
+
+* Improved progress bar output to give more information during MCMC sampling and prediction processes.
+* Removed outputted progress bars from vignette examples to reduce clutter.
+
+## AddiVortes 0.3.1
 
 * Enhanced SEO and discoverability with comprehensive keyword optimization across package documentation
 * Added formal Keywords field in DESCRIPTION for better search indexing
@@ -6,20 +13,20 @@
 * Optimized vignette titles for machine learning and Bayesian regression search terms
 * Enhanced package documentation with machine learning focus
 
-# AddiVortes 0.3.0
+## AddiVortes 0.3.0
 
 * Implemented nearest neighbour search in C++.
 * Removed dependency on FNN package.
 
-# AddiVortes 0.2.5
+## AddiVortes 0.2.5
 
-## Package Features
+### Package Features
 
 * Added progress bars to MCMC sampling functions and subsequent prediction functions for better user feedback during long computations.
 
-# AddiVortes 0.2.4
+## AddiVortes 0.2.4
 
-## CRAN Submission Preparation
+### CRAN Submission Preparation
 
 * Removed compiled object files from package source
 * Added examples to main `AddiVortes()` function
@@ -31,7 +38,7 @@
 * Updated .Rbuildignore with standard exclusions
 * Enhanced documentation with examples for key functions
 
-## Package Features
+### Package Features
 
 * Implements Bayesian Additive Voronoi Tessellation models
 * Non-parametric regression with tessellation-based approach  

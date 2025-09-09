@@ -277,7 +277,7 @@ predict.AddiVortesFit <- function(object, newdata,
   # Display initial message and set up progress bar
   if (showProgress) {
     cat("Generating predictions for ", nrow(newdata), " observations using ", 
-        numStoredSamples, " posterior samples...\n")
+        numStoredSamples, " posterior samples...\n", sep = "")
     pbar <- txtProgressBar(min = 0, max = numStoredSamples,
                            style = 3, width = 50, char = "=")
   }
