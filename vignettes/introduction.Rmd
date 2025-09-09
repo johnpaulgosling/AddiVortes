@@ -4,31 +4,31 @@ author: "John Paul Gosling and Adam Stone"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-%\VignetteIndexEntry{Machine Learning with AddiVortes: A Bayesian Alternative to BART}
+  %\VignetteIndexEntry{Machine Learning with AddiVortes: A Bayesian Alternative to BART}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-  ---
-  
-  ```{r setup, include = FALSE}
-  knitr::opts_chunk$set(
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
-  )
-  ```
-  
-  This vignette provides a comprehensive example of how to use the `AddiVortes` package for machine learning regression tasks. AddiVortes offers a Bayesian alternative to BART (Bayesian Additive Regression Trees), using Voronoi tessellations for spatial partitioning. We will walk through loading data, training a regression model, and making predictions on a test set using this powerful non-parametric Bayesian approach.
-  
-  ### 1. Loading the Package and Data
-  
-  First, we load the `AddiVortes` package. For this example, we will use the well-known Boston Housing dataset.
-  
-  ```{r, message=FALSE, warning=FALSE}
-  # Load the package
+)
+```
+
+This vignette provides a comprehensive example of how to use the `AddiVortes` package for machine learning regression tasks. AddiVortes offers a Bayesian alternative to BART (Bayesian Additive Regression Trees), using Voronoi tessellations for spatial partitioning. We will walk through loading data, training a regression model, and making predictions on a test set using this powerful non-parametric Bayesian approach.
+
+### 1. Loading the Package and Data
+
+First, we load the `AddiVortes` package. For this example, we will use the well-known Boston Housing dataset.
+
+```{r, message=FALSE, warning=FALSE}
+# Load the package
 require(AddiVortes)
 
 # Load the Boston Housing dataset from a URL
 Boston <- read.csv(paste0("https://raw.githubusercontent.com/anonymous2738/",
-"AddiVortesAlgorithm/DataSets/BostonHousing_Data.csv"))
+                          "AddiVortesAlgorithm/DataSets/BostonHousing_Data.csv"))
 
 
 # Separate predictors (X) and the response variable (Y)
