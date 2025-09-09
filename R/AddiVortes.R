@@ -20,6 +20,7 @@
 #' @param lambdaRate The rate of the Poisson distribution for the number of centres.
 #' @param IntialSigma The method used to calculate the initial variance.
 #' @param thinning The thinning rate.
+#' @param showProgress Logical; if TRUE (default), progress bars and messages are shown during fitting.
 #'
 #' @return An AddiVortesFit object containing the posterior samples of the
 #' tessellations, dimensions and predictions.
@@ -39,7 +40,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
                        mcmcBurnIn = 200, nu = 6, q = 0.85,
                        k = 3, sd = 0.8, omega = 3, lambdaRate = 25,
                        IntialSigma = "Linear",
-                       thinning = 1) {
+                       thinning = 1, showProgress = TRUE) {
   #### Scaling x and y ---------------------------------------------------------
   yScalingResult <- scaleData_internal(y)
   yScaled <- yScalingResult$scaledData # Vector of values
@@ -138,15 +139,52 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
     current_indices[[k]] <- cellIndices(xScaled, tess[[k]], dim[[k]])
   }
   
-  # Setting up progress bar
-  
-  
-  pbar <- txtProgressBar(min = 0, max = totalMCMCIter,
-                         style = 3, width = 50,
-                         char = "=")
+  # Initial message and progress bar setup
+  if (showProgress) {
+    cat("Fitting AddiVortes model to input data...\n")
+    cat("Input dimensions: ", nrow(xScaled), " observations, ", ncol(xScaled), " covariates\n")
+    cat("Model configuration: ", m, " tessellations, ", totalMCMCIter, " total iterations (", mcmcBurnIn, " burn-in)\n\n")
+  }
   
   #### MCMC Loop ---------------------------------------------------------------
+  
+  # Initialize progress tracking variables
+  pbar_burnin <- NULL
+  pbar_sampling <- NULL
+  
+  # Start burn-in phase
+  if (showProgress && mcmcBurnIn > 0) {
+    cat("Phase 1: Burn-in sampling (", mcmcBurnIn, " iterations)\n")
+    pbar_burnin <- txtProgressBar(min = 0, max = mcmcBurnIn,
+                                 style = 3, width = 50, char = "=")
+  }
+  
   for (i in 1:totalMCMCIter) {
+    # Progress bar management
+    if (showProgress) {
+      if (i <= mcmcBurnIn && !is.null(pbar_burnin)) {
+        setTxtProgressBar(pbar_burnin, i)
+      } else if (i == mcmcBurnIn + 1 && mcmcBurnIn > 0) {
+        # Close burn-in progress bar and start sampling phase
+        if (!is.null(pbar_burnin)) {
+          close(pbar_burnin)
+          cat("\n")
+        }
+        if (totalMCMCIter > mcmcBurnIn) {
+          cat("Phase 2: Posterior sampling (", totalMCMCIter - mcmcBurnIn, " iterations)\n")
+          pbar_sampling <- txtProgressBar(min = 0, max = totalMCMCIter - mcmcBurnIn,
+                                         style = 3, width = 50, char = "=")
+        }
+      } else if (i > mcmcBurnIn && !is.null(pbar_sampling)) {
+        setTxtProgressBar(pbar_sampling, i - mcmcBurnIn)
+      } else if (mcmcBurnIn == 0 && i == 1 && totalMCMCIter > 0) {
+        # No burn-in phase, start directly with sampling
+        cat("Posterior sampling (", totalMCMCIter, " iterations)\n")
+        pbar_sampling <- txtProgressBar(min = 0, max = totalMCMCIter,
+                                       style = 3, width = 50, char = "=")
+        setTxtProgressBar(pbar_sampling, i)
+      }
+    }
     # Sample sigma squared using all tessellations to predict the outcome variables
     sigmaSquared[i] <- sampleSigmaSquared(
       yScaled,
@@ -255,13 +293,19 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
       outputPosteriorPred[[currentStorageIdx]] <- pred
       currentStorageIdx <- currentStorageIdx + 1
     }
-    
-    # Update progress bar
-    setTxtProgressBar(pbar, i)
   } # End of MCMC Loop
   
-  # Close progress bar
-  close(pbar)
+  # Close any remaining progress bar
+  if (showProgress) {
+    if (!is.null(pbar_sampling)) {
+      close(pbar_sampling)
+      cat("\n")
+    } else if (!is.null(pbar_burnin)) {
+      close(pbar_burnin)
+      cat("\n")
+    }
+    cat("MCMC sampling completed.\n\n")
+  }
   
   # Finding the mean of the prediction over the iterations and then unscaling
   # the predictions.
