@@ -213,6 +213,7 @@ summary.AddiVortesFit <- function(object, ...) {
 #'   specified by the `quantiles` argument.
 #' @param quantiles A numeric vector of probabilities with values in [0, 1] to
 #'   compute for the predictions when `type = "quantile"`.
+#' @param showProgress Logical; if TRUE (default), a progress bar is shown during prediction.
 #' @param ... Further arguments passed to or from other methods (currently 
 #' unused).
 #'
@@ -230,7 +231,8 @@ summary.AddiVortesFit <- function(object, ...) {
 #' @method predict AddiVortesFit
 predict.AddiVortesFit <- function(object, newdata,
                                   type = c("response", "quantile"),
-                                  quantiles = c(0.025, 0.975), ...) {
+                                  quantiles = c(0.025, 0.975), 
+                                  showProgress = TRUE, ...) {
   # Match the type argument
   type <- match.arg(type)
   
@@ -272,10 +274,13 @@ predict.AddiVortesFit <- function(object, newdata,
                                                 numStoredSamples))
   
   # --- Prediction Loop ---
-  # Set up progress bar
-  pbar <- txtProgressBar(min = 0, max = numStoredSamples,
-                         style = 3, width = 50,
-                         char = "=")
+  # Display initial message and set up progress bar
+  if (showProgress) {
+    cat("Generating predictions for ", nrow(newdata), " observations using ", 
+        numStoredSamples, " posterior samples...\n")
+    pbar <- txtProgressBar(min = 0, max = numStoredSamples,
+                           style = 3, width = 50, char = "=")
+  }
   
   for (sIdx in 1:numStoredSamples) {
     current_tess <- posteriorTessSamples[[sIdx]]
@@ -295,11 +300,16 @@ predict.AddiVortesFit <- function(object, newdata,
     newTestDataPredictionsMatrix[, sIdx] <- predictionsForSampleS
     
     # Update progress bar
-    setTxtProgressBar(pbar, sIdx)
+    if (showProgress) {
+      setTxtProgressBar(pbar, sIdx)
+    }
   }
   
   # Close progress bar
-  close(pbar)
+  if (showProgress) {
+    close(pbar)
+    cat("\nPrediction generation completed.\n\n")
+  }
   
   # --- Process and Unscale Predictions ---
   if (type == "response") {

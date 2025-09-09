@@ -17,7 +17,8 @@ AddiVortes(
   omega = 3,
   lambdaRate = 25,
   IntialSigma = "Linear",
-  thinning = 1
+  thinning = 1,
+  showProgress = TRUE
 )
 }
 \arguments{
@@ -46,6 +47,8 @@ AddiVortes(
 \item{IntialSigma}{The method used to calculate the initial variance.}
 
 \item{thinning}{The thinning rate.}
+
+\item{showProgress}{Logical; if TRUE (default), progress bars and messages are shown during fitting.}
 }
 \value{
 An AddiVortesFit object containing the posterior samples of the
