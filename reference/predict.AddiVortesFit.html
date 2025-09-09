@@ -55,6 +55,7 @@ Root Mean Squared Error (RMSE) if true outcomes are provided.</p>
 <span>  <span class="va">newdata</span>,</span>
 <span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"response"</span>, <span class="st">"quantile"</span><span class="op">)</span>,</span>
 <span>  quantiles <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.025</span>, <span class="fl">0.975</span><span class="op">)</span>,</span>
+<span>  showProgress <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -82,6 +83,10 @@ specified by the <code>quantiles</code> argument.</p></dd>
 <dt id="arg-quantiles">quantiles<a class="anchor" aria-label="anchor" href="#arg-quantiles"></a></dt>
 <dd><p>A numeric vector of probabilities with values in 0, 1 to
 compute for the predictions when <code>type = "quantile"</code>.</p></dd>
+
+
+<dt id="arg-showprogress">showProgress<a class="anchor" aria-label="anchor" href="#arg-showprogress"></a></dt>
+<dd><p>Logical; if TRUE (default), a progress bar is shown during prediction.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
