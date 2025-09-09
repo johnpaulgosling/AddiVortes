@@ -87,11 +87,10 @@ preds <- predict(results,
                  X_Boston[TestSet, ],
                  showProgress = FALSE)
 
-# The 8th element of the results object might contain useful info, like variable importance
-# For this example, we just display it
+# The RMSE is contained in the results object
 cat("In-Sample RMSE:", results$inSampleRmse, "\n")
 
-# Calculate the Root Mean Squared Error (RMSE)
+# Calculate the Root Mean Squared Error (RMSE) for the test set
 rmse <- sqrt(mean((Y_Boston[TestSet] - preds)^2))
 cat("Test Set RMSE:", rmse, "\n")
 ```
@@ -116,11 +115,10 @@ plot(Y_Boston[TestSet],
 abline(a = 0, b = 1, col = "darkred", lwd = 2)
 
 # Get quantile predictions to create error bars/intervals
-preds_quantile <- predict(
-  results,
-  X_Boston[TestSet, ],
-  "quantile"
-)
+preds_quantile <- predict(results,
+                          X_Boston[TestSet, ],
+                          "quantile",
+                          showProgress = FALSE)
 
 # Add error segments for each prediction
 for (i in 1:nrow(preds_quantile)) {

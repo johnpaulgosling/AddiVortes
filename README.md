@@ -1,7 +1,5 @@
 # AddiVortes: Bayesian Additive Voronoi Tessellations
 
-[![R-CMD-check](https://github.com/johnpaulgosling/AddiVortes/workflows/R-CMD-check/badge.svg)](https://github.com/johnpaulgosling/AddiVortes/actions)
-
 ## Overview
 
 AddiVortes implements the **Bayesian Additive Voronoi Tessellation** model for machine learning regression and non-parametric statistical modeling. This R package provides a flexible alternative to **BART (Bayesian Additive Regression Trees)**, using Voronoi tessellations instead of trees for spatial partitioning.

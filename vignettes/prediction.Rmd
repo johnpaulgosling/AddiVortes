@@ -126,7 +126,8 @@ lines(c(7, max(testY)+0.2), c(10, 10), col = "pink", lwd = 3, lty = 2)
 
 # Add a legend
 legend("bottomright",
-       legend = c("Predicted Mean & 90% Interval", "True Underlying Mean"),
+       legend = c("Predicted Mean & 90% Interval",
+                  "True Underlying Mean"),
        col = c("darkblue", "pink"),
        pch = c(19, NA),
        lty = c(1, 2),
