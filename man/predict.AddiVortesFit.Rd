@@ -9,6 +9,7 @@
   newdata,
   type = c("response", "quantile"),
   quantiles = c(0.025, 0.975),
+  showProgress = TRUE,
   ...
 )
 }
@@ -25,6 +26,8 @@ specified by the \code{quantiles} argument.}
 
 \item{quantiles}{A numeric vector of probabilities with values in \link{0, 1} to
 compute for the predictions when \code{type = "quantile"}.}
+
+\item{showProgress}{Logical; if TRUE (default), a progress bar is shown during prediction.}
 
 \item{...}{Further arguments passed to or from other methods (currently
 unused).}
