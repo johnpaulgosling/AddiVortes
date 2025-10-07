@@ -1,5 +1,11 @@
 # AddiVortes News
 
+## AddiVortes 0.4.0
+
+* **Performance improvement**: Replaced KD-tree-based nearest neighbor search with brute force allocation algorithm for faster observation assignment to tessellation tiles.
+* Implemented vectorized brute force method using matrix operations in pure R, eliminating dependency on C++ KD-tree implementation for this component.
+* Added comprehensive test suite for brute force allocation in `tests/testthat/test-bruteforce.R`.
+
 ## AddiVortes 0.3.2
 
 * Improved progress bar output to give more information during MCMC sampling and prediction processes.
