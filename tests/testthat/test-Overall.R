@@ -48,3 +48,28 @@ test_that("Simple AddiVortes fit 3", {
 
   expect_equal(round(results[[8]], 3), 1.148)
 })
+
+test_that("Warning when p > n", {
+  set.seed(42)
+  # Create data where p > n (5 observations, 10 covariates)
+  X <- matrix(rnorm(50), 5, 10)
+  Y <- rnorm(5)
+  
+  # Expect a warning to be issued
+  expect_warning(
+    AddiVortes(Y, X, m = 2, totalMCMCIter = 10, mcmcBurnIn = 5, showProgress = FALSE),
+    "Number of covariates.*exceeds number of observations"
+  )
+})
+
+test_that("No warning when p <= n", {
+  set.seed(42)
+  # Create data where p <= n (10 observations, 5 covariates)
+  X <- matrix(rnorm(50), 10, 5)
+  Y <- rnorm(10)
+  
+  # Expect no warning to be issued
+  expect_no_warning(
+    AddiVortes(Y, X, m = 2, totalMCMCIter = 10, mcmcBurnIn = 5, showProgress = FALSE)
+  )
+})
