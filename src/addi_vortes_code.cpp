@@ -17,7 +17,82 @@ bool in_vector(int value, const std::vector<int>& vec) {
 extern "C" {
   
   // ---------------------------------------------------------------------------
-  // 0. knnx_index_cpp
+  // 0a. bruteforce_assign_cpp
+  // ---------------------------------------------------------------------------
+  // This function implements brute force nearest neighbor assignment using
+  // vectorized distance calculations. It computes all pairwise squared distances
+  // using the identity ||a - b||^2 = ||a||^2 + ||b||^2 - 2*(a·b)
+  // The R wrapper function is `assign_bruteforce`.
+  SEXP bruteforce_assign_cpp(SEXP centers_sexp, SEXP query_sexp) {
+    
+    // --- Unpack arguments ---
+    double* p_centers = REAL(centers_sexp);
+    double* p_query = REAL(query_sexp);
+    
+    int centers_rows = Rf_nrows(centers_sexp);
+    int centers_cols = Rf_ncols(centers_sexp);
+    int query_rows = Rf_nrows(query_sexp);
+    int query_cols = Rf_ncols(query_sexp);
+    
+    // Check dimensions match
+    if (centers_cols != query_cols) {
+      Rf_error("Dimensions of centers and query matrices must match");
+    }
+    
+    // --- Create result vector ---
+    SEXP result;
+    PROTECT(result = Rf_allocVector(INTSXP, query_rows));
+    int* p_result = INTEGER(result);
+    
+    // Pre-compute squared norms for centers: ||center||^2
+    std::vector<double> centers_sq(centers_rows, 0.0);
+    for (int c = 0; c < centers_rows; ++c) {
+      for (int d = 0; d < centers_cols; ++d) {
+        double val = p_centers[c + d * centers_rows];
+        centers_sq[c] += val * val;
+      }
+    }
+    
+    // --- Main Logic: For each query point, find nearest center ---
+    for (int q = 0; q < query_rows; ++q) {
+      
+      // Compute squared norm for this query point: ||query||^2
+      double query_sq = 0.0;
+      for (int d = 0; d < query_cols; ++d) {
+        double val = p_query[q + d * query_rows];
+        query_sq += val * val;
+      }
+      
+      // Find nearest center using ||a - b||^2 = ||a||^2 + ||b||^2 - 2*(a·b)
+      double min_dist_sq = R_PosInf;
+      int nearest_idx = 0;
+      
+      for (int c = 0; c < centers_rows; ++c) {
+        // Compute dot product: query · center
+        double dot_product = 0.0;
+        for (int d = 0; d < centers_cols; ++d) {
+          dot_product += p_query[q + d * query_rows] * p_centers[c + d * centers_rows];
+        }
+        
+        // Compute squared distance using the identity
+        double dist_sq = query_sq + centers_sq[c] - 2.0 * dot_product;
+        
+        if (dist_sq < min_dist_sq) {
+          min_dist_sq = dist_sq;
+          nearest_idx = c + 1; // +1 for R 1-based indexing
+        }
+      }
+      
+      p_result[q] = nearest_idx;
+    }
+    
+    UNPROTECT(1);
+    return result;
+  }
+  
+  
+  // ---------------------------------------------------------------------------
+  // 0b. knnx_index_cpp
   // ---------------------------------------------------------------------------
   // This function implements k-nearest neighbors index search to replace FNN::knnx.index
   // The R wrapper function is `knnx.index`.

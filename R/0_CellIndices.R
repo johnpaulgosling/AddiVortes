@@ -5,8 +5,8 @@
 #'
 #' @details It finds the closest tessellation centre for each observation (row) in
 #'   the covariate matrix, considering only the specified dimensions. This is
-#'   achieved using a brute force distance calculation which is faster than
-#'   KD-tree for typical tessellation sizes.
+#'   achieved using a brute force distance calculation implemented in C++ for
+#'   optimal performance.
 #'
 #' @param obs A numeric matrix where each row is an observation.
 #' @param centers A numeric matrix where each row is a center.
@@ -17,10 +17,17 @@
 #' @keywords internal
 #' @noRd
 assign_bruteforce <- function(obs, centers) {
-  obs_sq <- rowSums(obs^2)
-  cn_sq  <- rowSums(centers^2)
-  D <- outer(obs_sq, cn_sq, "+") - 2*(obs %*% t(centers))
-  max.col(-D)
+  # Input validation
+  if (!is.matrix(obs)) obs <- as.matrix(obs)
+  if (!is.matrix(centers)) centers <- as.matrix(centers)
+  if (ncol(obs) != ncol(centers)) {
+    stop("Number of columns in obs and centers must match")
+  }
+  
+  # Call C++ implementation
+  result <- .Call("bruteforce_assign_cpp", centers, obs)
+  
+  return(as.vector(result))
 }
 
 #' @title Assign Observations to Tessellation Cells

@@ -2,8 +2,8 @@
 
 ## AddiVortes 0.4.0
 
-* **Performance improvement**: Replaced KD-tree-based nearest neighbor search with brute force allocation algorithm for faster observation assignment to tessellation tiles.
-* Implemented vectorized brute force method using matrix operations in pure R, eliminating dependency on C++ KD-tree implementation for this component.
+* **Performance improvement**: Replaced KD-tree-based nearest neighbor search with optimized brute force allocation algorithm for faster observation assignment to tessellation tiles.
+* Implemented brute force method in C++ using the mathematical identity ||a - b||² = ||a||² + ||b||² - 2(a·b) to efficiently compute all pairwise distances without materializing large distance matrices.
 * Added comprehensive test suite for brute force allocation in `tests/testthat/test-bruteforce.R`.
 
 ## AddiVortes 0.3.2
