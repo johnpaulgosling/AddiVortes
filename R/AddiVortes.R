@@ -52,6 +52,18 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
   xCentres <- xScalingResult$centres # Vector of values
   xRanges <- xScalingResult$ranges # Vector of values
   
+  #### Check dimensions --------------------------------------------------------
+  n <- length(y)
+  p <- ncol(xScaled)
+  if (p > n) {
+    warning(
+      "Number of covariates (p = ", p, ") exceeds number of observations (n = ", n, "). ",
+      "Model results may not be stable. Consider reducing the number of covariates or ",
+      "increasing the sample size.",
+      call. = FALSE
+    )
+  }
+  
   #### Initialise predictions --------------------------------------------------
   # Initialise:
   # Prediction Set (A list of vectors with the output values for each tessellation),
