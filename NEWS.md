@@ -1,5 +1,9 @@
 # AddiVortes News
 
+## AddiVortes 0.3.3
+
+* Added warning for situation where covariates exceed observations.
+
 ## AddiVortes 0.3.2
 
 * Improved progress bar output to give more information during MCMC sampling and prediction processes.
