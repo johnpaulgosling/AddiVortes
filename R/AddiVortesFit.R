@@ -227,103 +227,93 @@ summary.AddiVortesFit <- function(object, ...) {
 #' being available in the environment, which is used by the main
 #' `AddiVortes` function.
 #'
+#' @importFrom parallel makeCluster stopCluster parLapply detectCores
+#' @importFrom pbapply pblapply
 #' @export
 #' @method predict AddiVortesFit
 predict.AddiVortesFit <- function(object, newdata,
                                   type = c("response", "quantile"),
                                   quantiles = c(0.025, 0.975), 
-                                  showProgress = TRUE, ...) {
-  # Match the type argument
+                                  showProgress = TRUE,
+                                  parallel = TRUE,
+                                  cores = NULL,
+                                  ...) {
   type <- match.arg(type)
   
-  # --- Input Validation ---
-  if (!inherits(object, "AddiVortesFit")) {
+  # --- Input validation ---
+  if (!inherits(object, "AddiVortesFit"))
     stop("`object` must be of class 'AddiVortesFit'.")
-  }
-  if (!is.matrix(newdata)) {
+  if (!is.matrix(newdata))
     stop("`newdata` must be a matrix.")
-  }
-  if (ncol(newdata) != length(object$xCentres)) {
+  if (ncol(newdata) != length(object$xCentres))
     stop("Number of columns in `newdata` does not match the original training data.")
-  }
   
-  # Extract model components from the fitted object
   posteriorTessSamples <- object$posteriorTess
-  posteriorDimSamples <- object$posteriorDim
+  posteriorDimSamples  <- object$posteriorDim
   posteriorPredSamples <- object$posteriorPred
-  numStoredSamples <- length(posteriorTessSamples)
+  numStoredSamples     <- length(posteriorTessSamples)
   
-  # Handle cases with no stored samples
   if (numStoredSamples == 0) {
     warning("The AddiVortes model contains no posterior samples. Cannot make predictions.")
     return(NA_real_)
   }
   
-  # Scale the new test covariates using stored scaling parameters
+  # Scale new data
   xNewScaled <- applyScaling_internal(
     mat = newdata,
     centres = object$xCentres,
     ranges = object$xRanges
   )
   
-  # Determine the number of tessellations (m) from the first stored sample
   mTessellations <- length(posteriorTessSamples[[1]])
+  nObs <- nrow(xNewScaled)
   
-  # Initialize a matrix to store predictions for each posterior sample
-  newTestDataPredictionsMatrix <- array(dim = c(nrow(xNewScaled),
-                                                numStoredSamples))
+  # --- Parallel setup ---
+  if (is.null(cores)) cores <- max(1, parallel::detectCores() - 1)
+  useParallel <- parallel && (cores > 1)
+  cl <- NULL
   
-  # --- Prediction Loop ---
-  # Display initial message and set up progress bar
+  if (useParallel && .Platform$OS.type == "windows") {
+    cl <- parallel::makeCluster(cores)
+    on.exit(parallel::stopCluster(cl), add = TRUE)
+  }
+  
   if (showProgress) {
-    cat("Generating predictions for ", nrow(newdata), " observations using ", 
-        numStoredSamples, " posterior samples...\n", sep = "")
-    pbar <- txtProgressBar(min = 0, max = numStoredSamples,
-                           style = 3, width = 50, char = "=")
+    cat("Generating predictions for ", nrow(newdata),
+        " observations using ", numStoredSamples,
+        " posterior samples...\n", sep = "")
   }
   
-  for (sIdx in 1:numStoredSamples) {
-    current_tess <- posteriorTessSamples[[sIdx]]
-    current_dim  <- posteriorDimSamples[[sIdx]]
-    current_pred <- posteriorPredSamples[[sIdx]]
-    
-    # Get preds for each of the m tessellations in current posterior sample
-    predictionList <- lapply(1:mTessellations, function(j) {
-      NewTessIndexes <- cellIndices(xNewScaled, current_tess[[j]],
-                                    current_dim[[j]])
-      current_pred[[j]][NewTessIndexes]
-    })
-    
-    # Sum the predictions from all m tessellations for this posterior sample
-    predictionsForSampleS <- rowSums(do.call(cbind, predictionList))
-    
-    newTestDataPredictionsMatrix[, sIdx] <- predictionsForSampleS
-    
-    # Update progress bar
-    if (showProgress) {
-      setTxtProgressBar(pbar, sIdx)
-    }
-  }
+  # --- Parallel prediction loop with progress ---
+  prediction_list <- pbapply::pblapply(
+    X = 1:numStoredSamples,
+    FUN = function(sIdx) {
+      current_tess <- posteriorTessSamples[[sIdx]]
+      current_dim  <- posteriorDimSamples[[sIdx]]
+      current_pred <- posteriorPredSamples[[sIdx]]
+      
+      # Get predictions for each tessellation in current posterior sample
+      pred_list <- lapply(seq_len(mTessellations), function(j) {
+        NewTessIndexes <- cellIndices(xNewScaled, current_tess[[j]], current_dim[[j]])
+        current_pred[[j]][NewTessIndexes]
+      })
+      
+      rowSums(do.call(cbind, pred_list))
+    },
+    cl = if (useParallel) (if (.Platform$OS.type == "windows") cl else cores) else NULL
+  )
   
-  # Close progress bar
-  if (showProgress) {
-    close(pbar)
-    cat("\nPrediction generation completed.\n\n")
-  }
+  if (showProgress) cat("\nPrediction generation completed.\n\n")
   
-  # --- Process and Unscale Predictions ---
+  # Combine predictions into a matrix
+  newTestDataPredictionsMatrix <- do.call(cbind, prediction_list)
+  
+  # --- Unscale and summarise predictions ---
   if (type == "response") {
-    # Calculate the mean of predictions across all posterior samples 
-    # (still scaled)
-    meanYhatNewScaled <- rowMeans(newTestDataPredictionsMatrix)
-    # Unscale the mean predictions
-    predictions <- meanYhatNewScaled * object$yRange + object$yCentre
+    predictions <- rowMeans(newTestDataPredictionsMatrix) * object$yRange + object$yCentre
   } else if (type == "quantile") {
-    # Calculate the specified quantiles of the predictions
     quantileYhatNewScaled <- apply(newTestDataPredictionsMatrix, 1, quantile,
-                                   probs = quantiles, na.rm = TRUE
-    )
-    # Unscale the quantiles of predictions (transpose for correct dimensions)
+                                   probs = quantiles, na.rm = TRUE)
     predictions <- t(quantileYhatNewScaled * object$yRange + object$yCentre)
   }
   

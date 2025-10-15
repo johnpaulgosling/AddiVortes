@@ -10,6 +10,8 @@
   type = c("response", "quantile"),
   quantiles = c(0.025, 0.975),
   showProgress = TRUE,
+  parallel = TRUE,
+  cores = NULL,
   ...
 )
 }

@@ -20,7 +20,8 @@ results <- AddiVortes(Y_Boston[TrainSet], X_Boston[TrainSet, ],
 )
 preds <- predict(
   results,
-  X_Boston[TestSet, ]
+  X_Boston[TestSet, ],
+  cores = 10
 )
 toc()
 
