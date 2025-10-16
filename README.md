@@ -8,6 +8,7 @@ AddiVortes implements the **Bayesian Additive Voronoi Tessellation** model for m
 
 - **Machine Learning Regression**: Advanced Bayesian regression modeling for complex datasets
 - **Alternative to BART**: Uses Voronoi tessellations instead of trees for more flexible spatial modeling
+- **Parallel Computing**: Leverages multi-core processing for efficient MCMC sampling and predictions
 - **Spatial Data Analysis**: Excellent for geographic and spatial datasets
 - **Non-parametric Modeling**: No assumptions about functional form
 - **Bayesian Framework**: Full posterior inference with uncertainty quantification

@@ -213,23 +213,69 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
       sumOfAllTess
     )
     
+    # Parallelize proposal generation and index calculations
+    # Generate all proposals in parallel using cross-platform approach
+    if (.Platform$OS.type == "windows") {
+      # On Windows, use parLapply with a cluster
+      proposals <- lapply(1:m, function(j) {
+        newTessOutput <- proposeTessellation(
+          tess[[j]],
+          dim[[j]],
+          sd,
+          covariateIndices,
+          numCovariates
+        )
+        tess_j_star <- newTessOutput[[1]]
+        dim_j_star <- newTessOutput[[2]]
+        modification <- newTessOutput[[3]]
+        
+        # Calculate new indices for the proposal
+        indexesStar <- cellIndices(xScaled, tess_j_star, dim_j_star)
+        
+        list(
+          tess_j_star = tess_j_star,
+          dim_j_star = dim_j_star,
+          modification = modification,
+          indexesStar = indexesStar
+        )
+      })
+    } else {
+      # On Unix-like systems, use mclapply for better performance
+      proposals <- parallel::mclapply(1:m, function(j) {
+        newTessOutput <- proposeTessellation(
+          tess[[j]],
+          dim[[j]],
+          sd,
+          covariateIndices,
+          numCovariates
+        )
+        tess_j_star <- newTessOutput[[1]]
+        dim_j_star <- newTessOutput[[2]]
+        modification <- newTessOutput[[3]]
+        
+        # Calculate new indices for the proposal
+        indexesStar <- cellIndices(xScaled, tess_j_star, dim_j_star)
+        
+        list(
+          tess_j_star = tess_j_star,
+          dim_j_star = dim_j_star,
+          modification = modification,
+          indexesStar = indexesStar
+        )
+      }, mc.cores = getOption("mc.cores", 2L))
+    }
+    
+    # Sequential processing of accept/reject for each tessellation
     for (j in 1:m) {
-      # Propose new Tessellation for component j
-      newTessOutput <- proposeTessellation(
-        tess[[j]],
-        dim[[j]],
-        sd,
-        covariateIndices,
-        numCovariates
-      )
-      tess_j_star <- newTessOutput[[1]]
-      dim_j_star <- newTessOutput[[2]]
-      modification <- newTessOutput[[3]]
+      # Extract pre-computed proposal
+      proposal <- proposals[[j]]
+      tess_j_star <- proposal$tess_j_star
+      dim_j_star <- proposal$dim_j_star
+      modification <- proposal$modification
+      indexesStar <- proposal$indexesStar
       
       # Retrieve old indices from cache
       indexes <- current_indices[[j]]
-      # Calculate new indices for the proposal
-      indexesStar <- cellIndices(xScaled, tess_j_star, dim_j_star)
       
       residualsOutput <- calculateResiduals(
         y = yScaled,

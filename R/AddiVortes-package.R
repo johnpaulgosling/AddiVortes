@@ -5,14 +5,17 @@
 #' machine learning regression and non-parametric statistical modeling. This 
 #' package provides a flexible alternative to BART (Bayesian Additive Regression 
 #' Trees), using Voronoi tessellations instead of trees for spatial partitioning.
-#' The method is particularly effective for spatial data analysis, complex 
-#' function approximation, and Bayesian regression modeling.
+#' The package leverages parallel computing to accelerate both MCMC sampling
+#' and prediction, making it efficient for large-scale problems. The method is
+#' particularly effective for spatial data analysis, complex function approximation,
+#' and Bayesian regression modeling.
 #' 
 #' @details
 #' Key features include:
 #' \itemize{
 #'   \item Machine learning regression with Bayesian inference
 #'   \item Alternative to BART using Voronoi tessellations
+#'   \item Parallel computing support for efficient computation
 #'   \item Spatial data analysis and modeling
 #'   \item Non-parametric regression capabilities
 #'   \item Complex function approximation

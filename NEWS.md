@@ -1,5 +1,11 @@
 # AddiVortes News
 
+## AddiVortes 0.4.2
+
+* Added parallel computing to the inner loop of the AddiVortes MCMC sampler.
+* Proposal generation and cell index calculations are now performed in parallel across tessellations, improving computational efficiency.
+* Cross-platform parallel support using mclapply on Unix-like systems and standard lapply on Windows.
+
 ## AddiVortes 0.4.1
 
 * Added parallel processing to predict function.
