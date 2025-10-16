@@ -1,5 +1,10 @@
 # AddiVortes News
 
+## AddiVortes 0.4.1
+
+* Added parallel processing to predict function.
+* Removed unnecessary square-root function from KD-tree search.
+
 ## AddiVortes 0.3.3
 
 * Added warning for situation where covariates exceed observations.

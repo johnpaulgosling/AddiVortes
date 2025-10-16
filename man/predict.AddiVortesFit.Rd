@@ -31,6 +31,11 @@ compute for the predictions when \code{type = "quantile"}.}
 
 \item{showProgress}{Logical; if TRUE (default), a progress bar is shown during prediction.}
 
+\item{parallel}{Logical; if TRUE (default), predictions are computed in parallel.}
+
+\item{cores}{The number of CPU cores to use for parallel processing. If NULL (default),
+it defaults to one less than the total number of available cores.}
+
 \item{...}{Further arguments passed to or from other methods (currently
 unused).}
 }

@@ -60,10 +60,10 @@ extern "C" {
           double diff = p_query[q + d * query_rows] - p_tess[t + d * tess_rows];
           dist_sq += diff * diff;
         }
-        distances[t] = std::make_pair(sqrt(dist_sq), t + 1); // +1 for R 1-based indexing
+        distances[t] = std::make_pair(dist_sq, t + 1); // +1 for R 1-based indexing
       }
       
-      // Sort by distance to get k nearest neighbors
+      // Sort by squared distance to get k nearest neighbors
       std::partial_sort(distances.begin(), distances.begin() + k, distances.end());
       
       // Store the indices of k nearest neighbors

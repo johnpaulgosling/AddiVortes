@@ -214,6 +214,9 @@ summary.AddiVortesFit <- function(object, ...) {
 #' @param quantiles A numeric vector of probabilities with values in [0, 1] to
 #'   compute for the predictions when `type = "quantile"`.
 #' @param showProgress Logical; if TRUE (default), a progress bar is shown during prediction.
+#' @param parallel Logical; if TRUE (default), predictions are computed in parallel.
+#' @param cores The number of CPU cores to use for parallel processing. If NULL (default), 
+#'  it defaults to one less than the total number of available cores.
 #' @param ... Further arguments passed to or from other methods (currently 
 #' unused).
 #'
