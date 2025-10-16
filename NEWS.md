@@ -2,9 +2,10 @@
 
 ## AddiVortes 0.4.2
 
-* Added parallel computing to the inner loop of the AddiVortes MCMC sampler.
-* Proposal generation and cell index calculations are now performed in parallel across tessellations, improving computational efficiency.
-* Cross-platform parallel support using mclapply on Unix-like systems and standard lapply on Windows.
+* Added optional parallel computing support to the inner loop of the AddiVortes MCMC sampler.
+* Proposal generation and cell index calculations can be performed in parallel across tessellations using the `useParallel = TRUE` parameter, improving computational efficiency for large numbers of tessellations.
+* Parallel processing is disabled by default to ensure reproducibility. Users can enable it for faster computation when exact reproducibility is not required.
+* Parallel implementation uses mclapply on Unix-like systems (Linux, macOS); not available on Windows.
 
 ## AddiVortes 0.4.1
 
