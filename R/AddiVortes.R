@@ -40,7 +40,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
                        mcmcBurnIn = 200, nu = 6, q = 0.85,
                        k = 3, sd = 0.8, omega = 3, lambdaRate = 25,
                        IntialSigma = "Linear",
-                       thinning = 1, showProgress = TRUE) {
+                       thinning = 1, showProgress = TRUE, useParallel = FALSE) {
   #### Scaling x and y ---------------------------------------------------------
   yScalingResult <- scaleData_internal(y)
   yScaled <- yScalingResult$scaledData # Vector of values
