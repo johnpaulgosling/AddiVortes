@@ -139,6 +139,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
     "list",
     numPosteriorSamplesToStore
   )
+  outputPosteriorSigma <- numeric(numPosteriorSamplesToStore)
   sigmaSquared <- NULL
   
   currentStorageIdx <- 1 # Index for the new output lists
@@ -307,10 +308,11 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
     if (numPosteriorSamplesToStore > 0 &&
         i > mcmcBurnIn &
         (i - mcmcBurnIn) %% thinning == 0) {
-      # Store the current state of tess, dim, pred
+      # Store the current state of tess, dim, pred, sigma
       outputPosteriorTess[[currentStorageIdx]] <- tess
       outputPosteriorDim[[currentStorageIdx]] <- dim
       outputPosteriorPred[[currentStorageIdx]] <- pred
+      outputPosteriorSigma[currentStorageIdx] <- sigmaSquared[i]
       currentStorageIdx <- currentStorageIdx + 1
     }
   } # End of MCMC Loop
@@ -336,7 +338,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
   new_AddiVortesFit(
     posteriorTess = outputPosteriorTess,
     posteriorDim = outputPosteriorDim,
-    posteriorSigma = sigmaSquared,
+    posteriorSigma = outputPosteriorSigma,
     posteriorPred = outputPosteriorPred,
     xCentres = xCentres,
     xRanges = xRanges,

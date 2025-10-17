@@ -90,8 +90,17 @@ preds <- predict(AModel, testX,
                  showProgress = FALSE)
 
 # Predict the 90% credible interval (from 0.05 to 0.95 quantiles)
+# By default, this uses interval = "confidence" which only accounts for
+# uncertainty in the mean function
 preds_q <- predict(AModel, testX,
                    "quantile", c(0.05, 0.95), showProgress = FALSE)
+
+# For prediction intervals that also include the model's error variance
+# (similar to lm's prediction intervals), use interval = "prediction"
+# preds_q_pred <- predict(AModel, testX,
+#                         "quantile", c(0.05, 0.95), 
+#                         interval = "prediction",
+#                         showProgress = FALSE)
 ```
 
 ### 4. Visualising Prediction Performance
@@ -137,3 +146,99 @@ legend("bottomright",
 ```
 
 This plot shows that the model has successfully learned the underlying structure of the data with predictions clustering correctly around the true mean values of 0 and 10.
+
+### 5. Confidence Intervals vs. Prediction Intervals
+
+The `predict()` method supports two types of intervals, similar to R's built-in `lm` function:
+
+- **Confidence intervals** (`interval = "confidence"`, the default): These reflect uncertainty in the **mean function** E[Y|X]. They account for posterior sampling variability and uncertainty in the tessellation structure, but do not include the inherent noise in individual observations.
+
+- **Prediction intervals** (`interval = "prediction"`): These include both the uncertainty in the mean function AND the model's error variance (σ²). This makes them more appropriate for predicting individual future observations.
+
+Let's compare these two types of intervals on a subset of test data:
+
+```{r, fig.width=7, fig.height=6, fig.align='center'}
+# Use a subset of test data for clearer visualization
+subset_indices <- 1:20
+testX_subset <- testX[subset_indices, ]
+testY_subset <- testY[subset_indices]
+
+# Get confidence intervals (uncertainty in mean only)
+conf_intervals <- predict(AModel, testX_subset,
+                         type = "quantile",
+                         interval = "confidence",
+                         quantiles = c(0.025, 0.975),
+                         showProgress = FALSE)
+
+# Get prediction intervals (includes error variance)
+pred_intervals <- predict(AModel, testX_subset,
+                         type = "quantile",
+                         interval = "prediction",
+                         quantiles = c(0.025, 0.975),
+                         showProgress = FALSE)
+
+# Get mean predictions
+mean_preds <- predict(AModel, testX_subset,
+                     type = "response",
+                     showProgress = FALSE)
+
+# Create comparison plot
+plot(1:length(testY_subset), testY_subset,
+     ylim = range(c(testY_subset, pred_intervals)),
+     xlab = "Observation Index",
+     ylab = "Response Value",
+     main = "Confidence Intervals vs. Prediction Intervals",
+     pch = 19, col = "black", cex = 1.2)
+
+# Add mean predictions
+points(1:length(testY_subset), mean_preds, pch = 4, col = "blue", cex = 1)
+
+# Add confidence intervals (narrower, in blue)
+for (i in 1:length(testY_subset)) {
+  segments(i, conf_intervals[i, 1],
+           i, conf_intervals[i, 2],
+           col = "blue", lwd = 2)
+}
+
+# Add prediction intervals (wider, in red)
+for (i in 1:length(testY_subset)) {
+  segments(i - 0.1, pred_intervals[i, 1],
+           i - 0.1, pred_intervals[i, 2],
+           col = "red", lwd = 2, lty = 1)
+}
+
+# Add legend
+legend("topright",
+       legend = c("Observed Values", "Mean Prediction",
+                  "95% Confidence Interval", "95% Prediction Interval"),
+       col = c("black", "blue", "blue", "red"),
+       pch = c(19, 4, NA, NA),
+       lty = c(NA, NA, 1, 1),
+       lwd = c(NA, NA, 2, 2),
+       bty = "n")
+```
+
+As you can see in the plot, the prediction intervals (red) are wider than the confidence intervals (blue). This is because prediction intervals account for both:
+
+1. **Epistemic uncertainty**: Our uncertainty about the true mean function (captured by the confidence interval)
+2. **Aleatoric uncertainty**: The inherent random noise in individual observations (the additional width in prediction intervals)
+
+We can quantify this difference:
+
+```{r}
+# Calculate average interval widths
+conf_width <- mean(conf_intervals[, 2] - conf_intervals[, 1])
+pred_width <- mean(pred_intervals[, 2] - pred_intervals[, 1])
+
+cat("Average 95% confidence interval width:", round(conf_width, 2), "\n")
+cat("Average 95% prediction interval width:", round(pred_width, 2), "\n")
+cat("Ratio (prediction/confidence):", round(pred_width / conf_width, 2), "\n")
+```
+
+**When to use each type:**
+
+- Use **confidence intervals** when you want to understand uncertainty about the mean response at a given set of predictor values (e.g., "What is the average outcome for this type of case?")
+
+- Use **prediction intervals** when you want to predict individual future observations (e.g., "What range of outcomes should I expect for this specific new case?")
+
+This distinction is the same as in standard regression with `lm`, but AddiVortes additionally captures complex non-linear relationships through its tessellation-based approach.
