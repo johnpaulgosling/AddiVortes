@@ -241,6 +241,34 @@ summary.AddiVortesFit <- function(object, ...) {
 #' predictions, not just uncertainty in the mean function. The noise is added
 #' in the scaled space before unscaling predictions.
 #'
+#' @examples
+#' \donttest{
+#' # Fit a model
+#' set.seed(123)
+#' X <- matrix(rnorm(100), 20, 5)
+#' Y <- rnorm(20)
+#' fit <- AddiVortes(Y, X, m = 5, totalMCMCIter = 50, mcmcBurnIn = 10)
+#' 
+#' # New data for prediction
+#' X_new <- matrix(rnorm(25), 5, 5)
+#' 
+#' # Mean predictions
+#' pred_mean <- predict(fit, X_new, type = "response")
+#' 
+#' # Confidence intervals (uncertainty in mean only)
+#' pred_conf <- predict(fit, X_new, type = "quantile", 
+#'                     interval = "confidence",
+#'                     quantiles = c(0.025, 0.975))
+#' 
+#' # Prediction intervals (includes error variance)
+#' pred_pred <- predict(fit, X_new, type = "quantile",
+#'                     interval = "prediction",
+#'                     quantiles = c(0.025, 0.975))
+#' 
+#' # Prediction intervals are wider than confidence intervals
+#' mean(pred_pred[, 2] - pred_pred[, 1]) > mean(pred_conf[, 2] - pred_conf[, 1])
+#' }
+#'
 #' @importFrom parallel makeCluster stopCluster parLapply detectCores
 #' @importFrom pbapply pblapply
 #' @importFrom stats rnorm

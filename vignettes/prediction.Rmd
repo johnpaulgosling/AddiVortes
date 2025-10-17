@@ -90,8 +90,17 @@ preds <- predict(AModel, testX,
                  showProgress = FALSE)
 
 # Predict the 90% credible interval (from 0.05 to 0.95 quantiles)
+# By default, this uses interval = "confidence" which only accounts for
+# uncertainty in the mean function
 preds_q <- predict(AModel, testX,
                    "quantile", c(0.05, 0.95), showProgress = FALSE)
+
+# For prediction intervals that also include the model's error variance
+# (similar to lm's prediction intervals), use interval = "prediction"
+# preds_q_pred <- predict(AModel, testX,
+#                         "quantile", c(0.05, 0.95), 
+#                         interval = "prediction",
+#                         showProgress = FALSE)
 ```
 
 ### 4. Visualising Prediction Performance
