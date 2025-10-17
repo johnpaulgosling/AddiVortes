@@ -1,7 +1,7 @@
 Package: AddiVortes
 Title: (Bayesian) Additive Voronoi Tessellations
 Version: 0.4.1
-Date: 2025-10-15
+Date: 2025-10-17
 Authors@R: 
     c(person("Adam", "Stone", , "adam.stone2@durham.ac.uk",
              role = c("aut"),
@@ -17,7 +17,7 @@ Description: Implements the Bayesian Additive Voronoi Tessellation (AddiVortes)
     Voronoi tessellations instead of trees. Users can fit Bayesian regression models,
     estimate posterior distributions, and visualise the resulting tessellations. 
     It is particularly useful for spatial data analysis, machine learning regression,
-    complex function approximation, and Bayesian modeling where the underlying 
+    complex function approximation and Bayesian modeling where the underlying 
     structure is unknown. The method excels at capturing spatial patterns and 
     non-linear relationships in data.
 License: GPL (>= 3)
@@ -28,8 +28,8 @@ RoxygenNote: 7.3.2
 Depends: 
     R (>= 3.5.0)
 Imports:
-    parallel,
-    pbapply
+    parallel (>= 4.0.0),
+    pbapply (>= 1.6)
 Suggests: 
     knitr,
     rmarkdown,

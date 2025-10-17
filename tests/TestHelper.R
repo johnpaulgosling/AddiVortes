@@ -21,7 +21,7 @@ results <- AddiVortes(Y_Boston[TrainSet], X_Boston[TrainSet, ],
 preds <- predict(
   results,
   X_Boston[TestSet, ],
-  cores = 10
+  cores = 5
 )
 toc()
 
@@ -79,3 +79,4 @@ plot(results, X_Boston[TrainSet, ], Y_Boston[TrainSet],
 # v0.2.2 = 49 sec elapsed
 # v0.2.5 = 50 sec elapsed
 # v0.3.0 = 25 sec elapsed
+# v0.4.1 = 24 sec elapsed
