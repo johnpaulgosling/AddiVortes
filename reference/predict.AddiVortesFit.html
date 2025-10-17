@@ -166,10 +166,7 @@ in the scaled space before unscaling predictions.</p>
 <span class="r-in"><span><span class="va">pred_conf</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">X_new</span>, type <span class="op">=</span> <span class="st">"quantile"</span>, </span></span>
 <span class="r-in"><span>                    interval <span class="op">=</span> <span class="st">"confidence"</span>,</span></span>
 <span class="r-in"><span>                    quantiles <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.025</span>, <span class="fl">0.975</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Generating predictions for 5 observations using 40 posterior samples...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Prediction generation completed.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in match.arg(interval):</span> 'arg' should be one of “credible”, “prediction”</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Prediction intervals (includes error variance)</span></span></span>
 <span class="r-in"><span><span class="va">pred_pred</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">X_new</span>, type <span class="op">=</span> <span class="st">"quantile"</span>,</span></span>
@@ -182,7 +179,7 @@ in the scaled space before unscaling predictions.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Prediction intervals are wider than confidence intervals</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">pred_pred</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span> <span class="op">-</span> <span class="va">pred_pred</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">pred_conf</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span> <span class="op">-</span> <span class="va">pred_conf</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'pred_conf' not found</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
