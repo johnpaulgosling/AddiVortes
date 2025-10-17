@@ -9,6 +9,7 @@
   newdata,
   type = c("response", "quantile"),
   quantiles = c(0.025, 0.975),
+  interval = c("confidence", "prediction"),
   showProgress = TRUE,
   parallel = TRUE,
   cores = NULL,
@@ -28,6 +29,11 @@ specified by the \code{quantiles} argument.}
 
 \item{quantiles}{A numeric vector of probabilities with values in \link{0, 1} to
 compute for the predictions when \code{type = "quantile"}.}
+
+\item{interval}{The type of interval calculation. The default \code{"confidence"}
+accounts only for uncertainty in the mean (similar to lm's confidence interval).
+The alternative \code{"prediction"} also includes the model's error variance,
+producing wider intervals (similar to lm's prediction interval).}
 
 \item{showProgress}{Logical; if TRUE (default), a progress bar is shown during prediction.}
 
@@ -53,4 +59,10 @@ Root Mean Squared Error (RMSE) if true outcomes are provided.
 This function relies on the internal helper function \code{applyScaling_internal}
 being available in the environment, which is used by the main
 \code{AddiVortes} function.
+
+When \code{interval = "prediction"} and \code{type = "quantile"}, the function samples
+additional Gaussian noise with variance equal to the sampled sigma squared
+from the posterior. This accounts for the inherent variability in individual
+predictions, not just uncertainty in the mean function. The noise is added
+in the scaled space before unscaling predictions.
 }

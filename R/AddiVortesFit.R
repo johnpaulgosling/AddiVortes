@@ -22,6 +22,7 @@ new_AddiVortesFit <- function(posteriorTess, posteriorDim,
     list(
       posteriorTess = posteriorTess,
       posteriorDim = posteriorDim,
+      posteriorSigma = posteriorSigma,
       posteriorPred = posteriorPred,
       xCentres = xCentres,
       xRanges = xRanges,
@@ -213,6 +214,10 @@ summary.AddiVortesFit <- function(object, ...) {
 #'   specified by the `quantiles` argument.
 #' @param quantiles A numeric vector of probabilities with values in [0, 1] to
 #'   compute for the predictions when `type = "quantile"`.
+#' @param interval The type of interval calculation. The default `"confidence"`
+#'   accounts only for uncertainty in the mean (similar to lm's confidence interval).
+#'   The alternative `"prediction"` also includes the model's error variance,
+#'   producing wider intervals (similar to lm's prediction interval).
 #' @param showProgress Logical; if TRUE (default), a progress bar is shown during prediction.
 #' @param parallel Logical; if TRUE (default), predictions are computed in parallel.
 #' @param cores The number of CPU cores to use for parallel processing. If NULL (default), 
@@ -230,18 +235,27 @@ summary.AddiVortesFit <- function(object, ...) {
 #' being available in the environment, which is used by the main
 #' `AddiVortes` function.
 #'
+#' When `interval = "prediction"` and `type = "quantile"`, the function samples
+#' additional Gaussian noise with variance equal to the sampled sigma squared
+#' from the posterior. This accounts for the inherent variability in individual
+#' predictions, not just uncertainty in the mean function. The noise is added
+#' in the scaled space before unscaling predictions.
+#'
 #' @importFrom parallel makeCluster stopCluster parLapply detectCores
 #' @importFrom pbapply pblapply
+#' @importFrom stats rnorm
 #' @export
 #' @method predict AddiVortesFit
 predict.AddiVortesFit <- function(object, newdata,
                                   type = c("response", "quantile"),
-                                  quantiles = c(0.025, 0.975), 
+                                  quantiles = c(0.025, 0.975),
+                                  interval = c("confidence", "prediction"),
                                   showProgress = TRUE,
                                   parallel = TRUE,
                                   cores = NULL,
                                   ...) {
   type <- match.arg(type)
+  interval <- match.arg(interval)
   
   # --- Input validation ---
   if (!inherits(object, "AddiVortesFit"))
@@ -254,7 +268,18 @@ predict.AddiVortesFit <- function(object, newdata,
   posteriorTessSamples <- object$posteriorTess
   posteriorDimSamples  <- object$posteriorDim
   posteriorPredSamples <- object$posteriorPred
+  posteriorSigmaSamples <- object$posteriorSigma
   numStoredSamples     <- length(posteriorTessSamples)
+  
+  # Validate sigma samples for prediction intervals
+  if (interval == "prediction" && type == "quantile") {
+    if (is.null(posteriorSigmaSamples) || length(posteriorSigmaSamples) == 0) {
+      stop("Prediction intervals require posterior sigma samples, which are not available in this model object.")
+    }
+    if (length(posteriorSigmaSamples) != numStoredSamples) {
+      stop("Number of sigma samples does not match number of posterior samples.")
+    }
+  }
   
   if (numStoredSamples == 0) {
     warning("The AddiVortes model contains no posterior samples. Cannot make predictions.")
@@ -301,7 +326,17 @@ predict.AddiVortesFit <- function(object, newdata,
         current_pred[[j]][NewTessIndexes]
       })
       
-      rowSums(do.call(cbind, pred_list))
+      model_predictions <- rowSums(do.call(cbind, pred_list))
+      
+      # Add Gaussian noise for prediction intervals when computing quantiles
+      if (interval == "prediction" && type == "quantile") {
+        current_sigma <- posteriorSigmaSamples[sIdx]
+        # Add noise: sample from N(model_prediction, sigma^2)
+        # Note: sigma is stored as sigma^2 (variance), so we need sqrt for sd
+        model_predictions <- model_predictions + rnorm(nObs, mean = 0, sd = sqrt(current_sigma))
+      }
+      
+      model_predictions
     },
     cl = if (useParallel) (if (.Platform$OS.type == "windows") cl else cores) else NULL
   )
