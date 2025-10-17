@@ -1,6 +1,6 @@
 # --- Test Suite for prediction intervals ---
 
-test_that("Prediction intervals are wider than confidence intervals", {
+test_that("Prediction intervals are wider than credible intervals", {
   set.seed(12345)
   X <- matrix(rnorm(500), 100, 5)
   Y <- rnorm(100, 0, 2)
@@ -10,9 +10,9 @@ test_that("Prediction intervals are wider than confidence intervals", {
                        totalMCMCIter = 100, mcmcBurnIn = 20,
                        showProgress = FALSE)
   
-  # Get confidence intervals (default)
+  # Get credible intervals (default)
   pred_conf <- predict(results, X_test, type = "quantile",
-                      interval = "confidence",
+                      interval = "credible",
                       quantiles = c(0.025, 0.975),
                       showProgress = FALSE)
   
@@ -26,7 +26,7 @@ test_that("Prediction intervals are wider than confidence intervals", {
   conf_width <- pred_conf[, 2] - pred_conf[, 1]
   pred_width <- pred_pred[, 2] - pred_pred[, 1]
   
-  # Prediction intervals should generally be wider than confidence intervals
+  # Prediction intervals should generally be wider than credible intervals
   # (allowing for some statistical variation due to sampling)
   expect_true(mean(pred_width) > mean(conf_width))
 })
@@ -41,14 +41,14 @@ test_that("Confidence interval is default", {
                        totalMCMCIter = 50, mcmcBurnIn = 10,
                        showProgress = FALSE)
   
-  # Get quantiles without specifying interval (should default to confidence)
+  # Get quantiles without specifying interval (should default to credible)
   pred_default <- predict(results, X_test, type = "quantile",
                          quantiles = c(0.1, 0.9),
                          showProgress = FALSE)
   
-  # Get quantiles with explicit confidence interval
+  # Get quantiles with explicit credible interval
   pred_conf <- predict(results, X_test, type = "quantile",
-                      interval = "confidence",
+                      interval = "credible",
                       quantiles = c(0.1, 0.9),
                       showProgress = FALSE)
   
@@ -111,7 +111,7 @@ test_that("Response type ignores interval parameter", {
   
   # Get mean predictions with different interval settings
   pred_conf <- predict(results, X_test, type = "response",
-                      interval = "confidence",
+                      interval = "credible",
                       showProgress = FALSE)
   
   pred_pred <- predict(results, X_test, type = "response",

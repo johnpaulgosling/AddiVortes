@@ -214,8 +214,8 @@ summary.AddiVortesFit <- function(object, ...) {
 #'   specified by the `quantiles` argument.
 #' @param quantiles A numeric vector of probabilities with values in [0, 1] to
 #'   compute for the predictions when `type = "quantile"`.
-#' @param interval The type of interval calculation. The default `"confidence"`
-#'   accounts only for uncertainty in the mean (similar to lm's confidence interval).
+#' @param interval The type of interval calculation. The default `"credible"`
+#'   accounts only for uncertainty in the mean (similar to lm's credible interval).
 #'   The alternative `"prediction"` also includes the model's error variance,
 #'   producing wider intervals (similar to lm's prediction interval).
 #' @param showProgress Logical; if TRUE (default), a progress bar is shown during prediction.
@@ -255,9 +255,9 @@ summary.AddiVortesFit <- function(object, ...) {
 #' # Mean predictions
 #' pred_mean <- predict(fit, X_new, type = "response")
 #' 
-#' # Confidence intervals (uncertainty in mean only)
+#' # Credible intervals (uncertainty in mean only)
 #' pred_conf <- predict(fit, X_new, type = "quantile", 
-#'                     interval = "confidence",
+#'                     interval = "credible",
 #'                     quantiles = c(0.025, 0.975))
 #' 
 #' # Prediction intervals (includes error variance)
@@ -265,7 +265,7 @@ summary.AddiVortesFit <- function(object, ...) {
 #'                     interval = "prediction",
 #'                     quantiles = c(0.025, 0.975))
 #' 
-#' # Prediction intervals are wider than confidence intervals
+#' # Prediction intervals are wider than credible intervals
 #' mean(pred_pred[, 2] - pred_pred[, 1]) > mean(pred_conf[, 2] - pred_conf[, 1])
 #' }
 #'
@@ -277,7 +277,7 @@ summary.AddiVortesFit <- function(object, ...) {
 predict.AddiVortesFit <- function(object, newdata,
                                   type = c("response", "quantile"),
                                   quantiles = c(0.025, 0.975),
-                                  interval = c("confidence", "prediction"),
+                                  interval = c("credible", "prediction"),
                                   showProgress = TRUE,
                                   parallel = TRUE,
                                   cores = NULL,
@@ -415,7 +415,7 @@ predict.AddiVortesFit <- function(object, newdata,
 #'   \item \strong{Residuals Plot}: Residuals vs fitted values with smoothed trend line
 #'   \item \strong{Sigma Trace}: MCMC trace plot for the error variance parameter
 #'   \item \strong{Tessellation Complexity}: Trace of average tessellation size over iterations
-#'   \item \strong{Predicted vs Observed}: Scatter plot with confidence intervals
+#'   \item \strong{Predicted vs Observed}: Scatter plot with credible intervals
 #' }
 #'
 #' @importFrom graphics plot abline title par layout lines points segments legend
