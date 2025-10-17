@@ -1,5 +1,12 @@
 # AddiVortes News
 
+## AddiVortes 0.4.2
+
+* Added prediction interval support to `predict.AddiVortesFit()` function with new `interval` parameter.
+* Fixed bug where `posteriorSigma` was not stored in model objects.
+* Prediction intervals now available alongside confidence intervals, similar to `lm` predict function.
+* Updated tests to use named access instead of numeric indexing for improved robustness.
+
 ## AddiVortes 0.4.1
 
 * Added parallel processing to predict function.
