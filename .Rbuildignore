@@ -12,3 +12,4 @@
 ^\.travis\.yml$
 ^\.gitlab-ci\.yml$
 ^codecov\.yml$
+^tests/benchmark_environment_storage\.R$

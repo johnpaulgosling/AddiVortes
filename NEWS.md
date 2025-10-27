@@ -2,7 +2,7 @@
 
 ## AddiVortes 0.4.3 (Development)
 
-* **Performance improvement**: Tessellations are now stored as R environments instead of lists during MCMC sampling. This provides reference semantics and avoids unnecessary memory copying, especially beneficial for models with large numbers of tessellations (m).
+* **Internal optimization**: Tessellations are now stored as R environments instead of lists during MCMC sampling. This provides reference semantics, ensuring predictable memory behavior and avoiding potential copy-on-write overhead in long MCMC chains, especially beneficial for models with large numbers of tessellations (m).
 * Maintains full backward compatibility - stored model objects continue to use lists for posterior samples.
 
 ## AddiVortes 0.4.2
