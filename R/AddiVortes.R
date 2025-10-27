@@ -66,17 +66,21 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
   
   #### Initialise predictions --------------------------------------------------
   # Initialise:
-  # Prediction Set (A list of vectors with the output values for each tessellation),
-  # Dimension set (A list of vectors with the covariates included in the tessellations);
-  # and Tessellation Set (A list of matrices that give the
+  # Prediction Set (An environment with output values for each tessellation),
+  # Dimension set (An environment with covariates included in the tessellations);
+  # and Tessellation Set (An environment with matrices giving the
   #                       coordinates of the centres in the tessellations)
-  pred <- rep(list(matrix(mean(yScaled) / m)), m)
-  dim <- sapply(1:m, function(ignoredIndex) {
-    list(sample(1:length(x[1, ]), 1))
-  })
-  tess <- sapply(1:m, function(ignoredIndex) {
-    list(matrix(rnorm(1, 0, sd)))
-  })
+  # Using environments provides reference semantics and avoids unnecessary copying
+  pred <- new.env(hash = TRUE, size = m)
+  dim <- new.env(hash = TRUE, size = m)
+  tess <- new.env(hash = TRUE, size = m)
+  
+  for (k in 1:m) {
+    key <- as.character(k)
+    pred[[key]] <- matrix(mean(yScaled) / m)
+    dim[[key]] <- sample(1:length(x[1, ]), 1)
+    tess[[key]] <- matrix(rnorm(1, 0, sd))
+  }
   
   #### Set-up MCMC -------------------------------------------------------------
   # Prepare some variables used in the backfitting algorithm.
@@ -147,9 +151,10 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
   # Some precalculations
   numCovariates <- ncol(xScaled)
   covariateIndices <- seq_len(numCovariates)
-  current_indices <- vector("list", m)
+  current_indices <- new.env(hash = TRUE, size = m)
   for(k in 1:m) {
-    current_indices[[k]] <- cellIndices(xScaled, tess[[k]], dim[[k]])
+    key <- as.character(k)
+    current_indices[[key]] <- cellIndices(xScaled, tess[[key]], dim[[key]])
   }
   
   # Initial message and progress bar setup
@@ -215,10 +220,11 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
     )
     
     for (j in 1:m) {
+      key <- as.character(j)
       # Propose new Tessellation for component j
       newTessOutput <- proposeTessellation(
-        tess[[j]],
-        dim[[j]],
+        tess[[key]],
+        dim[[key]],
         sd,
         covariateIndices,
         numCovariates
@@ -228,7 +234,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
       modification <- newTessOutput[[3]]
       
       # Retrieve old indices from cache
-      indexes <- current_indices[[j]]
+      indexes <- current_indices[[key]]
       # Calculate new indices for the proposal
       indexesStar <- cellIndices(xScaled, tess_j_star, dim_j_star)
       
@@ -264,34 +270,34 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
         )
         
         if (log(runif(n = 1)) < logAcceptanceProb) {
-          # Accept proposal: update lists IN-PLACE
-          tess[[j]] <- tess_j_star
-          dim[[j]] <- dim_j_star
-          current_indices[[j]] <- indexesStar
+          # Accept proposal: update environments IN-PLACE
+          tess[[key]] <- tess_j_star
+          dim[[key]] <- dim_j_star
+          current_indices[[key]] <- indexesStar
           
-          pred[[j]] <- sampleMuValues(
+          pred[[key]] <- sampleMuValues(
             j, tess,
             rIjNew, nIjNew,
             sigmaSquaredMu,
             sigmaSquared[i]
           )
-          lastTessPred <- pred[[j]][indexesStar]
+          lastTessPred <- pred[[key]][indexesStar]
           
         } else {
           # Reject proposal
-          pred[[j]] <- sampleMuValues(
+          pred[[key]] <- sampleMuValues(
             j, tess, rIjOld, nIjOld,
             sigmaSquaredMu, sigmaSquared[i]
           )
-          lastTessPred <- pred[[j]][indexes]
+          lastTessPred <- pred[[key]][indexes]
         }
       } else {
         # Reject proposal (empty cell)
-        pred[[j]] <- sampleMuValues(
+        pred[[key]] <- sampleMuValues(
           j, tess, rIjOld, nIjOld,
           sigmaSquaredMu, sigmaSquared[i]
         )
-        lastTessPred <- pred[[j]][indexes]
+        lastTessPred <- pred[[key]][indexes]
       }
       
       if (j == m) {
@@ -308,10 +314,15 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
     if (numPosteriorSamplesToStore > 0 &&
         i > mcmcBurnIn &
         (i - mcmcBurnIn) %% thinning == 0) {
+      # Convert environments to lists for storage (maintains compatibility)
+      tess_list <- lapply(1:m, function(k) tess[[as.character(k)]])
+      dim_list <- lapply(1:m, function(k) dim[[as.character(k)]])
+      pred_list <- lapply(1:m, function(k) pred[[as.character(k)]])
+      
       # Store the current state of tess, dim, pred, sigma
-      outputPosteriorTess[[currentStorageIdx]] <- tess
-      outputPosteriorDim[[currentStorageIdx]] <- dim
-      outputPosteriorPred[[currentStorageIdx]] <- pred
+      outputPosteriorTess[[currentStorageIdx]] <- tess_list
+      outputPosteriorDim[[currentStorageIdx]] <- dim_list
+      outputPosteriorPred[[currentStorageIdx]] <- pred_list
       outputPosteriorSigma[currentStorageIdx] <- sigmaSquared[i]
       currentStorageIdx <- currentStorageIdx + 1
     }

@@ -18,8 +18,15 @@
 sampleMuValues <- function(j, Tess,
                            R_ijNew, n_ijNew,
                            sigmaSquaredMu, sigmaSquared) {
-  # 1. Get the number of samples needed
-  N <- length(Tess[[j]][, 1]) # Or nrow(Tess[[j]])
+  # Support both list and environment for Tess
+  key <- as.character(j)
+  if (is.environment(Tess)) {
+    # 1. Get the number of samples needed
+    N <- length(Tess[[key]][, 1]) # Or nrow(Tess[[key]])
+  } else {
+    # Legacy list support
+    N <- length(Tess[[j]][, 1]) # Or nrow(Tess[[j]])
+  }
 
   # 2. Calculate the vector of means for rnorm
   denominatorVec <- sigmaSquaredMu * n_ijNew + sigmaSquared

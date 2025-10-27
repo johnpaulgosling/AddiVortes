@@ -36,17 +36,35 @@
 calculateResiduals <- function(y, j, SumOfAllTess, Pred, lastTessPred,
                                indexes, indexesStar, num_centres_new) {
   # This part of the logic remains in R
-  if (j == 1) {
-    CurrentTessPred <- Pred[[j]][indexes]
-    SumOfAllTess <- SumOfAllTess - CurrentTessPred
+  # Support both list and environment for Pred
+  key <- as.character(j)
+  if (is.environment(Pred)) {
+    if (j == 1) {
+      CurrentTessPred <- Pred[[key]][indexes]
+      SumOfAllTess <- SumOfAllTess - CurrentTessPred
+    } else {
+      CurrentTessPred <- Pred[[key]][indexes]
+      SumOfAllTess <- SumOfAllTess + lastTessPred - CurrentTessPred
+    }
+    R_j <- y - SumOfAllTess
+    
+    # --- Call the C++ function via the .Call interface ---
+    num_levels_old <- length(Pred[[key]])
   } else {
-    CurrentTessPred <- Pred[[j]][indexes]
-    SumOfAllTess <- SumOfAllTess + lastTessPred - CurrentTessPred
+    # Legacy list support
+    if (j == 1) {
+      CurrentTessPred <- Pred[[j]][indexes]
+      SumOfAllTess <- SumOfAllTess - CurrentTessPred
+    } else {
+      CurrentTessPred <- Pred[[j]][indexes]
+      SumOfAllTess <- SumOfAllTess + lastTessPred - CurrentTessPred
+    }
+    R_j <- y - SumOfAllTess
+    
+    # --- Call the C++ function via the .Call interface ---
+    num_levels_old <- length(Pred[[j]])
   }
-  R_j <- y - SumOfAllTess
   
-  # --- Call the C++ function via the .Call interface ---
-  num_levels_old <- length(Pred[[j]])
   cpp_results <- .Call("calculate_residuals_cpp",
                        as.double(R_j),
                        as.integer(indexes),
