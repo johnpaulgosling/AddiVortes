@@ -1,6 +1,6 @@
 # AddiVortes News
 
-## AddiVortes 0.4.5 (Development)
+## AddiVortes 0.4.5
 
 * Fixed bug in tessellation proposal when number of covariates equals number of selected dimensions.
 * Add Dimension (AD) modification now properly checks if all covariates are already selected before attempting to add a new one.
