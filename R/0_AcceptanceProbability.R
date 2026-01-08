@@ -44,6 +44,12 @@ acceptanceProbability <- function(R_ijOld, n_ijOld,
   d <- length(dim_j_star)
   cStar <- nrow(tess_j_star)
   
+  # Clamp probability to [0, 1] range to avoid NaN in dbinom.
+  # When Omega/NumCovariates > 1 (e.g., Omega=3, NumCovariates=2), 
+  # clamping to 1.0 represents 100% probability of including dimensions.
+  # This allows the model to work with small numbers of covariates.
+  prob <- min(1, max(0, Omega / NumCovariates))
+  
   LogLikelihoodRatio <- 0.5 * (log(prod(n_ijOld * SigmaSquaredMu +
                                           SigmaSquared)) -
                                  log(prod(n_ijNew * SigmaSquaredMu +
@@ -53,8 +59,8 @@ acceptanceProbability <- function(R_ijOld, n_ijOld,
           sum((R_ijOld^2) / (n_ijOld * SigmaSquaredMu + SigmaSquared))))
   
   if (Modification == "AD") {
-    TessStructure <- (dbinom(d - 1, NumCovariates - 1, Omega / NumCovariates)) /
-      (dbinom(d - 2, NumCovariates - 1, Omega / NumCovariates) *
+    TessStructure <- (dbinom(d - 1, NumCovariates - 1, prob)) /
+      (dbinom(d - 2, NumCovariates - 1, prob) *
          (NumCovariates - d + 1))
     TransitionRatio <- (NumCovariates - d + 1) / d
     AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) +
@@ -65,9 +71,9 @@ acceptanceProbability <- function(R_ijOld, n_ijOld,
       AcceptanceProb <- AcceptanceProb + log(2)
     }
   } else if (Modification == "RD") {
-    TessStructure <- (dbinom(d - 1, NumCovariates, Omega / NumCovariates) *
+    TessStructure <- (dbinom(d - 1, NumCovariates, prob) *
                         (NumCovariates - d)) /
-      (dbinom(d, NumCovariates, Omega / NumCovariates))
+      (dbinom(d, NumCovariates, prob))
     TransitionRatio <- (d + 1) / (NumCovariates - d)
     AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) +
       log(TransitionRatio)
