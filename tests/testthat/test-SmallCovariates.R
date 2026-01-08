@@ -11,7 +11,8 @@ test_that("AddiVortes works with 1 covariate", {
   # Fit model - should not crash or produce errors
   expect_no_error(
     results <- AddiVortes(Y, X, 
-                         m = 5, 
+                         m = 5,
+                         omega = 1,
                          totalMCMCIter = 50, 
                          mcmcBurnIn = 10,
                          showProgress = FALSE)
@@ -36,7 +37,8 @@ test_that("AddiVortes works with 2 covariates", {
   # Fit model - should not crash or produce errors
   expect_no_error(
     results <- AddiVortes(Y, X, 
-                         m = 5, 
+                         m = 5,
+                         omega = 1,
                          totalMCMCIter = 50, 
                          mcmcBurnIn = 10,
                          showProgress = FALSE)
@@ -61,7 +63,8 @@ test_that("AddiVortes works with 3 covariates", {
   # Fit model - should not crash or produce errors
   expect_no_error(
     results <- AddiVortes(Y, X, 
-                         m = 5, 
+                         m = 5,
+                         omega = 1,
                          totalMCMCIter = 50, 
                          mcmcBurnIn = 10,
                          showProgress = FALSE)
@@ -84,7 +87,8 @@ test_that("Predictions work with 1 covariate", {
   X_test <- matrix(rnorm(10), 10, 1)
   
   results <- AddiVortes(Y, X, 
-                       m = 5, 
+                       m = 5,
+                       omega = 1,
                        totalMCMCIter = 50, 
                        mcmcBurnIn = 10,
                        showProgress = FALSE)
@@ -106,6 +110,7 @@ test_that("Predictions work with 2 covariates", {
   
   results <- AddiVortes(Y, X, 
                        m = 5, 
+                       omega = 1,
                        totalMCMCIter = 50, 
                        mcmcBurnIn = 10,
                        showProgress = FALSE)
@@ -127,6 +132,7 @@ test_that("Predictions work with 3 covariates", {
   
   results <- AddiVortes(Y, X, 
                        m = 5, 
+                       omega = 1,
                        totalMCMCIter = 50, 
                        mcmcBurnIn = 10,
                        showProgress = FALSE)
@@ -150,6 +156,7 @@ test_that("No NaN or Inf values in results with small covariates", {
   expect_no_error(
     results1 <- AddiVortes(Y1, X1, 
                           m = 10, 
+                          omega = 1,
                           totalMCMCIter = 100, 
                           mcmcBurnIn = 20,
                           showProgress = FALSE)
@@ -166,6 +173,7 @@ test_that("No NaN or Inf values in results with small covariates", {
   expect_no_error(
     results2 <- AddiVortes(Y2, X2, 
                           m = 10, 
+                          omega = 1,
                           totalMCMCIter = 100, 
                           mcmcBurnIn = 20,
                           showProgress = FALSE)
@@ -181,6 +189,7 @@ test_that("No NaN or Inf values in results with small covariates", {
   expect_no_error(
     results3 <- AddiVortes(Y3, X3, 
                           m = 10, 
+                          omega = 1,
                           totalMCMCIter = 100, 
                           mcmcBurnIn = 20,
                           showProgress = FALSE)

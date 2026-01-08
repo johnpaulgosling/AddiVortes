@@ -16,7 +16,7 @@
 #' @param q The quantile.
 #' @param k The number of centres.
 #' @param sd The standard deviation.
-#' @param omega The prior probability of adding a dimension.
+#' @param omega omega/(number of covariates) is the prior probability of adding a dimension.
 #' @param lambdaRate The rate of the Poisson distribution for the number of centres.
 #' @param IntialSigma The method used to calculate the initial variance.
 #' @param thinning The thinning rate.
@@ -38,7 +38,9 @@
 #' @export
 AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
                        mcmcBurnIn = 200, nu = 6, q = 0.85,
-                       k = 3, sd = 0.8, omega = 3, lambdaRate = 25,
+                       k = 3, sd = 0.8, 
+                       omega = min(3, ncol(x)), 
+                       lambdaRate = 25,
                        IntialSigma = "Linear",
                        thinning = 1, showProgress = TRUE) {
   #### Scaling x and y ---------------------------------------------------------

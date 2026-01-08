@@ -22,8 +22,7 @@
 #'   Dimension), "AC" (Add Centre), "RC" (Remove Centre), "Change" and "Swap".
 #' @param SigmaSquaredMu The variance of the random effects component of the
 #'   model.
-#' @param Omega The prior probability of including a covariate in a
-#'   tessellation's dimension.
+#' @param Omega Omega/(number of covariates) is the prior probability of adding a dimension.
 #' @param LambdaRate The rate parameter for the Poisson prior on the number of
 #'   centres in the tessellation.
 #' @param NumCovariates The total number of covariates available in the dataset.
