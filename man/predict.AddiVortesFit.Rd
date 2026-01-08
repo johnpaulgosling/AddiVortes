@@ -9,7 +9,7 @@
   newdata,
   type = c("response", "quantile"),
   quantiles = c(0.025, 0.975),
-  interval = c("confidence", "prediction"),
+  interval = c("credible", "prediction"),
   showProgress = TRUE,
   parallel = TRUE,
   cores = NULL,
@@ -27,10 +27,10 @@ columns must match the original training data.}
 the mean prediction. The alternative \code{"quantile"} returns the quantiles
 specified by the \code{quantiles} argument.}
 
-\item{quantiles}{A numeric vector of probabilities with values in \link{0, 1} to
+\item{quantiles}{A numeric vector of probabilities with values in [0, 1] to
 compute for the predictions when \code{type = "quantile"}.}
 
-\item{interval}{The type of interval calculation. The default \code{"confidence"}
+\item{interval}{The type of interval calculation. The default \code{"credible"}
 accounts only for uncertainty in the mean (similar to lm's confidence interval).
 The alternative \code{"prediction"} also includes the model's error variance,
 producing wider intervals (similar to lm's prediction interval).}
@@ -80,9 +80,9 @@ X_new <- matrix(rnorm(25), 5, 5)
 # Mean predictions
 pred_mean <- predict(fit, X_new, type = "response")
 
-# Confidence intervals (uncertainty in mean only)
+# Credible intervals (uncertainty in mean only)
 pred_conf <- predict(fit, X_new, type = "quantile", 
-                    interval = "confidence",
+                    interval = "credible",
                     quantiles = c(0.025, 0.975))
 
 # Prediction intervals (includes error variance)
@@ -90,7 +90,7 @@ pred_pred <- predict(fit, X_new, type = "quantile",
                     interval = "prediction",
                     quantiles = c(0.025, 0.975))
 
-# Prediction intervals are wider than confidence intervals
+# Prediction intervals are wider than credible intervals
 mean(pred_pred[, 2] - pred_pred[, 1]) > mean(pred_conf[, 2] - pred_conf[, 1])
 }
 
