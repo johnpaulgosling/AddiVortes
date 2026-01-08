@@ -16,8 +16,8 @@
 #' @param q The quantile.
 #' @param k The number of centres.
 #' @param sd The standard deviation.
-#' @param omega omega/(number of covariates) is the prior probability of adding a dimension.
-#' @param lambdaRate The rate of the Poisson distribution for the number of centres.
+#' @param Omega Omega/(number of covariates) is the prior probability of adding a dimension.
+#' @param LambdaRate The rate of the Poisson distribution for the number of centres.
 #' @param IntialSigma The method used to calculate the initial variance.
 #' @param thinning The thinning rate.
 #' @param showProgress Logical; if TRUE (default), progress bars and messages are shown during fitting.
@@ -39,8 +39,8 @@
 AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
                        mcmcBurnIn = 200, nu = 6, q = 0.85,
                        k = 3, sd = 0.8, 
-                       omega = min(3, ncol(x)), 
-                       lambdaRate = 25,
+                       Omega = min(3, ncol(x)), 
+                       LambdaRate = 25,
                        IntialSigma = "Linear",
                        thinning = 1, showProgress = TRUE) {
   #### Scaling x and y ---------------------------------------------------------
@@ -66,9 +66,9 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
     )
   }
   
-  if (omega > p) {
+  if (Omega > p) {
     message(
-      "Note: omega (", omega, ") exceeds number of covariates (", p, "). ",
+      "Note: Omega (", Omega, ") exceeds number of covariates (", p, "). ",
       "The dimension inclusion probability will be clamped to 100%."
     )
   }
@@ -96,7 +96,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
     length(yScaled)
   )
   # The variance that captures variability around the mean of the scaled y values.
-  sigmaSquaredMu <- (0.5 / (k * sqrt(m)))^2
+  SigmaSquaredMu <- (0.5 / (k * sqrt(m)))^2
   lastTessPred <- matrix
   
   # Matrices that will hold the samples from the posterior distribution
@@ -110,12 +110,12 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
   # Finding lambda
   if (IntialSigma == "Naive") {
     # Usually used if p is greater then n. Uses Standard deviation of y to predict sigma.
-    sigmaSquaredHat <- var(yScaled)
+    SigmaSquaredHat <- var(yScaled)
   } else {
     # Default method using residual standard deviation from a least-squared linear
     # regression of y, to predict sigma.
     multiLinear <- lm(yScaled ~ xScaled)
-    sigmaSquaredHat <- sum(multiLinear$residuals^2) /
+    SigmaSquaredHat <- sum(multiLinear$residuals^2) /
       (length(yScaled) - length(xScaled[1, ]) - 1)
   }
   lambda <- optim(
@@ -125,7 +125,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
     lower = 0.001,
     upper = 100,
     q = q, nu = nu,
-    sigmaSquaredHat = sigmaSquaredHat
+    SigmaSquaredHat = SigmaSquaredHat
   )$par
   
   # Determine number of samples to store
@@ -149,13 +149,13 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
     numPosteriorSamplesToStore
   )
   outputPosteriorSigma <- numeric(numPosteriorSamplesToStore)
-  sigmaSquared <- NULL
+  SigmaSquared <- NULL
   
   currentStorageIdx <- 1 # Index for the new output lists
   
   # Some precalculations
-  numCovariates <- ncol(xScaled)
-  covariateIndices <- seq_len(numCovariates)
+  NumCovariates <- ncol(xScaled)
+  covariateIndices <- seq_len(NumCovariates)
   current_indices <- vector("list", m)
   for(k in 1:m) {
     current_indices[[k]] <- cellIndices(xScaled, tess[[k]], dim[[k]])
@@ -216,7 +216,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
       }
     }
     # Sample sigma squared using all tessellations to predict the outcome variables
-    sigmaSquared[i] <- sampleSigmaSquared(
+    SigmaSquared[i] <- sampleSigmaSquared(
       yScaled,
       nu,
       lambda,
@@ -230,7 +230,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
         dim[[j]],
         sd,
         covariateIndices,
-        numCovariates
+        NumCovariates
       )
       tess_j_star <- newTessOutput[[1]]
       dim_j_star <- newTessOutput[[2]]
@@ -264,12 +264,12 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
           rIjOld, nIjOld,
           rIjNew, nIjNew,
           tess_j_star, dim_j_star,
-          sigmaSquared[i],
+          SigmaSquared[i],
           modification,
-          sigmaSquaredMu,
-          omega,
-          lambdaRate,
-          numCovariates
+          SigmaSquaredMu,
+          Omega,
+          LambdaRate,
+          NumCovariates
         )
         
         if (log(runif(n = 1)) < logAcceptanceProb) {
@@ -281,8 +281,8 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
           pred[[j]] <- sampleMuValues(
             j, tess,
             rIjNew, nIjNew,
-            sigmaSquaredMu,
-            sigmaSquared[i]
+            SigmaSquaredMu,
+            SigmaSquared[i]
           )
           lastTessPred <- pred[[j]][indexesStar]
           
@@ -290,7 +290,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
           # Reject proposal
           pred[[j]] <- sampleMuValues(
             j, tess, rIjOld, nIjOld,
-            sigmaSquaredMu, sigmaSquared[i]
+            SigmaSquaredMu, SigmaSquared[i]
           )
           lastTessPred <- pred[[j]][indexes]
         }
@@ -298,7 +298,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
         # Reject proposal (empty cell)
         pred[[j]] <- sampleMuValues(
           j, tess, rIjOld, nIjOld,
-          sigmaSquaredMu, sigmaSquared[i]
+          SigmaSquaredMu, SigmaSquared[i]
         )
         lastTessPred <- pred[[j]][indexes]
       }
@@ -321,7 +321,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
       outputPosteriorTess[[currentStorageIdx]] <- tess
       outputPosteriorDim[[currentStorageIdx]] <- dim
       outputPosteriorPred[[currentStorageIdx]] <- pred
-      outputPosteriorSigma[currentStorageIdx] <- sigmaSquared[i]
+      outputPosteriorSigma[currentStorageIdx] <- SigmaSquared[i]
       currentStorageIdx <- currentStorageIdx + 1
     }
   } # End of MCMC Loop
