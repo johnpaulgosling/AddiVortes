@@ -53,3 +53,4 @@ docs
 inst/doc
 /doc/
 /Meta/
+_codeql_detected_source_root

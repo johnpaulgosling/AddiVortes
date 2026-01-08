@@ -177,7 +177,8 @@ extern "C" {
     double p = unif_rand();
     
     // --- Main Logic ---
-    if ((p < 0.2 && d_j_length != numCovariates) || (d_j_length == 1 && p < 0.4)) {
+    // Add Dimension (AD): ensure we don't try to add a dimension when all covariates are already selected
+    if ((p < 0.2 && d_j_length != numCovariates) || (d_j_length == 1 && d_j_length != numCovariates && p < 0.4)) {
       modification = "AD";
       int new_dim;
       do {
