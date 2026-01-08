@@ -15,7 +15,7 @@
 #'   generate new coordinate values for centres and dimensions.
 #' @param covariateIndices This parameter is accepted by the function but is
 #'   **not used** in the current implementation.
-#' @param numCovariates An integer giving the total number of covariates
+#' @param NumCovariates An integer giving the total number of covariates
 #'   available for selection in the full dataset.
 #'
 #' @return A list containing three elements:
@@ -30,13 +30,13 @@
 #' 
 #' @useDynLib AddiVortes, .registration = TRUE
 proposeTessellation <- function(tess_j, dim_j, var, covariateIndices,
-                                numCovariates) {
+                                NumCovariates) {
   # Call the C++ implementation via the .Call interface
   results <- .Call("propose_tessellation_cpp",
                    tess_j,
                    dim_j,
                    as.double(var),
-                   as.integer(numCovariates))
+                   as.integer(NumCovariates))
   
   return(results)
 }

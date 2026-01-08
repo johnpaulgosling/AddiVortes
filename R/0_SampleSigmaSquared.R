@@ -7,7 +7,7 @@
 #' @param lambda The prior scale parameter.
 #' @param SumOfAllTess The sum of all the tessellations.
 #'
-#' @return sigmaSquared The sampled sigma squared.
+#' @return SigmaSquared The sampled sigma squared.
 #'
 #' @keywords internal
 #' @noRd
@@ -15,11 +15,11 @@
 sampleSigmaSquared <- function(yScaled, nu,
                                lambda, SumOfAllTess) {
   n <- length(yScaled)
-  sigmaSquared <- rinvgamma_internal(1,
+  SigmaSquared <- rinvgamma_internal(1,
     shape = (nu + n) / 2,
     rate = (nu * lambda +
       sum((yScaled - SumOfAllTess)^2)) / 2
   )
 
-  return(sigmaSquared)
+  return(SigmaSquared)
 }

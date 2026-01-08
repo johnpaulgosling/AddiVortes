@@ -14,8 +14,8 @@ AddiVortes(
   q = 0.85,
   k = 3,
   sd = 0.8,
-  omega = 3,
-  lambdaRate = 25,
+  Omega = 3,
+  LambdaRate = 25,
   IntialSigma = "Linear",
   thinning = 1,
   showProgress = TRUE
@@ -40,9 +40,9 @@ AddiVortes(
 
 \item{sd}{The standard deviation.}
 
-\item{omega}{The prior probability of adding a dimension.}
+\item{Omega}{Omega/(number of covariates) is the prior probability of adding a dimension.}
 
-\item{lambdaRate}{The rate of the Poisson distribution for the number of centres.}
+\item{LambdaRate}{The rate of the Poisson distribution for the number of centres.}
 
 \item{IntialSigma}{The method used to calculate the initial variance.}
 
