@@ -73,3 +73,28 @@ test_that("No warning when p <= n", {
     AddiVortes(Y, X, m = 2, totalMCMCIter = 10, mcmcBurnIn = 5, showProgress = FALSE)
   )
 })
+
+test_that("Thinning parameter works correctly", {
+  set.seed(567813)
+  X <- matrix(rnorm(500), 50, 10)
+  Y <- runif(50, -1, 3)
+  X_test <- matrix(rnorm(100), 10, 10)
+  
+  # Test with thinning = 3
+  results <- AddiVortes(Y, X, 10,
+    120, 30,
+    6, 0.85, 3, 0.8, 3, 25,
+    IntialSigma = "Linear",
+    thinning = 3,
+    showProgress = FALSE
+  )
+  
+  # Check that posterior samples are correctly thinned
+  # Expected number of samples: floor((totalMCMCIter - mcmcBurnIn) / thinning)
+  expected_samples <- floor((120 - 30) / 3)
+  expect_equal(length(results$posteriorSigma), expected_samples)
+  
+  # Verify predictions work with thinning
+  preds <- predict(results, X_test, showProgress = FALSE)
+  expect_equal(length(preds), nrow(X_test))
+})

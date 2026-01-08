@@ -1,5 +1,13 @@
 # AddiVortes News
 
+## AddiVortes 0.4.3
+
+* Cleaned up tests folder for CRAN submission preparation.
+* Removed `TestSuite.R`, `CodeProfiler.R`, and `TestHelper.R` from tests directory.
+* Incorporated relevant tests from `TestSuite.R` into testthat framework.
+* Added test for thinning parameter functionality.
+* Only `testthat.R` remains in tests folder alongside the testthat directory per CRAN requirements.
+
 ## AddiVortes 0.4.2
 
 * Added prediction interval support to `predict.AddiVortesFit()` function with new `interval` parameter.
