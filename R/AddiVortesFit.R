@@ -215,7 +215,7 @@ summary.AddiVortesFit <- function(object, ...) {
 #' @param quantiles A numeric vector of probabilities with values in [0, 1] to
 #'   compute for the predictions when `type = "quantile"`.
 #' @param interval The type of interval calculation. The default `"credible"`
-#'   accounts only for uncertainty in the mean (similar to lm's credible interval).
+#'   accounts only for uncertainty in the mean (similar to lm's confidence interval).
 #'   The alternative `"prediction"` also includes the model's error variance,
 #'   producing wider intervals (similar to lm's prediction interval).
 #' @param showProgress Logical; if TRUE (default), a progress bar is shown during prediction.
@@ -632,7 +632,7 @@ plot.AddiVortesFit <- function(x, x_train, y_train, sigma_trace = NULL,
     legend("bottomright",
            legend = c("Perfect Prediction",
                       "95% Prediction Intervals",
-                      paste("R² =", round(r_squared, 3))),
+                      paste("R^2 =", round(r_squared, 3))),
            col = c("red", "lightblue", "black"),
            lty = c(2, 1, NA),
            lwd = c(2, 1, NA),
