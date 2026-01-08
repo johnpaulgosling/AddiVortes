@@ -64,6 +64,13 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
     )
   }
   
+  if (omega > p) {
+    message(
+      "Note: omega (", omega, ") exceeds number of covariates (", p, "). ",
+      "The dimension inclusion probability will be clamped to 100%."
+    )
+  }
+  
   #### Initialise predictions --------------------------------------------------
   # Initialise:
   # Prediction Set (A list of vectors with the output values for each tessellation),
