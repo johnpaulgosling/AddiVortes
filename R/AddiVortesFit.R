@@ -324,8 +324,21 @@ predict.AddiVortesFit <- function(object, newdata,
   mTessellations <- length(posteriorTessSamples[[1]])
   nObs <- nrow(xNewScaled)
   
-  # --- Parallel setup ---
-  if (is.null(cores)) cores <- max(1, parallel::detectCores() - 1)
+  # --- Parallel set-up ---
+  # Cap cores at a conservative limit to avoid exceeding system limits
+  # in CI/test environments. Some systems have restrictions like
+  # RLIMIT_NPROC which may limit to ~16-20 processes. We use 1 core
+  # as a safe default.
+  max_cores_safe <- 1
+  if (is.null(cores)) {
+    detected_cores <- parallel::detectCores()
+    if (is.na(detected_cores)) detected_cores <- 1
+    # Use detected - 1, but cap at a safe maximum
+    cores <- max(1, min(detected_cores - 1, max_cores_safe))
+  } else {
+    # User specified cores, but still cap at safe maximum
+    cores <- max(1, min(cores, max_cores_safe))
+  }
   useParallel <- parallel && (cores > 1)
   cl <- NULL
   

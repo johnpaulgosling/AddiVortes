@@ -1,6 +1,6 @@
 Package: AddiVortes
 Title: (Bayesian) Additive Voronoi Tessellations
-Version: 0.4.3
+Version: 0.4.4
 Date: 2026-01-08
 Authors@R: 
     c(person("Adam", "Stone", , "adam.stone2@durham.ac.uk",
@@ -20,7 +20,7 @@ Description: Implements the Bayesian Additive Voronoi Tessellation (AddiVortes)
     complex function approximation and Bayesian modeling where the underlying 
     structure is unknown. The method excels at capturing spatial patterns and 
     non-linear relationships in data.
-License: GPL (>= 3)
+License: GPL (>= 3) + file LICENSE
 Encoding: UTF-8
 Keywords: Bayesian, machine-learning, regression, BART, spatial-analysis, tessellation, non-parametric
 Roxygen: list(markdown = TRUE)

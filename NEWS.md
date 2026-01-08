@@ -1,5 +1,10 @@
 # AddiVortes News
 
+## AddiVortes 0.4.4
+
+* Fixed test automation bug stemming from too many cores being assumed available.
+
+
 ## AddiVortes 0.4.3
 
 * Cleaned up tests folder for CRAN submission preparation.
