@@ -140,7 +140,7 @@ test_that("Predictions work with 3 covariates", {
   expect_true(all(is.finite(preds)))
 })
 
-test_that("No NaN or Inf in acceptance probabilities with small covariates", {
+test_that("No NaN or Inf values in results with small covariates", {
   set.seed(303)
   # Test with 1 covariate - most restrictive case
   X1 <- matrix(rnorm(30), 30, 1)
