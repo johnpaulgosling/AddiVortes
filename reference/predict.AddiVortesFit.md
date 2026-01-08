@@ -14,7 +14,7 @@ predict(
   newdata,
   type = c("response", "quantile"),
   quantiles = c(0.025, 0.975),
-  interval = c("confidence", "prediction"),
+  interval = c("credible", "prediction"),
   showProgress = TRUE,
   parallel = TRUE,
   cores = NULL,
@@ -42,12 +42,12 @@ predict(
 
 - quantiles:
 
-  A numeric vector of probabilities with values in 0, 1 to compute for
-  the predictions when `type = "quantile"`.
+  A numeric vector of probabilities with values in \[0, 1\] to compute
+  for the predictions when `type = "quantile"`.
 
 - interval:
 
-  The type of interval calculation. The default `"confidence"` accounts
+  The type of interval calculation. The default `"credible"` accounts
   only for uncertainty in the mean (similar to lm's confidence
   interval). The alternative `"prediction"` also includes the model's
   error variance, producing wider intervals (similar to lm's prediction
@@ -122,11 +122,14 @@ pred_mean <- predict(fit, X_new, type = "response")
 #> Prediction generation completed.
 #> 
 
-# Confidence intervals (uncertainty in mean only)
+# Credible intervals (uncertainty in mean only)
 pred_conf <- predict(fit, X_new, type = "quantile", 
-                    interval = "confidence",
+                    interval = "credible",
                     quantiles = c(0.025, 0.975))
-#> Error in match.arg(interval): 'arg' should be one of “credible”, “prediction”
+#> Generating predictions for 5 observations using 40 posterior samples...
+#> 
+#> Prediction generation completed.
+#> 
 
 # Prediction intervals (includes error variance)
 pred_pred <- predict(fit, X_new, type = "quantile",
@@ -137,8 +140,8 @@ pred_pred <- predict(fit, X_new, type = "quantile",
 #> Prediction generation completed.
 #> 
 
-# Prediction intervals are wider than confidence intervals
+# Prediction intervals are wider than credible intervals
 mean(pred_pred[, 2] - pred_pred[, 1]) > mean(pred_conf[, 2] - pred_conf[, 1])
-#> Error: object 'pred_conf' not found
+#> [1] TRUE
 # }
 ```
