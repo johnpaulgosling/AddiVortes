@@ -327,8 +327,12 @@ predict.AddiVortesFit <- function(object, newdata,
   # --- Parallel setup ---
   # Cap cores at a conservative limit to avoid exceeding system limits
   # in CI/test environments. Some systems have restrictions like
-  # RLIMIT_NPROC which may limit to ~16-20 processes.
-  max_cores_safe <- 8  # Conservative limit that should work in most environments
+  # RLIMIT_NPROC which may limit to ~16-20 processes. We use 8 cores
+  # as a safe default that:
+  # - Stays well below common system limits (typically 16-20 processes)
+  # - Provides good parallelization for most workloads
+  # - Works reliably in GitHub Actions and similar CI environments
+  max_cores_safe <- 8
   if (is.null(cores)) {
     detected_cores <- parallel::detectCores()
     if (is.na(detected_cores)) detected_cores <- 1
