@@ -1,6 +1,6 @@
 # --- Test Suite for small number of covariates ---
 # This test file checks that AddiVortes works correctly with 1, 2, or 3 covariates
-# and does not produce negative or undefined probabilities/distributions.
+# and produces finite, valid results without errors or infinite loops.
 
 test_that("AddiVortes works with 1 covariate", {
   set.seed(42)
@@ -85,7 +85,7 @@ test_that("Predictions work with 1 covariate", {
   
   results <- AddiVortes(Y, X, 
                        m = 5, 
-                       totalMCMCIter = 30, 
+                       totalMCMCIter = 50, 
                        mcmcBurnIn = 10,
                        showProgress = FALSE)
   
@@ -106,7 +106,7 @@ test_that("Predictions work with 2 covariates", {
   
   results <- AddiVortes(Y, X, 
                        m = 5, 
-                       totalMCMCIter = 30, 
+                       totalMCMCIter = 50, 
                        mcmcBurnIn = 10,
                        showProgress = FALSE)
   
@@ -127,7 +127,7 @@ test_that("Predictions work with 3 covariates", {
   
   results <- AddiVortes(Y, X, 
                        m = 5, 
-                       totalMCMCIter = 30, 
+                       totalMCMCIter = 50, 
                        mcmcBurnIn = 10,
                        showProgress = FALSE)
   
