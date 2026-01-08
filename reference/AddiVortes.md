@@ -19,8 +19,8 @@ AddiVortes(
   q = 0.85,
   k = 3,
   sd = 0.8,
-  omega = 3,
-  lambdaRate = 25,
+  Omega = 3,
+  LambdaRate = 25,
   IntialSigma = "Linear",
   thinning = 1,
   showProgress = TRUE
@@ -65,11 +65,12 @@ AddiVortes(
 
   The standard deviation.
 
-- omega:
+- Omega:
 
-  The prior probability of adding a dimension.
+  Omega/(number of covariates) is the prior probability of adding a
+  dimension.
 
-- lambdaRate:
+- LambdaRate:
 
   The rate of the Poisson distribution for the number of centres.
 

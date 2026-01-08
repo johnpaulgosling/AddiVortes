@@ -66,8 +66,8 @@ results <- AddiVortes(y = Y_Boston[TrainSet],
                       q = 0.85, 
                       k = 3, 
                       sd = 0.8, 
-                      omega = 3, 
-                      lambdaRate = 25,
+                      Omega = 3, 
+                      LambdaRate = 25,
                       IntialSigma = "Linear",
                       showProgress = FALSE)
 ```
