@@ -258,9 +258,9 @@ pred_width <- mean(pred_intervals[, 2] - pred_intervals[, 1])
 cat("Average 95% credible interval width:", round(cred_width, 2), "\n")
 #> Average 95% credible interval width: 3.05
 cat("Average 95% prediction interval width:", round(pred_width, 2), "\n")
-#> Average 95% prediction interval width: 5.82
+#> Average 95% prediction interval width: 5.76
 cat("Ratio (prediction/credible):", round(pred_width / cred_width, 2), "\n")
-#> Ratio (prediction/credible): 1.91
+#> Ratio (prediction/credible): 1.89
 ```
 
 **When to use each type:**
