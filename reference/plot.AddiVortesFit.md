@@ -71,7 +71,7 @@ The function generates up to four diagnostic plots:
 3.  **Tessellation Complexity**: Trace of average tessellation size over
     iterations
 
-4.  **Predicted vs Observed**: Scatter plot with confidence intervals
+4.  **Predicted vs Observed**: Scatter plot with credible intervals
 
 ## Examples
 

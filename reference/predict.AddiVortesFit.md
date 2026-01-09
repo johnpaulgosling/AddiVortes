@@ -42,16 +42,16 @@ predict(
 
 - quantiles:
 
-  A numeric vector of probabilities with values in \[0, 1\] to compute
-  for the predictions when `type = "quantile"`.
+  A numeric vector of probabilities to compute for the predictions when
+  `type = "quantile"`.
 
 - interval:
 
   The type of interval calculation. The default `"credible"` accounts
-  only for uncertainty in the mean (similar to lm's confidence
+  only for uncertainty in the mean (similar to `lm`'s confidence
   interval). The alternative `"prediction"` also includes the model's
-  error variance, producing wider intervals (similar to lm's prediction
-  interval).
+  error variance, producing wider intervals (similar to `lm`'s
+  prediction interval).
 
 - showProgress:
 
