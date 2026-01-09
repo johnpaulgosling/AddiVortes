@@ -14,7 +14,7 @@ AddiVortes(
   q = 0.85,
   k = 3,
   sd = 0.8,
-  Omega = 3,
+  Omega = min(3, ncol(x)),
   LambdaRate = 25,
   IntialSigma = "Linear",
   thinning = 1,

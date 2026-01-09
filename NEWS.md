@@ -1,5 +1,10 @@
 # AddiVortes News
 
+## AddiVortes 0.4.6
+
+* Linting and formatting improvements.
+* Final preparations for CRAN submission.
+
 ## AddiVortes 0.4.5
 
 * Fixed bug in tessellation proposal when number of covariates equals number of selected dimensions.

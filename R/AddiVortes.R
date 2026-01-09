@@ -35,14 +35,19 @@
 #' fit <- AddiVortes(y, x, m = 5, totalMCMCIter = 50, mcmcBurnIn = 10)
 #' }
 #'
+#' @importFrom stats var lm optim quantile runif dbinom dpois
+#' @importFrom utils txtProgressBar setTxtProgressBar
 #' @export
-AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
-                       mcmcBurnIn = 200, nu = 6, q = 0.85,
+AddiVortes <- function(y, x, m = 200,
+                       totalMCMCIter = 1200,
+                       mcmcBurnIn = 200,
+                       nu = 6, q = 0.85,
                        k = 3, sd = 0.8, 
                        Omega = min(3, ncol(x)), 
                        LambdaRate = 25,
                        IntialSigma = "Linear",
-                       thinning = 1, showProgress = TRUE) {
+                       thinning = 1,
+                       showProgress = TRUE) {
   #### Scaling x and y ---------------------------------------------------------
   yScalingResult <- scaleData_internal(y)
   yScaled <- yScalingResult$scaledData # Vector of values
@@ -183,7 +188,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
   if (showProgress && mcmcBurnIn > 0) {
     cat("Phase 1: Burn-in sampling (", mcmcBurnIn, " iterations)\n", sep = "")
     pbar_burnin <- txtProgressBar(min = 0, max = mcmcBurnIn,
-                                 style = 3, width = 50, char = "=")
+                                  style = 3, width = 50, char = "=")
   }
   
   for (i in 1:totalMCMCIter) {
@@ -203,7 +208,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
               " iterations)\n",
               sep = "")
           pbar_sampling <- txtProgressBar(min = 0, max = totalMCMCIter - mcmcBurnIn,
-                                         style = 3, width = 50, char = "=")
+                                          style = 3, width = 50, char = "=")
         }
       } else if (i > mcmcBurnIn && !is.null(pbar_sampling)) {
         setTxtProgressBar(pbar_sampling, i - mcmcBurnIn)
@@ -211,7 +216,7 @@ AddiVortes <- function(y, x, m = 200, totalMCMCIter = 1200,
         # No burn-in phase, start directly with sampling
         cat("Posterior sampling (", totalMCMCIter, " iterations)\n")
         pbar_sampling <- txtProgressBar(min = 0, max = totalMCMCIter,
-                                       style = 3, width = 50, char = "=")
+                                        style = 3, width = 50, char = "=")
         setTxtProgressBar(pbar_sampling, i)
       }
     }

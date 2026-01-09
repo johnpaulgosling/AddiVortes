@@ -155,6 +155,7 @@ print.AddiVortesFit <- function(x, ...) {
 #' The function is called for its side effect of printing detailed model 
 #' information and returns the input object `object` invisibly.
 #'
+#' @importFrom stats sd
 #' @export
 #' @method summary AddiVortesFit
 summary.AddiVortesFit <- function(object, ...) {
@@ -212,12 +213,12 @@ summary.AddiVortesFit <- function(object, ...) {
 #' @param type The type of prediction required. The default `"response"` gives 
 #'   the mean prediction. The alternative `"quantile"` returns the quantiles
 #'   specified by the `quantiles` argument.
-#' @param quantiles A numeric vector of probabilities with values in [0, 1] to
+#' @param quantiles A numeric vector of probabilities to
 #'   compute for the predictions when `type = "quantile"`.
 #' @param interval The type of interval calculation. The default `"credible"`
-#'   accounts only for uncertainty in the mean (similar to lm's confidence interval).
+#'   accounts only for uncertainty in the mean (similar to `lm`'s confidence interval).
 #'   The alternative `"prediction"` also includes the model's error variance,
-#'   producing wider intervals (similar to lm's prediction interval).
+#'   producing wider intervals (similar to `lm`'s prediction interval).
 #' @param showProgress Logical; if TRUE (default), a progress bar is shown during prediction.
 #' @param parallel Logical; if TRUE (default), predictions are computed in parallel.
 #' @param cores The number of CPU cores to use for parallel processing. If NULL (default), 
@@ -432,7 +433,7 @@ predict.AddiVortesFit <- function(object, newdata,
 #' }
 #'
 #' @importFrom graphics plot abline title par layout lines points segments legend
-#' @importFrom stats lowess residuals fitted
+#' @importFrom stats lowess residuals fitted predict sd
 #' @export
 #' @method plot AddiVortesFit
 #'

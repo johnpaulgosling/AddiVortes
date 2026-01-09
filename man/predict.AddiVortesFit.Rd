@@ -27,13 +27,13 @@ columns must match the original training data.}
 the mean prediction. The alternative \code{"quantile"} returns the quantiles
 specified by the \code{quantiles} argument.}
 
-\item{quantiles}{A numeric vector of probabilities with values in [0, 1] to
+\item{quantiles}{A numeric vector of probabilities to
 compute for the predictions when \code{type = "quantile"}.}
 
 \item{interval}{The type of interval calculation. The default \code{"credible"}
-accounts only for uncertainty in the mean (similar to lm's confidence interval).
+accounts only for uncertainty in the mean (similar to \code{lm}'s confidence interval).
 The alternative \code{"prediction"} also includes the model's error variance,
-producing wider intervals (similar to lm's prediction interval).}
+producing wider intervals (similar to \code{lm}'s prediction interval).}
 
 \item{showProgress}{Logical; if TRUE (default), a progress bar is shown during prediction.}
 

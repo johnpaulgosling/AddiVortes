@@ -48,7 +48,7 @@ The function generates up to four diagnostic plots:
 \item \strong{Residuals Plot}: Residuals vs fitted values with smoothed trend line
 \item \strong{Sigma Trace}: MCMC trace plot for the error variance parameter
 \item \strong{Tessellation Complexity}: Trace of average tessellation size over iterations
-\item \strong{Predicted vs Observed}: Scatter plot with confidence intervals
+\item \strong{Predicted vs Observed}: Scatter plot with credible intervals
 }
 }
 \examples{
