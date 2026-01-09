@@ -1,5 +1,12 @@
 # AddiVortes News
 
+## AddiVortes 0.4.7
+
+* Fixed DESCRIPTION file for CRAN compliance:
+  - Removed non-standard 'Keywords' field
+  - Removed redundant 'Author' and 'Maintainer' fields (now auto-derived from Authors@R)
+* Resolved R CMD check NOTEs for DESCRIPTION meta-information
+
 ## AddiVortes 0.4.6
 
 * Linting and formatting improvements.

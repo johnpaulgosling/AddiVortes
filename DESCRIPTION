@@ -1,6 +1,6 @@
 Package: AddiVortes
 Title: (Bayesian) Additive Voronoi Tessellations
-Version: 0.4.6
+Version: 0.4.7
 Date: 2026-01-09
 Authors@R: 
     c(person("Adam", "Stone", , "adam.stone2@durham.ac.uk",
@@ -9,8 +9,6 @@ Authors@R:
       person("John Paul", "Gosling", , "john-paul.gosling@durham.ac.uk",
              role = c("aut", "cre"),
              comment = c(ORCID = "0000-0002-4072-3022")))
-Author: Adam Stone [aut], John Paul Gosling [aut, cre]
-Maintainer: John Paul Gosling <john-paul.gosling@durham.ac.uk>
 Description: Implements the Bayesian Additive Voronoi Tessellation (AddiVortes) 
     model for non-parametric regression and machine learning. This package provides
     a flexible alternative to BART (Bayesian Additive Regression Trees) using 
@@ -22,7 +20,6 @@ Description: Implements the Bayesian Additive Voronoi Tessellation (AddiVortes)
     non-linear relationships in data.
 License: GPL (>= 3) + file LICENSE
 Encoding: UTF-8
-Keywords: Bayesian, machine-learning, regression, BART, spatial-analysis, tessellation, non-parametric
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Depends: 
