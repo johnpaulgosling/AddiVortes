@@ -54,3 +54,8 @@ inst/doc
 /doc/
 /Meta/
 _codeql_detected_source_root
+
+# Compiled object files and shared libraries
+src/*.o
+src/*.so
+src/*.dll
