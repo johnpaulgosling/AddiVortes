@@ -1,5 +1,11 @@
 # AddiVortes News
 
+## AddiVortes 0.4.8
+
+* Fixed installation failure on r-devel-linux-x86_64-fedora-clang:
+  - Added missing `<cstring>` header for `memcpy()` function in C++ code
+  - Clang compiler requires explicit inclusion of standard library headers
+
 ## AddiVortes 0.4.7
 
 * Fixed DESCRIPTION file for CRAN compliance:

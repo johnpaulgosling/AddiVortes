@@ -7,6 +7,7 @@
 #include <numeric>   // For std::accumulate
 #include <algorithm> // For std::find
 #include <cmath>     // For sqrt
+#include <cstring>   // For memcpy
 
 // Helper function to check if a value is in a vector
 bool in_vector(int value, const std::vector<int>& vec) {
