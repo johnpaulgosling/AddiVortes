@@ -1,7 +1,4 @@
-#include <R.h>
-#include <Rinternals.h>
-#include <R_ext/Random.h> // For unif_rand() and norm_rand()
-
+// 1. C++ Standard Library headers first
 #include <vector>    // For std::vector
 #include <string>    // For std::string
 #include <numeric>   // For std::accumulate
@@ -9,11 +6,18 @@
 #include <cmath>     // For sqrt
 #include <cstring>   // For memcpy
 
+// 2. Add this to prevent R from creating problematic macros
+#define R_NO_REMAP
+
+// 3. R headers last
+#include <R.h>
+#include <Rinternals.h>
+#include <R_ext/Random.h> // For unif_rand() and norm_rand()
+
 // Helper function to check if a value is in a vector
 bool in_vector(int value, const std::vector<int>& vec) {
   return std::find(vec.begin(), vec.end(), value) != vec.end();
 }
-
 
 extern "C" {
   
