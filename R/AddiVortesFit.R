@@ -530,7 +530,7 @@ plot.AddiVortesFit <- function(x, x_train, y_train, sigma_trace = NULL,
     
     # Add RMSE annotation
     rmse_text <- paste("RMSE =", round(x$inSampleRmse, 4))
-    legend("topright", legend = rmse_text, bty = "n")
+    legend("topright", legend = rmse_text, bty = "n", cex = 0.9)
   }
   
   # --- Plot 2: Sigma Trace ---
@@ -577,7 +577,7 @@ plot.AddiVortesFit <- function(x, x_train, y_train, sigma_trace = NULL,
     legend("topright", 
            legend = c(paste("Mean:", sigma_mean),
                       paste("SD:", sigma_sd)),
-           bty = "n")
+           bty = "n", cex = 0.9)
   }
   
   # --- Plot 3: Tessellation Complexity Trace ---
@@ -603,8 +603,9 @@ plot.AddiVortesFit <- function(x, x_train, y_train, sigma_trace = NULL,
     complexity_range <- round(range(tess_complexity), 1)
     legend("topright", 
            legend = c(paste("Mean:", complexity_mean),
-                      paste("Range: [", complexity_range[1], ",", complexity_range[2], "]")),
-           bty = "n")
+                      paste("Range: [", complexity_range[1], ",",
+                            complexity_range[2], "]")),
+           bty = "n", cex = 0.9)
   }
   
   # --- Plot 4: Predicted vs Observed ---
@@ -643,14 +644,19 @@ plot.AddiVortesFit <- function(x, x_train, y_train, sigma_trace = NULL,
     ss_tot <- sum((y_train - mean(y_train))^2)
     r_squared <- 1 - (ss_res / ss_tot)
     
-    legend("bottomright",
+    legend("topleft",
            legend = c("Perfect Prediction",
-                      "95% Prediction Intervals",
-                      paste("R^2 =", round(r_squared, 3))),
-           col = c("red", "lightblue", "black"),
-           lty = c(2, 1, NA),
-           lwd = c(2, 1, NA),
-           pch = c(NA, NA, NA))
+                      "95% Prediction Intervals"),
+           col = c("red", "lightblue"),
+           lty = c(2, 1),
+           lwd = c(2, 1),
+           pch = c(NA, NA), cex = 0.9, bty = "n")
+    legend("bottomright",
+           legend = c(paste("R^2 =", round(r_squared, 3))),
+           col = c("black"),
+           lty = c(NA),
+           lwd = c(NA),
+           pch = c(NA), cex = 0.9, bty = "n")
   }
   
   # Return invisibly

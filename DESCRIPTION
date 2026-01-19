@@ -1,7 +1,7 @@
 Package: AddiVortes
 Title: (Bayesian) Additive Voronoi Tessellations
-Version: 0.4.8
-Date: 2026-01-14
+Version: 0.4.9
+Date: 2026-01-19
 Authors@R: 
     c(person("Adam", "Stone", , "adam.stone2@durham.ac.uk",
              role = c("aut"),
@@ -14,8 +14,8 @@ Description: Implements the Bayesian Additive Voronoi Tessellation
     in Stone and Gosling (2025) <doi:10.1080/10618600.2024.2414104>.
     This package provides a flexible alternative to BART (Bayesian Additive 
     Regression Trees) using Voronoi tessellations instead of trees. Users can 
-    fit Bayesian regression models, estimate posterior distributions, and 
-    visualise the resulting tessellations. It is particularly useful for spatial
+    fit Bayesian regression models (estimating the associated posterior 
+    distributions and make predictions. It is particularly useful for spatial
     data analysis, machine learning regression, complex function approximation 
     and Bayesian modeling where the underlying structure is unknown. The method 
     is well-suited to capturing spatial patterns and non-linear relationships.

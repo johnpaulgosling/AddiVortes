@@ -1,5 +1,10 @@
 # AddiVortes News
 
+## AddiVortes 0.4.9
+
+* Improved legends in plot.AddiVortesFit().
+* Fix typos in package description.
+
 ## AddiVortes 0.4.8
 
 * Fixed installation failure on r-devel-linux-x86_64-fedora-clang:
