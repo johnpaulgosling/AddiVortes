@@ -10,7 +10,7 @@ test_that("Simple AddiVortes fit 1", {
   results <- AddiVortes(Y, X, 10,
     90, 10,
     6, 0.85, 3, 0.8, 3, 25,
-    IntialSigma = "Linear"
+    InitialSigma = "Linear"
   )
 
   expect_equal(round(results$inSampleRmse, 3), 0.754)
@@ -26,7 +26,7 @@ test_that("Simple AddiVortes fit 2", {
   results <- AddiVortes(Y, X, 5,
     150, 50,
     6, 0.85, 3, 0.8, 3, 25,
-    IntialSigma = "Linear"
+    InitialSigma = "Linear"
   )
 
 
@@ -43,7 +43,7 @@ test_that("Simple AddiVortes fit 3", {
   results <- AddiVortes(Y, X, 10,
     200, 100,
     6, 0.85, 3, 0.8, 3, 25,
-    IntialSigma = "Linear"
+    InitialSigma = "Linear"
   )
 
   expect_equal(round(results$inSampleRmse, 3), 1.148)
@@ -84,7 +84,7 @@ test_that("Thinning parameter works correctly", {
   results <- AddiVortes(Y, X, 10,
     120, 30,
     6, 0.85, 3, 0.8, 3, 25,
-    IntialSigma = "Linear",
+    InitialSigma = "Linear",
     thinning = 3,
     showProgress = FALSE
   )
