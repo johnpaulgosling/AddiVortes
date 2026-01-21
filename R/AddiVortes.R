@@ -18,9 +18,9 @@
 #' @param sd The standard deviation.
 #' @param Omega Omega/(number of covariates) is the prior probability of adding a dimension.
 #' @param LambdaRate The rate of the Poisson distribution for the number of centres.
-#' @param IntialSigma The method used to calculate the initial variance.
+#' @param InitialSigma The method used to calculate the initial variance.
 #' @param thinning The thinning rate.
-#' @param showProgress Logical; if TRUE (default), progress bars and messages are shown during fitting.
+#' @param showProgress Logical; if TRUE, progress bars and messages are shown during fitting.
 #'
 #' @return An AddiVortesFit object containing the posterior samples of the
 #' tessellations, dimensions and predictions.
@@ -45,9 +45,9 @@ AddiVortes <- function(y, x, m = 200,
                        k = 3, sd = 0.8, 
                        Omega = min(3, ncol(x)), 
                        LambdaRate = 25,
-                       IntialSigma = "Linear",
+                       InitialSigma = "Linear",
                        thinning = 1,
-                       showProgress = TRUE) {
+                       showProgress = interactive()) {
   #### Scaling x and y ---------------------------------------------------------
   yScalingResult <- scaleData_internal(y)
   yScaled <- yScalingResult$scaledData # Vector of values
@@ -113,7 +113,7 @@ AddiVortes <- function(y, x, m = 200,
   ))
   
   # Finding lambda
-  if (IntialSigma == "Naive") {
+  if (InitialSigma == "Naive") {
     # Usually used if p is greater then n. Uses Standard deviation of y to predict sigma.
     SigmaSquaredHat <- var(yScaled)
   } else {

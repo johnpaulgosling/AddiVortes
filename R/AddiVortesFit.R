@@ -219,7 +219,7 @@ summary.AddiVortesFit <- function(object, ...) {
 #'   accounts only for uncertainty in the mean (similar to `lm`'s confidence interval).
 #'   The alternative `"prediction"` also includes the model's error variance,
 #'   producing wider intervals (similar to `lm`'s prediction interval).
-#' @param showProgress Logical; if TRUE (default), a progress bar is shown during prediction.
+#' @param showProgress Logical; if TRUE, a progress bar is shown during prediction.
 #' @param parallel Logical; if TRUE (default), predictions are computed in parallel.
 #' @param cores The number of CPU cores to use for parallel processing. If NULL (default), 
 #'  it defaults to one less than the total number of available cores.
@@ -279,7 +279,7 @@ predict.AddiVortesFit <- function(object, newdata,
                                   type = c("response", "quantile"),
                                   quantiles = c(0.025, 0.975),
                                   interval = c("credible", "prediction"),
-                                  showProgress = TRUE,
+                                  showProgress = interactive(),
                                   parallel = TRUE,
                                   cores = NULL,
                                   ...) {
