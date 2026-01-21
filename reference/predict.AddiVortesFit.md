@@ -99,46 +99,22 @@ set.seed(123)
 X <- matrix(rnorm(100), 20, 5)
 Y <- rnorm(20)
 fit <- AddiVortes(Y, X, m = 5, totalMCMCIter = 50, mcmcBurnIn = 10)
-#> Fitting AddiVortes model to input data...
-#> Input dimensions: 20 observations, 5 covariates
-#> Model configuration: 5 tessellations, 50 total iterations (10 burn-in)
-#> 
-#> Phase 1: Burn-in sampling (10 iterations)
-#>   |                                                          |                                                  |   0%  |                                                          |=====                                             |  10%  |                                                          |==========                                        |  20%  |                                                          |===============                                   |  30%  |                                                          |====================                              |  40%  |                                                          |=========================                         |  50%  |                                                          |==============================                    |  60%  |                                                          |===================================               |  70%  |                                                          |========================================          |  80%  |                                                          |=============================================     |  90%  |                                                          |==================================================| 100%
-#> 
-#> Phase 2: Posterior sampling (40 iterations)
-#>   |                                                          |                                                  |   0%  |                                                          |==                                                |   5%  |                                                          |====                                              |   8%  |                                                          |=====                                             |  10%  |                                                          |======                                            |  12%  |                                                          |========                                          |  15%  |                                                          |=========                                         |  18%  |                                                          |==========                                        |  20%  |                                                          |===========                                       |  22%  |                                                          |============                                      |  25%  |                                                          |==============                                    |  28%  |                                                          |===============                                   |  30%  |                                                          |================                                  |  32%  |                                                          |==================                                |  35%  |                                                          |===================                               |  38%  |                                                          |====================                              |  40%  |                                                          |=====================                             |  42%  |                                                          |======================                            |  45%  |                                                          |========================                          |  48%  |                                                          |=========================                         |  50%  |                                                          |==========================                        |  52%  |                                                          |============================                      |  55%  |                                                          |=============================                     |  58%  |                                                          |==============================                    |  60%  |                                                          |===============================                   |  62%  |                                                          |================================                  |  65%  |                                                          |==================================                |  68%  |                                                          |===================================               |  70%  |                                                          |====================================              |  72%  |                                                          |======================================            |  75%  |                                                          |=======================================           |  78%  |                                                          |========================================          |  80%  |                                                          |=========================================         |  82%  |                                                          |==========================================        |  85%  |                                                          |============================================      |  88%  |                                                          |=============================================     |  90%  |                                                          |==============================================    |  92%  |                                                          |================================================  |  95%  |                                                          |================================================= |  98%  |                                                          |==================================================| 100%
-#> 
-#> MCMC sampling completed.
-#> 
 
 # New data for prediction
 X_new <- matrix(rnorm(25), 5, 5)
 
 # Mean predictions
 pred_mean <- predict(fit, X_new, type = "response")
-#> Generating predictions for 5 observations using 40 posterior samples...
-#> 
-#> Prediction generation completed.
-#> 
 
 # Credible intervals (uncertainty in mean only)
 pred_conf <- predict(fit, X_new, type = "quantile", 
                     interval = "credible",
                     quantiles = c(0.025, 0.975))
-#> Generating predictions for 5 observations using 40 posterior samples...
-#> 
-#> Prediction generation completed.
-#> 
 
 # Prediction intervals (includes error variance)
 pred_pred <- predict(fit, X_new, type = "quantile",
                     interval = "prediction",
                     quantiles = c(0.025, 0.975))
-#> Generating predictions for 5 observations using 40 posterior samples...
-#> 
-#> Prediction generation completed.
-#> 
 
 # Prediction intervals are wider than credible intervals
 mean(pred_pred[, 2] - pred_pred[, 1]) > mean(pred_conf[, 2] - pred_conf[, 1])
