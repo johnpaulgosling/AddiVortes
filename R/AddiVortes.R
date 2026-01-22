@@ -15,7 +15,7 @@
 #' @param nu The degrees of freedom.
 #' @param q The quantile.
 #' @param k The number of centres.
-#' @param sd The standard deviation.
+#' @param sd The standard deviation used in centre proposals.
 #' @param Omega Omega/(number of covariates) is the prior probability of adding a dimension.
 #' @param LambdaRate The rate of the Poisson distribution for the number of centres.
 #' @param InitialSigma The method used to calculate the initial variance.
@@ -161,9 +161,9 @@ AddiVortes <- function(y, x, m = 200,
   # Some precalculations
   NumCovariates <- ncol(xScaled)
   covariateIndices <- seq_len(NumCovariates)
-  current_indices <- vector("list", m)
+  currentIndices <- vector("list", m)
   for(k in 1:m) {
-    current_indices[[k]] <- cellIndices(xScaled, tess[[k]], dim[[k]])
+    currentIndices[[k]] <- cellIndices(xScaled, tess[[k]], dim[[k]])
   }
   
   # Initial message and progress bar setup
@@ -242,7 +242,7 @@ AddiVortes <- function(y, x, m = 200,
       modification <- newTessOutput[[3]]
       
       # Retrieve old indices from cache
-      indexes <- current_indices[[j]]
+      indexes <- currentIndices[[j]]
       # Calculate new indices for the proposal
       indexesStar <- cellIndices(xScaled, tess_j_star, dim_j_star)
       
@@ -281,7 +281,7 @@ AddiVortes <- function(y, x, m = 200,
           # Accept proposal: update lists IN-PLACE
           tess[[j]] <- tess_j_star
           dim[[j]] <- dim_j_star
-          current_indices[[j]] <- indexesStar
+          currentIndices[[j]] <- indexesStar
           
           pred[[j]] <- sampleMuValues(
             j, tess,

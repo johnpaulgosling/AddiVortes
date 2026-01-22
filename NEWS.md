@@ -1,5 +1,10 @@
 # AddiVortes News
 
+## AddiVortes 0.4.10
+
+* Fixed variance/standard deviation mismatch in tessellation proposal step.
+* Fixed typo in variable names and added more camelCase.
+
 ## AddiVortes 0.4.9
 
 * Improved legends in plot.AddiVortesFit().
@@ -7,6 +12,7 @@
 
 ## AddiVortes 0.4.8
 
+* Initial CRAN release of AddiVortes package.
 * Fixed installation failure on r-devel-linux-x86_64-fedora-clang:
   - Added missing `<cstring>` header for `memcpy()` function in C++ code
   - Clang compiler requires explicit inclusion of standard library headers

@@ -160,12 +160,12 @@ extern "C" {
   // This function proposes a new tessellation based on the current one,
   // modifying it according to a set of rules and a random number generator.
   // The R wrapper function is `proposeTessellation`.
-  SEXP propose_tessellation_cpp(SEXP tess_j_sexp, SEXP dim_j_sexp, SEXP var_sexp, SEXP num_cov_sexp) {
+  SEXP propose_tessellation_cpp(SEXP tess_j_sexp, SEXP dim_j_sexp, SEXP sd_sexp, SEXP num_cov_sexp) {
     
     // --- Unpack arguments ---
     double* p_tess_j = REAL(tess_j_sexp);
     int* p_dim_j = INTEGER(dim_j_sexp);
-    double var = REAL(var_sexp)[0];
+    double sd = REAL(sd_sexp)[0];
     int numCovariates = INTEGER(num_cov_sexp)[0];
     
     int tess_j_rows = Rf_nrows(tess_j_sexp);
@@ -197,7 +197,7 @@ extern "C" {
         for (int c = 0; c < d_j_length; ++c) {
           new_tess[r + c * tess_j_rows] = tess_j_star[r + c * tess_j_rows];
         }
-        new_tess[r + d_j_length * tess_j_rows] = norm_rand() * sqrt(var);
+        new_tess[r + d_j_length * tess_j_rows] = norm_rand() * sd;
       }
       tess_j_star = new_tess;
       
@@ -221,7 +221,7 @@ extern "C" {
     } else if (p < 0.6 || (p < 0.8 && tess_j_rows == 1)) {
       modification = "AC";
       for (int i = 0; i < d_j_length; ++i) {
-        tess_j_star.insert(tess_j_star.begin() + (i * (tess_j_rows + 1)) + tess_j_rows, norm_rand() * sqrt(var));
+        tess_j_star.insert(tess_j_star.begin() + (i * (tess_j_rows + 1)) + tess_j_rows, norm_rand() * sd);
       }
       
     } else if (p < 0.8 && tess_j_rows > 1) {
@@ -241,7 +241,7 @@ extern "C" {
     } else if (p < 0.9 || d_j_length == numCovariates) {
       int centre_to_change_idx = floor(unif_rand() * tess_j_rows);
       for (int c = 0; c < d_j_length; ++c) {
-        tess_j_star[centre_to_change_idx + c * tess_j_rows] = norm_rand() * sqrt(var);
+        tess_j_star[centre_to_change_idx + c * tess_j_rows] = norm_rand() * sd;
       }
       
     } else {
@@ -254,7 +254,7 @@ extern "C" {
       
       dim_j_star[dim_to_change_idx] = new_dim;
       for (int r = 0; r < tess_j_rows; ++r) {
-        tess_j_star[r + dim_to_change_idx * tess_j_rows] = norm_rand() * sqrt(var);
+        tess_j_star[r + dim_to_change_idx * tess_j_rows] = norm_rand() * sd;
       }
     }
     
