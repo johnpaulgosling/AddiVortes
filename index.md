@@ -54,7 +54,7 @@ library(AddiVortes)
 # y <- your_response
 
 # Fit the AddiVortes model
-# model <- AddiVortesFit(X, y)
+# model <- AddiVortes(X, y)
 
 # Make predictions
 # predictions <- predict(model, newdata = X_test)

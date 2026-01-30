@@ -89,7 +89,7 @@ AddiVortes(
 
 ## Value
 
-An AddiVortesFit object containing the posterior samples of the
+An AddiVortes object containing the posterior samples of the
 tessellations, dimensions and predictions.
 
 ## Examples

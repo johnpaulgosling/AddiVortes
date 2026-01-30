@@ -17,20 +17,20 @@ Core functions for fitting AddiVortes models
 
 ## S3 Methods
 
-Methods for AddiVortesFit objects
+Methods for AddiVortes objects
 
-- [`plot(`*`<AddiVortesFit>`*`)`](https://johnpaulgosling.github.io/AddiVortes/reference/plot.AddiVortesFit.md)
-  : Plot Method for AddiVortesFit
-- [`predict(`*`<AddiVortesFit>`*`)`](https://johnpaulgosling.github.io/AddiVortes/reference/predict.AddiVortesFit.md)
-  : Predict Method for AddiVortesFit
-- [`print(`*`<AddiVortesFit>`*`)`](https://johnpaulgosling.github.io/AddiVortes/reference/print.AddiVortesFit.md)
-  : Print Method for AddiVortesFit
-- [`summary(`*`<AddiVortesFit>`*`)`](https://johnpaulgosling.github.io/AddiVortes/reference/summary.AddiVortesFit.md)
-  : Summary Method for AddiVortesFit
+- [`plot(`*`<AddiVortes>`*`)`](https://johnpaulgosling.github.io/AddiVortes/reference/plot.AddiVortes.md)
+  : Plot Method for AddiVortes
+- [`predict(`*`<AddiVortes>`*`)`](https://johnpaulgosling.github.io/AddiVortes/reference/predict.AddiVortes.md)
+  : Predict Method for AddiVortes
+- [`print(`*`<AddiVortes>`*`)`](https://johnpaulgosling.github.io/AddiVortes/reference/print.AddiVortes.md)
+  : Print Method for AddiVortes
+- [`summary(`*`<AddiVortes>`*`)`](https://johnpaulgosling.github.io/AddiVortes/reference/summary.AddiVortes.md)
+  : Summary Method for AddiVortes
 
 ## Utilities
 
 Helper functions and constructors
 
-- [`new_AddiVortesFit()`](https://johnpaulgosling.github.io/AddiVortes/reference/new_AddiVortesFit.md)
-  : Create an AddiVortesFit Object
+- [`new_AddiVortes()`](https://johnpaulgosling.github.io/AddiVortes/reference/new_AddiVortes.md)
+  : Create an AddiVortes Object
