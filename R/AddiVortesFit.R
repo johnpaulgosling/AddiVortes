@@ -11,13 +11,21 @@
 #' @param yCentre The centre of the output values.
 #' @param yRange The range of the output values.
 #' @param inSampleRmse The in-sample RMSE.
+#' @param mcmcLog A data frame logging each proposed tessellation move during
+#'   MCMC. Contains columns \code{iteration} (MCMC iteration index),
+#'   \code{tessellation} (tessellation component index), \code{move_type}
+#'   (character: one of "AD", "RD", "AC", "RC", "Change", "Swap"),
+#'   \code{log_alpha} (log acceptance probability; \code{-Inf} for proposals
+#'   auto-rejected due to empty cells), \code{accepted} (logical), and
+#'   \code{variable} (integer covariate index added or removed for "AD"/"RD"
+#'   moves; \code{NA} for all other move types).
 #'
 #' @return An object of class AddiVortes.
 #' @export
 new_AddiVortes <- function(posteriorTess, posteriorDim, 
                               posteriorSigma, posteriorPred,
                               xCentres, xRanges, yCentre, yRange,
-                              inSampleRmse) {
+                              inSampleRmse, mcmcLog) {
   structure(
     list(
       posteriorTess = posteriorTess,
@@ -28,7 +36,8 @@ new_AddiVortes <- function(posteriorTess, posteriorDim,
       xRanges = xRanges,
       yCentre = yCentre,
       yRange = yRange,
-      inSampleRmse = inSampleRmse
+      inSampleRmse = inSampleRmse,
+      mcmcLog = mcmcLog
     ),
     class = "AddiVortes"
   )
