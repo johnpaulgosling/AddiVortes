@@ -6,6 +6,9 @@ covariates and the output values. The model uses a backfitting algorithm
 to sample from the posterior distribution of the output values for each
 tessellation. The function returns the RMSE value for the test samples.
 
+For spherical data, it is assumed that the final spherical dimension is
+the polar angle: i.e. that with range 0, 2\*pi.
+
 ## Usage
 
 ``` r
@@ -21,9 +24,10 @@ AddiVortes(
   sd = 0.8,
   Omega = min(3, ncol(x)),
   LambdaRate = 25,
-  IntialSigma = "Linear",
+  InitialSigma = "Linear",
   thinning = 1,
-  showProgress = TRUE
+  metric = "E",
+  showProgress = interactive()
 )
 ```
 
@@ -63,7 +67,7 @@ AddiVortes(
 
 - sd:
 
-  The standard deviation.
+  The standard deviation used in centre proposals.
 
 - Omega:
 
@@ -74,7 +78,7 @@ AddiVortes(
 
   The rate of the Poisson distribution for the number of centres.
 
-- IntialSigma:
+- InitialSigma:
 
   The method used to calculate the initial variance.
 
@@ -82,10 +86,13 @@ AddiVortes(
 
   The thinning rate.
 
+- metric:
+
+  Either "E" (Euclidean, default) or "S" (Spherical).
+
 - showProgress:
 
-  Logical; if TRUE (default), progress bars and messages are shown
-  during fitting.
+  Logical; if TRUE, progress bars and messages are shown during fitting.
 
 ## Value
 

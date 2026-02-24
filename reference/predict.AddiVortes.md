@@ -54,7 +54,7 @@ predict(
 
 - showProgress:
 
-  Logical; if TRUE (default), a progress bar is shown during prediction.
+  Logical; if TRUE, a progress bar is shown during prediction.
 
 - parallel:
 
