@@ -1,5 +1,9 @@
 # AddiVortes News
 
+## Addivortes 0.4.1200
+
+* Now stores acceptance information as the MCMC runs.
+
 ## AddiVortes 0.4.12
 
 * Added comprehensive test suite for AddiVortes class methods syntax validation.
