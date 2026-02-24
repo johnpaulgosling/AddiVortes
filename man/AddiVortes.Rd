@@ -16,9 +16,9 @@ AddiVortes(
   sd = 0.8,
   Omega = min(3, ncol(x)),
   LambdaRate = 25,
-  IntialSigma = "Linear",
+  InitialSigma = "Linear",
   thinning = 1,
-  showProgress = TRUE
+  showProgress = interactive()
 )
 }
 \arguments{
@@ -38,21 +38,26 @@ AddiVortes(
 
 \item{k}{The number of centres.}
 
-\item{sd}{The standard deviation.}
+\item{sd}{The standard deviation used in centre proposals.}
 
 \item{Omega}{Omega/(number of covariates) is the prior probability of adding a dimension.}
 
 \item{LambdaRate}{The rate of the Poisson distribution for the number of centres.}
 
-\item{IntialSigma}{The method used to calculate the initial variance.}
+\item{InitialSigma}{The method used to calculate the initial variance.}
 
 \item{thinning}{The thinning rate.}
 
-\item{showProgress}{Logical; if TRUE (default), progress bars and messages are shown during fitting.}
+\item{showProgress}{Logical; if TRUE, progress bars and messages are shown during fitting.}
 }
 \value{
 An AddiVortes object containing the posterior samples of the
-tessellations, dimensions and predictions.
+tessellations, dimensions and predictions, and a \code{mcmcLog} data frame
+recording, for every proposed tessellation move: the MCMC iteration, the
+tessellation component index, the move type, the log acceptance probability
+(\code{log_alpha}), whether the proposal was accepted (\code{accepted}), and
+the covariate index added or removed (\code{variable}; \code{NA} except for
+"AD" and "RD" moves).
 }
 \description{
 The AddiVortes function is a Bayesian nonparametric regression model that uses a
