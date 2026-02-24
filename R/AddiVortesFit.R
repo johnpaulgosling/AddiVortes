@@ -11,13 +11,14 @@
 #' @param yCentre The centre of the output values.
 #' @param yRange The range of the output values.
 #' @param inSampleRmse The in-sample RMSE.
+#' @param metric The metric used for scaling covariates (default "E" for Euclidean).
 #'
 #' @return An object of class AddiVortes.
 #' @export
 new_AddiVortes <- function(posteriorTess, posteriorDim, 
                               posteriorSigma, posteriorPred,
                               xCentres, xRanges, yCentre, yRange,
-                              inSampleRmse, metric) {
+                              inSampleRmse, metric = "E") {
   structure(
     list(
       posteriorTess = posteriorTess,
@@ -370,12 +371,12 @@ predict.AddiVortes <- function(object, newdata,
       current_pred <- posteriorPredSamples[[sIdx]]
       
       # Get predictions for each tessellation in current posterior sample
-      pred_list <- lapply(seq_len(mTessellations), function(j) {
+      # and accumulate directly to avoid large temporary allocations.
+      model_predictions <- numeric(nObs)
+      for (j in seq_len(mTessellations)) {
         NewTessIndexes <- cellIndices(xNewScaled, current_tess[[j]], current_dim[[j]], object$metric)
-        current_pred[[j]][NewTessIndexes]
-      })
-      
-      model_predictions <- rowSums(do.call(cbind, pred_list))
+        model_predictions <- model_predictions + current_pred[[j]][NewTessIndexes]
+      }
       
       # Add Gaussian noise for prediction intervals when computing quantiles
       if (interval == "prediction" && type == "quantile") {

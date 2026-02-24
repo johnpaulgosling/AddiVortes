@@ -1,5 +1,10 @@
 # AddiVortes News
 
+## AddiVortes 0.5.1
+
+* Reinstated C++ speed-ups for new distance metrics
+* Restructured testthat tests
+
 ## AddiVortes 0.5.0
 
 * Added compatibility for purely spherical input data and mixed Euclidean and Spherical inputs.

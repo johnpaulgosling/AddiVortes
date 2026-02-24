@@ -52,13 +52,14 @@ double period_shift(double val, double lim) {
 }
 
 // Computes Euclidean distance between two points
-double euclidean_distance(std::vector<double>& p1, std::vector<double>& p2) {
+double euclidean_distance(const std::vector<double>& p1, const std::vector<double>& p2) {
   if (p1.size() != p2.size()) {
     Rf_error("Points have incompatible dimensions.");
   }
   double dist = 0.0;
-  for (int i = 0; i < p1.size(); ++i) {
-    dist += pow(p1[i]-p2[i], 2);
+  for (int i = 0; i < static_cast<int>(p1.size()); ++i) {
+    const double diff = p1[i] - p2[i];
+    dist += diff * diff;
   }
   return dist;
 }
@@ -67,7 +68,7 @@ double euclidean_distance(std::vector<double>& p1, std::vector<double>& p2) {
 // It assumes that the last dimension is the 'azimuthal' distance; i.e. the one with range [-pi, pi].
 // Optimisation not great: needs some work with the trigonometric functions.
 // The issue is that one needs all the covariates to calculate: you can't just cull the covariates not in the tessellation.
-double spherical_distance(std::vector<double>& p1, std::vector<double>& p2) {
+double spherical_distance(const std::vector<double>& p1, const std::vector<double>& p2) {
   if (p1.size() != p2.size()) {
     Rf_error("Points have incompatible dimensions.");
   }
@@ -118,6 +119,10 @@ extern "C" {
     int tess_cols = Rf_ncols(tess_sexp);
     int query_rows = Rf_nrows(query_sexp);
     int query_cols = Rf_ncols(query_sexp);
+
+    if (static_cast<int>(metric.size()) != query_cols) {
+      Rf_error("Length of metric must match number of columns in query/data matrices");
+    }
     
     // Check dimensions match
     if (tess_cols != query_cols) {
@@ -136,9 +141,11 @@ extern "C" {
 
     // Define variables to be used in the loop
     int how_many_E = n_elem(0, metric);
+    const bool has_euclidean = how_many_E > 0;
     std::vector<double> t_pt_E(how_many_E);
     std::vector<double> q_pt_E(how_many_E);
     int how_many_S = n_elem(1, metric);
+    const bool has_spherical = how_many_S > 0;
     std::vector<double> t_pt_S(how_many_S);
     std::vector<double> q_pt_S(how_many_S);
     std::vector<int> coind(metric.size());
@@ -154,49 +161,61 @@ extern "C" {
         count_S++;
       }
     }
+
+    std::vector<char> active_dim_mask(query_cols, 0);
+    std::vector<int> active_dim_idx;
+    active_dim_idx.reserve(dim_p_temp.size());
+    for (int i = 0; i < static_cast<int>(dim_p_temp.size()); ++i) {
+      const int d0 = dim_p_temp[i] - 1;
+      if (d0 < 0 || d0 >= query_cols) {
+        Rf_error("Values in dim must be valid 1-based column indices");
+      }
+      if (!active_dim_mask[d0]) {
+        active_dim_mask[d0] = 1;
+        active_dim_idx.push_back(d0);
+      }
+    }
+
     double dval;
-    //std::vector<double> q_pt(query_cols);
-    //std::vector<double> t_pt(tess_cols);
     
     // --- Main Logic: For each query point, find k nearest neighbors ---
     for (int q = 0; q < query_rows; ++q) {
-      
+      for (int d = 0; d < query_cols; ++d) {
+        if (metric[d] == 0) {
+          q_pt_E[coind[d]] = p_query[q + d * query_rows];
+        }
+        if (metric[d] == 1) {
+          q_pt_S[coind[d]] = p_query[q + d * query_rows];
+        }
+      }
+
       // Calculate distances to all tessellation points
       std::vector<std::pair<double, int>> distances(tess_rows);
-      
-      /// Getting ref errors here when building the q_pt_S and t_pt_S
+
       for (int t = 0; t < tess_rows; ++t) {
         dval = 0.0;
-        for (int d = 0; d < query_cols; ++d) {
+
+        if (has_euclidean) {
+          t_pt_E = q_pt_E;
+        }
+        if (has_spherical) {
+          t_pt_S = q_pt_S;
+        }
+
+        for (int i = 0; i < static_cast<int>(active_dim_idx.size()); ++i) {
+          const int d = active_dim_idx[i];
           if (metric[d] == 0) {
-            q_pt_E[coind[d]] = p_query[q + d * query_rows];
+            t_pt_E[coind[d]] = p_tess[t + d * tess_rows];
           }
           if (metric[d] == 1) {
-            q_pt_S[coind[d]] = p_query[q + d * query_rows];
+            t_pt_S[coind[d]] = p_tess[t + d * tess_rows];
           }
         }
-        for (int d = 0; d < tess_cols; ++d) {
-          if (in_vector(d+1, dim_p_temp)) {
-            if (metric[d] == 0) {
-              t_pt_E[coind[d]] = p_tess[t + d * tess_rows];
-            }
-            if (metric[d] == 1) {
-              t_pt_S[coind[d]] = p_tess[t + d * tess_rows];
-            }
-          }
-          else {
-            if (metric[d] == 0) {
-              t_pt_E[coind[d]] = p_query[q + d * query_rows];
-            }
-            if (metric[d] == 1) {
-              t_pt_S[coind[d]] = p_query[q + d * query_rows];
-            }
-          }
-        }
-        if (in_vector(1, metric)) {
+
+        if (has_spherical) {
           dval += spherical_distance(q_pt_S, t_pt_S);
         }
-        if (in_vector(0, metric)) {
+        if (has_euclidean) {
           dval += euclidean_distance(q_pt_E, t_pt_E);
         }
         distances[t] = std::make_pair(dval, t + 1); // +1 for R 1-based indexing

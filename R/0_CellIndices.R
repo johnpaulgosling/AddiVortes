@@ -20,17 +20,21 @@
 #' @export
 #' @noRd
 cellIndices <- function(x, tess, dim, metric = "Euclidean") {
-  if (length(tess[, 1]) == 1) { # only 1 centre
-    CellsForGivenTess <- rep(1, length(x[, 1]))
+  n_tess <- nrow(tess)
+  n_x <- nrow(x)
+
+  if (n_tess == 1L) { # only 1 centre
+    CellsForGivenTess <- rep.int(1L, n_x)
   } else { # multiple
     if (ncol(tess) != ncol(x)) {
-      new_tess <- matrix(0, nrow = nrow(tess), ncol = ncol(x))
+      new_tess <- matrix(0, nrow = n_tess, ncol = ncol(x))
       new_tess[,dim] <- tess
       tess <- new_tess
     }
     CellsForGivenTess <- knnx_index(tess, 
                                     x, 1,
-                                    dim, as.integer(metric)
+                                    dim, metric
     )
   }
+  return(CellsForGivenTess)
 } # Implicit return of CellsForGivenTess
