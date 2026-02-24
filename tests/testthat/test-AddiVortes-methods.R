@@ -37,7 +37,8 @@ test_that("new_AddiVortes creates correct class", {
     xRanges = c(1, 1),
     yCentre = 0,
     yRange = 1,
-    inSampleRmse = 0.5
+    inSampleRmse = 0.5,
+    mcmcLog = data.frame()
   )
   
   expect_s3_class(obj, "AddiVortes")
@@ -76,7 +77,8 @@ test_that("print.AddiVortes handles empty posterior samples", {
     xRanges = c(1),
     yCentre = 0,
     yRange = 1,
-    inSampleRmse = 0.5
+    inSampleRmse = 0.5,
+    mcmcLog = data.frame()
   )
   
   expect_output(print(obj), "No posterior samples available")
@@ -198,7 +200,8 @@ test_that("predict.AddiVortes handles empty posterior samples", {
     xRanges = c(1, 1, 1, 1, 1),
     yCentre = 0,
     yRange = 1,
-    inSampleRmse = 0.5
+    inSampleRmse = 0.5,
+    mcmcLog = data.frame()
   )
   X_new <- matrix(rnorm(25), 5, 5)
   
@@ -277,7 +280,8 @@ test_that("plot.AddiVortes handles empty posterior samples", {
     xRanges = c(1, 1, 1, 1, 1),
     yCentre = 0,
     yRange = 1,
-    inSampleRmse = 0.5
+    inSampleRmse = 0.5,
+    mcmcLog = data.frame()
   )
   X <- matrix(rnorm(50), 10, 5)
   Y <- rnorm(10)
@@ -299,4 +303,79 @@ test_that("plot.AddiVortes validates which parameter", {
     plot(obj, x_train = X, y_train = Y, which = c(5, 6, 7)),
     "which.*must contain values between 1 and 4"
   )
+})
+
+# --- Tests for mcmcLog field ---
+
+test_that("AddiVortes object contains mcmcLog field", {
+  obj <- create_test_object()
+  
+  expect_true("mcmcLog" %in% names(obj))
+  expect_s3_class(obj$mcmcLog, "data.frame")
+})
+
+test_that("mcmcLog has correct columns", {
+  obj <- create_test_object()
+  
+  expected_cols <- c("iteration", "tessellation", "move_type", "log_alpha", "accepted")
+  expect_true(all(expected_cols %in% names(obj$mcmcLog)))
+})
+
+test_that("mcmcLog has correct number of rows", {
+  set.seed(42)
+  X <- matrix(rnorm(50), 10, 5)
+  Y <- rnorm(10)
+  m <- 3
+  totalMCMCIter <- 20
+  
+  obj <- AddiVortes(Y, X, m = m, totalMCMCIter = totalMCMCIter,
+                    mcmcBurnIn = 5, showProgress = FALSE)
+  
+  expect_equal(nrow(obj$mcmcLog), totalMCMCIter * m)
+})
+
+test_that("mcmcLog move_type values are valid", {
+  obj <- create_test_object()
+  
+  valid_types <- c("AD", "RD", "AC", "RC", "Change", "Swap")
+  expect_true(all(obj$mcmcLog$move_type %in% valid_types))
+})
+
+test_that("mcmcLog accepted column is logical", {
+  obj <- create_test_object()
+  
+  expect_type(obj$mcmcLog$accepted, "logical")
+})
+
+test_that("mcmcLog log_alpha is numeric", {
+  obj <- create_test_object()
+  
+  expect_type(obj$mcmcLog$log_alpha, "double")
+})
+
+test_that("mcmcLog iteration and tessellation indices are correct", {
+  set.seed(42)
+  X <- matrix(rnorm(50), 10, 5)
+  Y <- rnorm(10)
+  m <- 3
+  totalMCMCIter <- 10
+  
+  obj <- AddiVortes(Y, X, m = m, totalMCMCIter = totalMCMCIter,
+                    mcmcBurnIn = 5, showProgress = FALSE)
+  
+  expect_true(all(obj$mcmcLog$iteration >= 1 & obj$mcmcLog$iteration <= totalMCMCIter))
+  expect_true(all(obj$mcmcLog$tessellation >= 1 & obj$mcmcLog$tessellation <= m))
+})
+
+test_that("mcmcLog auto-rejected proposals have log_alpha = -Inf and accepted = FALSE", {
+  obj <- create_test_object()
+  
+  # Any auto-rejected row (if any exist) must have log_alpha == -Inf and accepted == FALSE
+  auto_rejected <- obj$mcmcLog[is.infinite(obj$mcmcLog$log_alpha) &
+                                  obj$mcmcLog$log_alpha < 0, ]
+  if (nrow(auto_rejected) > 0) {
+    expect_true(all(!auto_rejected$accepted))
+  }
+  # This test always passes vacuously if there are no auto-rejections
+  expect_true(TRUE)
 })

@@ -23,7 +23,10 @@
 #' @param showProgress Logical; if TRUE, progress bars and messages are shown during fitting.
 #'
 #' @return An AddiVortes object containing the posterior samples of the
-#' tessellations, dimensions and predictions.
+#' tessellations, dimensions and predictions, and a \code{mcmcLog} data frame
+#' recording, for every proposed tessellation move: the MCMC iteration, the
+#' tessellation component index, the move type, the log acceptance probability
+#' (\code{log_alpha}), and whether the proposal was accepted (\code{accepted}).
 #'
 #' @examples
 #' \donttest{
@@ -166,6 +169,15 @@ AddiVortes <- function(y, x, m = 200,
     currentIndices[[k]] <- cellIndices(xScaled, tess[[k]], dim[[k]])
   }
   
+  # Pre-allocate MCMC log storage (one entry per (iteration, tessellation) pair)
+  numLogEntries <- totalMCMCIter * m
+  mcmcLog_iteration    <- integer(numLogEntries)
+  mcmcLog_tessellation <- integer(numLogEntries)
+  mcmcLog_move_type    <- character(numLogEntries)
+  mcmcLog_log_alpha    <- numeric(numLogEntries)
+  mcmcLog_accepted     <- logical(numLogEntries)
+  logIdx <- 1L
+  
   # Initial message and progress bar setup
   if (showProgress) {
     cat("Fitting AddiVortes model to input data...\n")
@@ -277,7 +289,18 @@ AddiVortes <- function(y, x, m = 200,
           NumCovariates
         )
         
-        if (log(runif(n = 1)) < logAcceptanceProb) {
+        logU <- log(runif(n = 1))
+        accepted <- logU < logAcceptanceProb
+        
+        # Log this proposal
+        mcmcLog_iteration[logIdx]    <- i
+        mcmcLog_tessellation[logIdx] <- j
+        mcmcLog_move_type[logIdx]    <- modification
+        mcmcLog_log_alpha[logIdx]    <- logAcceptanceProb
+        mcmcLog_accepted[logIdx]     <- accepted
+        logIdx <- logIdx + 1L
+        
+        if (accepted) {
           # Accept proposal: update lists IN-PLACE
           tess[[j]] <- tess_j_star
           dim[[j]] <- dim_j_star
@@ -300,7 +323,14 @@ AddiVortes <- function(y, x, m = 200,
           lastTessPred <- pred[[j]][indexes]
         }
       } else {
-        # Reject proposal (empty cell)
+        # Reject proposal (empty cell) — log with log_alpha = -Inf
+        mcmcLog_iteration[logIdx]    <- i
+        mcmcLog_tessellation[logIdx] <- j
+        mcmcLog_move_type[logIdx]    <- modification
+        mcmcLog_log_alpha[logIdx]    <- -Inf
+        mcmcLog_accepted[logIdx]     <- FALSE
+        logIdx <- logIdx + 1L
+        
         pred[[j]] <- sampleMuValues(
           j, tess, rIjOld, nIjOld,
           SigmaSquaredMu, SigmaSquared[i]
@@ -348,6 +378,16 @@ AddiVortes <- function(y, x, m = 200,
   meanYhat <- (rowSums(predictionMatrix) / (posteriorSamples)) * yRange +
     yCentre
   
+  # Build the MCMC log data frame
+  mcmcLog <- data.frame(
+    iteration    = mcmcLog_iteration,
+    tessellation = mcmcLog_tessellation,
+    move_type    = mcmcLog_move_type,
+    log_alpha    = mcmcLog_log_alpha,
+    accepted     = mcmcLog_accepted,
+    stringsAsFactors = FALSE
+  )
+  
   # Create and return the AddiVortes object
   new_AddiVortes(
     posteriorTess = outputPosteriorTess,
@@ -358,6 +398,7 @@ AddiVortes <- function(y, x, m = 200,
     xRanges = xRanges,
     yCentre = yCentre,
     yRange = yRange,
-    inSampleRmse = sqrt(mean((y - meanYhat)^2))
+    inSampleRmse = sqrt(mean((y - meanYhat)^2)),
+    mcmcLog = mcmcLog
   )
 }
