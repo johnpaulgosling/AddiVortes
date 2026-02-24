@@ -63,6 +63,9 @@ tessellation to model the relationship between the covariates and the output val
 The model uses a backfitting algorithm to sample from the posterior distribution of
 the output values for each tessellation. The function returns the RMSE value for
 the test samples.
+
+For spherical data, it is assumed that the final spherical dimension is the
+polar angle: i.e. that with range \link{0, 2*pi}.
 }
 \examples{
 \donttest{

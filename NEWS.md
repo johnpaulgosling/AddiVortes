@@ -1,5 +1,9 @@
 # AddiVortes News
 
+## AddiVortes 0.5.0
+
+* Added compatibility for purely spherical input data and mixed Euclidean and Spherical inputs.
+
 ## AddiVortes 0.4.12
 
 * Added comprehensive test suite for AddiVortes class methods syntax validation.

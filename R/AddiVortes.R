@@ -6,6 +6,9 @@
 #' The model uses a backfitting algorithm to sample from the posterior distribution of
 #' the output values for each tessellation. The function returns the RMSE value for
 #' the test samples.
+#' 
+#' For spherical data, it is assumed that the final spherical dimension is the
+#' polar angle: i.e. that with range [0, 2*pi].
 #'
 #' @param y A vector of the output values.
 #' @param x A matrix of the covariates.
