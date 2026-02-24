@@ -16,9 +16,10 @@ AddiVortes(
   sd = 0.8,
   Omega = min(3, ncol(x)),
   LambdaRate = 25,
-  IntialSigma = "Linear",
+  InitialSigma = "Linear",
   thinning = 1,
-  showProgress = TRUE
+  metric = "E",
+  showProgress = interactive()
 )
 }
 \arguments{
@@ -38,17 +39,19 @@ AddiVortes(
 
 \item{k}{The number of centres.}
 
-\item{sd}{The standard deviation.}
+\item{sd}{The standard deviation used in centre proposals.}
 
 \item{Omega}{Omega/(number of covariates) is the prior probability of adding a dimension.}
 
 \item{LambdaRate}{The rate of the Poisson distribution for the number of centres.}
 
-\item{IntialSigma}{The method used to calculate the initial variance.}
+\item{InitialSigma}{The method used to calculate the initial variance.}
 
 \item{thinning}{The thinning rate.}
 
-\item{showProgress}{Logical; if TRUE (default), progress bars and messages are shown during fitting.}
+\item{metric}{Either "E" (Euclidean, default) or "S" (Spherical).}
+
+\item{showProgress}{Logical; if TRUE, progress bars and messages are shown during fitting.}
 }
 \value{
 An AddiVortes object containing the posterior samples of the
@@ -60,6 +63,9 @@ tessellation to model the relationship between the covariates and the output val
 The model uses a backfitting algorithm to sample from the posterior distribution of
 the output values for each tessellation. The function returns the RMSE value for
 the test samples.
+
+For spherical data, it is assumed that the final spherical dimension is the
+polar angle: i.e. that with range \link{0, 2*pi}.
 }
 \examples{
 \donttest{

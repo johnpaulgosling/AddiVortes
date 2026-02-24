@@ -17,7 +17,7 @@
 new_AddiVortes <- function(posteriorTess, posteriorDim, 
                               posteriorSigma, posteriorPred,
                               xCentres, xRanges, yCentre, yRange,
-                              inSampleRmse) {
+                              inSampleRmse, metric) {
   structure(
     list(
       posteriorTess = posteriorTess,
@@ -28,7 +28,8 @@ new_AddiVortes <- function(posteriorTess, posteriorDim,
       xRanges = xRanges,
       yCentre = yCentre,
       yRange = yRange,
-      inSampleRmse = inSampleRmse
+      inSampleRmse = inSampleRmse,
+      metric = metric
     ),
     class = "AddiVortes"
   )
@@ -320,12 +321,13 @@ predict.AddiVortes <- function(object, newdata,
     return(NA_real_)
   }
   
-  # Scale new data
+  # Scale new data if required
   xNewScaled <- applyScaling_internal(
     mat = newdata,
     centres = object$xCentres,
     ranges = object$xRanges
   )
+  xNewScaled[,object$metric != 0] <- newdata[,object$metric != 0]
   
   mTessellations <- length(posteriorTessSamples[[1]])
   nObs <- nrow(xNewScaled)
@@ -369,7 +371,7 @@ predict.AddiVortes <- function(object, newdata,
       
       # Get predictions for each tessellation in current posterior sample
       pred_list <- lapply(seq_len(mTessellations), function(j) {
-        NewTessIndexes <- cellIndices(xNewScaled, current_tess[[j]], current_dim[[j]])
+        NewTessIndexes <- cellIndices(xNewScaled, current_tess[[j]], current_dim[[j]], object$metric)
         current_pred[[j]][NewTessIndexes]
       })
       

@@ -13,10 +13,13 @@
 #'   that define the dimensions of the current tessellation.
 #' @param sd The standard deviation parameter for the normal distribution (`rnorm`) 
 #'   used to generate new coordinate values for centres and dimensions.
+#' @param mu The mean parameter for the normal distribution used to generate new
+#'   coordinate values for centres and dimensions.
 #' @param covariateIndices This parameter is accepted by the function but is
 #'   **not used** in the current implementation.
 #' @param NumCovariates An integer giving the total number of covariates
 #'   available for selection in the full dataset.
+#' @param metric Either "Euclidean" or "Spherical".
 #'
 #' @return A list containing three elements:
 #'   \enumerate{
@@ -29,14 +32,16 @@
 #' @noRd
 #' 
 #' @useDynLib AddiVortes, .registration = TRUE
-proposeTessellation <- function(tess_j, dim_j, sd, covariateIndices,
-                                NumCovariates) {
+proposeTessellation <- function(tess_j, dim_j, sd, mu, covariateIndices,
+                                NumCovariates, metric) {
   # Call the C++ implementation via the .Call interface
   results <- .Call("propose_tessellation_cpp",
                    tess_j,
                    dim_j,
                    as.double(sd),
-                   as.integer(NumCovariates))
+                   as.double(mu),
+                   as.integer(NumCovariates),
+                   as.integer(metric))
   
   return(results)
 }

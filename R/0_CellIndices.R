@@ -11,20 +11,26 @@
 #'   row is a unique centre.
 #' @param dim An integer vector specifying the column indices of `x` to be used
 #'   for calculating distance.
+#' @param metric Either "Euclidean" or "Spherical".
 #'
 #' @return A numeric vector of integers where each element corresponds to a row
 #'   in `x` and its value is the row index of the nearest centre in `tess`.
 #'
 #' @keywords internal
+#' @export
 #' @noRd
-cellIndices <- function(x, tess, dim) {
+cellIndices <- function(x, tess, dim, metric = "Euclidean") {
   if (length(tess[, 1]) == 1) { # only 1 centre
     CellsForGivenTess <- rep(1, length(x[, 1]))
   } else { # multiple
+    if (ncol(tess) != ncol(x)) {
+      new_tess <- matrix(0, nrow = nrow(tess), ncol = ncol(x))
+      new_tess[,dim] <- tess
+      tess <- new_tess
+    }
     CellsForGivenTess <- knnx_index(tess, 
-                                    matrix(x[, dim],
-                                           ncol = length(dim)
-                                    ), 1
+                                    x, 1,
+                                    dim, as.integer(metric)
     )
   }
 } # Implicit return of CellsForGivenTess
