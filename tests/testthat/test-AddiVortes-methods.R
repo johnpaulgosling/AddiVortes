@@ -376,6 +376,37 @@ test_that("mcmcLog auto-rejected proposals have log_alpha = -Inf and accepted = 
   if (nrow(auto_rejected) > 0) {
     expect_true(all(!auto_rejected$accepted))
   }
-  # This test always passes vacuously if there are no auto-rejections
-  expect_true(TRUE)
+})
+
+test_that("mcmcLog variable column exists and is integer", {
+  obj <- create_test_object()
+  
+  expect_true("variable" %in% names(obj$mcmcLog))
+  expect_type(obj$mcmcLog$variable, "integer")
+})
+
+test_that("mcmcLog variable is NA for non-AD/RD moves", {
+  obj <- create_test_object()
+  log <- obj$mcmcLog
+  
+  non_dim_rows <- log[!(log$move_type %in% c("AD", "RD")), ]
+  if (nrow(non_dim_rows) > 0) {
+    expect_true(all(is.na(non_dim_rows$variable)))
+  }
+})
+
+test_that("mcmcLog variable is a valid covariate index for AD/RD moves", {
+  set.seed(99)
+  X <- matrix(rnorm(100), 20, 5)
+  Y <- rnorm(20)
+  
+  obj <- AddiVortes(Y, X, m = 5, totalMCMCIter = 50, mcmcBurnIn = 10,
+                    showProgress = FALSE)
+  log <- obj$mcmcLog
+  
+  ad_rd_rows <- log[log$move_type %in% c("AD", "RD"), ]
+  if (nrow(ad_rd_rows) > 0) {
+    expect_true(all(!is.na(ad_rd_rows$variable)))
+    expect_true(all(ad_rd_rows$variable >= 1 & ad_rd_rows$variable <= ncol(X)))
+  }
 })

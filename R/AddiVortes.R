@@ -26,7 +26,9 @@
 #' tessellations, dimensions and predictions, and a \code{mcmcLog} data frame
 #' recording, for every proposed tessellation move: the MCMC iteration, the
 #' tessellation component index, the move type, the log acceptance probability
-#' (\code{log_alpha}), and whether the proposal was accepted (\code{accepted}).
+#' (\code{log_alpha}), whether the proposal was accepted (\code{accepted}), and
+#' the covariate index added or removed (\code{variable}; \code{NA} except for
+#' "AD" and "RD" moves).
 #'
 #' @examples
 #' \donttest{
@@ -176,6 +178,7 @@ AddiVortes <- function(y, x, m = 200,
   mcmcLog_move_type    <- character(numLogEntries)
   mcmcLog_log_alpha    <- numeric(numLogEntries)
   mcmcLog_accepted     <- logical(numLogEntries)
+  mcmcLog_variable     <- integer(numLogEntries)  # Will contain NA_integer_ for non-AD/RD moves
   logIdx <- 1L
   
   # Initial message and progress bar setup
@@ -275,6 +278,17 @@ AddiVortes <- function(y, x, m = 200,
       nIjNew <- residualsOutput[[4]]
       sumOfAllTess <- residualsOutput[[5]]
       
+      # Compute which variable was added/removed (only relevant for AD/RD)
+      dimCurrent <- as.integer(unlist(dim[[j]]))
+      dimProposed <- as.integer(dim_j_star)
+      logVar <- if (modification == "AD") {
+        setdiff(dimProposed, dimCurrent)[1L]
+      } else if (modification == "RD") {
+        setdiff(dimCurrent, dimProposed)[1L]
+      } else {
+        NA_integer_
+      }
+      
       if (!any(nIjNew == 0)) {
         # Call the acceptanceProbability function 
         logAcceptanceProb <- acceptanceProbability(
@@ -298,6 +312,7 @@ AddiVortes <- function(y, x, m = 200,
         mcmcLog_move_type[logIdx]    <- modification
         mcmcLog_log_alpha[logIdx]    <- logAcceptanceProb
         mcmcLog_accepted[logIdx]     <- accepted
+        mcmcLog_variable[logIdx]     <- logVar
         logIdx <- logIdx + 1L
         
         if (accepted) {
@@ -329,6 +344,7 @@ AddiVortes <- function(y, x, m = 200,
         mcmcLog_move_type[logIdx]    <- modification
         mcmcLog_log_alpha[logIdx]    <- -Inf
         mcmcLog_accepted[logIdx]     <- FALSE
+        mcmcLog_variable[logIdx]     <- logVar
         logIdx <- logIdx + 1L
         
         pred[[j]] <- sampleMuValues(
@@ -385,6 +401,7 @@ AddiVortes <- function(y, x, m = 200,
     move_type    = mcmcLog_move_type,
     log_alpha    = mcmcLog_log_alpha,
     accepted     = mcmcLog_accepted,
+    variable     = mcmcLog_variable,
     stringsAsFactors = FALSE
   )
   
