@@ -11,7 +11,9 @@
 #' polar angle: i.e. that with range [0, 2*pi].
 #'
 #' @param y A vector of the output values.
-#' @param x A matrix of the covariates.
+#' @param x A matrix or data frame of the covariates. Character and factor columns
+#'   are treated as categorical variables and automatically converted to d-1 binary
+#'   indicator variables via one-hot encoding (with the first level as reference).
 #' @param m The number of tessellations.
 #' @param totalMCMCIter The number of iterations.
 #' @param mcmcBurnIn The number of burn in iterations.
@@ -24,6 +26,10 @@
 #' @param InitialSigma The method used to calculate the initial variance.
 #' @param thinning The thinning rate.
 #' @param metric Either "E" (Euclidean, default) or "S" (Spherical).
+#' @param catScaling Numeric scalar controlling the scale of binary indicator
+#'   variables created from categorical covariates. The indicator takes values
+#'   0 or \code{catScaling} (default 1). Larger values give categorical differences
+#'   more weight in the distance calculations.
 #' @param showProgress Logical; if TRUE, progress bars and messages are shown during fitting.
 #'
 #' @return An AddiVortes object containing the posterior samples of the
@@ -52,7 +58,15 @@ AddiVortes <- function(y, x, m = 200,
                        InitialSigma = "Linear",
                        thinning = 1,
                        metric = "E",
+                       catScaling = 1,
                        showProgress = interactive()) {
+  #### Encode categorical covariates -------------------------------------------
+  if (!is.numeric(catScaling) || length(catScaling) != 1 || catScaling <= 0)
+    stop("'catScaling' must be a single positive number.")
+  encResult <- encodeCategories_internal(x, catScaling = catScaling)
+  catEncoding <- encResult$encoding
+  x <- encResult$encoded
+
   #### Dealing with choice of metric -------------------------------------------
   if (length(metric) == 1) {
     if (metric == "E" || metric == "Euc" || metric == "Euclidean")
@@ -85,6 +99,12 @@ AddiVortes <- function(y, x, m = 200,
   
   ##### Dealing with unscaled data ---------------------------------------------
   xScaled[,metric != 0] <- x[,metric != 0]
+  # Binary columns from categorical encoding keep their {0, catScaling} values
+  # rather than being further scaled, so they directly control distance weight
+  if (!is.null(catEncoding)) {
+    binaryCols <- catEncoding$encodedBinaryCols
+    xScaled[, binaryCols] <- x[, binaryCols]
+  }
   mus <- rep(0, nrow(x))
   mus[metric != 0] <- xCentres[metric != 0]
   
@@ -406,6 +426,7 @@ AddiVortes <- function(y, x, m = 200,
     yCentre = yCentre,
     yRange = yRange,
     inSampleRmse = sqrt(mean((y - meanYhat)^2)),
-    metric = metric
+    metric = metric,
+    catEncoding = catEncoding
   )
 }
