@@ -326,3 +326,42 @@ test_that("catEncoding stores correct origNCols and origColNames", {
   # grp (d=3) -> 2 binary cols; total encoded = 1 + 2 + 1 = 4
   expect_equal(length(fit$xCentres), 4L)
 })
+
+test_that("all stored tess centres for binary dimensions lie in [0, catScaling]", {
+  set.seed(88)
+  n <- 40
+  cs <- 0.75
+  x <- data.frame(
+    x1   = rnorm(n),
+    cat3 = sample(c("a", "b", "c"), n, replace = TRUE),
+    stringsAsFactors = FALSE
+  )
+  y <- rnorm(n)
+
+  fit <- AddiVortes(y, x, m = 8, totalMCMCIter = 60, mcmcBurnIn = 20,
+                    catScaling = cs, showProgress = FALSE)
+
+  binaryCols <- fit$catEncoding$encodedBinaryCols
+
+  # Check every posterior tessellation sample
+  for (s in seq_along(fit$posteriorTess)) {
+    sample_tess <- fit$posteriorTess[[s]]
+    sample_dim  <- fit$posteriorDim[[s]]
+    for (j in seq_along(sample_tess)) {
+      tess_mat <- sample_tess[[j]]
+      dim_vec  <- sample_dim[[j]]
+      local_bin_pos <- which(dim_vec %in% binaryCols)
+      if (length(local_bin_pos) > 0) {
+        for (lp in local_bin_pos) {
+          vals <- tess_mat[, lp]
+          expect_true(
+            all(vals >= 0 & vals <= cs),
+            info = paste0("Sample ", s, ", tess ", j,
+                          ", local dim ", lp,
+                          ": values out of [0, ", cs, "]")
+          )
+        }
+      }
+    }
+  }
+})

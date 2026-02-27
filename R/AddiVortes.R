@@ -182,6 +182,23 @@ AddiVortes <- function(y, x, m = 200,
       }
     }
   }
+  ## Constrain initial centres for binary (one-hot) dimensions to [0, catScaling]
+  ## Initialization always produces single-dimension tessellations, so dim[[i]] is
+  ## a scalar. Guard against any future multi-column initial states by iterating
+  ## over all active dims.
+  if (!is.null(catEncoding) && length(catEncoding$encodedBinaryCols) > 0) {
+    binaryColsInit <- catEncoding$encodedBinaryCols
+    cs <- catEncoding$catScaling
+    for (i in seq_along(tess)) {
+      active_dims <- as.integer(unlist(dim[[i]]))
+      local_bin_pos <- which(active_dims %in% binaryColsInit)
+      if (length(local_bin_pos) > 0) {
+        for (lp in local_bin_pos) {
+          tess[[i]][, lp] <- runif(nrow(tess[[i]]), 0, cs)
+        }
+      }
+    }
+  }
   
   #### Set-up MCMC -------------------------------------------------------------
   # Prepare some variables used in the backfitting algorithm.
@@ -333,6 +350,17 @@ AddiVortes <- function(y, x, m = 200,
       tess_j_star <- newTessOutput[[1]]
       dim_j_star <- newTessOutput[[2]]
       modification <- newTessOutput[[3]]
+      
+      ## Clamp proposed centres for binary (one-hot) dimensions to [0, catScaling]
+      if (!is.null(catEncoding) && length(catEncoding$encodedBinaryCols) > 0) {
+        local_bin_pos <- which(dim_j_star %in% catEncoding$encodedBinaryCols)
+        if (length(local_bin_pos) > 0) {
+          cs <- catEncoding$catScaling
+          for (lp in local_bin_pos) {
+            tess_j_star[, lp] <- pmin(pmax(tess_j_star[, lp], 0), cs)
+          }
+        }
+      }
       
       # Retrieve old indices from cache
       indexes <- currentIndices[[j]]
