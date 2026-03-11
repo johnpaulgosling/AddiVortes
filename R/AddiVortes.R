@@ -27,9 +27,16 @@
 #' @param thinning The thinning rate.
 #' @param metric Either "E" (Euclidean, default) or "S" (Spherical).
 #' @param catScaling Numeric scalar controlling the scale of binary indicator
-#'   variables created from categorical covariates. The indicator takes values
-#'   0 or \code{catScaling} (default 1). Larger values give categorical differences
-#'   more weight in the distance calculations.
+#'   variables created from categorical covariates. Each binary indicator takes
+#'   values 0 (reference level) or \code{catScaling} (non-reference level).
+#'   The default value of 1 matches the range of continuous covariates, which are
+#'   normalised to \code{[-0.5, 0.5]} (range = 1) during fitting, so categorical
+#'   differences receive comparable weight to continuous differences in the distance
+#'   calculations. Increase above 1 to give categorical differences more weight;
+#'   decrease below 1 to give them less weight. Binary indicator columns are named
+#'   \code{<colname>_<level>} (e.g. a column \code{grp} with levels \code{"A"},
+#'   \code{"B"}, \code{"C"} produces columns \code{grp_B} and \code{grp_C}, with
+#'   \code{"A"} as the reference level).
 #' @param showProgress Logical; if TRUE, progress bars and messages are shown during fitting.
 #'
 #' @return An AddiVortes object containing the posterior samples of the
