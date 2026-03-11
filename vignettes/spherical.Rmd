@@ -1,6 +1,6 @@
 ---
 title: "Modelling Spherical Data with AddiVortes"
-author: "John Paul Gosling and Adam Stone"
+author: "Andy Iskauskas and John Paul Gosling"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
