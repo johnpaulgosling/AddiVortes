@@ -1,5 +1,16 @@
 # AddiVortes News
 
+## AddiVortes 0.5.3
+
+* Added vignette "Modelling Spherical Data with AddiVortes" (by Andy Iskauskas
+  and John Paul Gosling) demonstrating the use of great-circle distance via
+  `metric = "S"`, the coordinate convention (latitude/longitude in radians),
+  and a comparison with the Euclidean metric on synthetic globe data.
+* Added vignette "Using Categorical Covariates with AddiVortes" explaining
+  automatic one-hot encoding (d categories → d-1 binary indicators), the
+  `catScaling` parameter, the `catEncoding` metadata field, and handling of
+  unseen category levels at prediction time.
+
 ## AddiVortes 0.5.2
 
 * Added support for categorical covariates via automatic one-hot encoding.
