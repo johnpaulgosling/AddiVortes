@@ -11,7 +11,9 @@
 #' polar angle: i.e. that with range [0, 2*pi].
 #'
 #' @param y A vector of the output values.
-#' @param x A matrix of the covariates.
+#' @param x A matrix or data frame of the covariates. Character and factor columns
+#'   are treated as categorical variables and automatically converted to d-1 binary
+#'   indicator variables via one-hot encoding (with the first level as reference).
 #' @param m The number of tessellations.
 #' @param totalMCMCIter The number of iterations.
 #' @param mcmcBurnIn The number of burn in iterations.
@@ -24,6 +26,17 @@
 #' @param InitialSigma The method used to calculate the initial variance.
 #' @param thinning The thinning rate.
 #' @param metric Either "E" (Euclidean, default) or "S" (Spherical).
+#' @param catScaling Numeric scalar controlling the scale of binary indicator
+#'   variables created from categorical covariates. Each binary indicator takes
+#'   values 0 (reference level) or \code{catScaling} (non-reference level).
+#'   The default value of 1 matches the range of continuous covariates, which are
+#'   normalised to \code{[-0.5, 0.5]} (range = 1) during fitting, so categorical
+#'   differences receive comparable weight to continuous differences in the distance
+#'   calculations. Increase above 1 to give categorical differences more weight;
+#'   decrease below 1 to give them less weight. Binary indicator columns are named
+#'   \code{<colname>_<level>} (e.g. a column \code{grp} with levels \code{"A"},
+#'   \code{"B"}, \code{"C"} produces columns \code{grp_B} and \code{grp_C}, with
+#'   \code{"A"} as the reference level).
 #' @param showProgress Logical; if TRUE, progress bars and messages are shown during fitting.
 #'
 #' @return An AddiVortes object containing the posterior samples of the
@@ -37,6 +50,32 @@
 #' y <- rnorm(10)
 #' # Fit model with reduced iterations for quick example
 #' fit <- AddiVortes(y, x, m = 5, totalMCMCIter = 50, mcmcBurnIn = 10)
+#' 
+#' # Larger example with categorical covariates (d=2 and d=3) and a test set
+#' set.seed(456)
+#' n_train <- 200
+#' n_test  <- 50
+#' x_train <- data.frame(
+#'   x1   = rnorm(n_train),
+#'   x2   = runif(n_train),
+#'   grp2 = sample(c("A", "B"), n_train, replace = TRUE),
+#'   grp3 = sample(c("low", "mid", "high"), n_train, replace = TRUE)
+#' )
+#' y_train <- x_train$x1 + ifelse(x_train$grp2 == "B", 1, 0) + rnorm(n_train, sd = 0.5)
+#' 
+#' fit2 <- AddiVortes(y_train, x_train, m = 10, totalMCMCIter = 200, mcmcBurnIn = 50,
+#'                    catScaling = 1, showProgress = FALSE)
+#' 
+#' x_test <- data.frame(
+#'   x1   = rnorm(n_test),
+#'   x2   = runif(n_test),
+#'   grp2 = sample(c("A", "B"), n_test, replace = TRUE),
+#'   grp3 = sample(c("low", "mid", "high"), n_test, replace = TRUE)
+#' )
+#' y_test <- x_test$x1 + ifelse(x_test$grp2 == "B", 1, 0) + rnorm(n_test, sd = 0.5)
+#' 
+#' preds <- predict(fit2, x_test, showProgress = FALSE)
+#' test_rmse <- sqrt(mean((y_test - preds)^2))
 #' }
 #'
 #' @importFrom stats var lm optim quantile runif dbinom dpois
@@ -52,7 +91,20 @@ AddiVortes <- function(y, x, m = 200,
                        InitialSigma = "Linear",
                        thinning = 1,
                        metric = "E",
+                       catScaling = 1,
                        showProgress = interactive()) {
+  # Force evaluation of Omega using the *original* x before categorical encoding
+  # replaces x with the encoded matrix. Without this, R's lazy evaluation would
+  # use ncol() of the encoded matrix, potentially making Omega = NumCovariates
+  # and causing prob = 1 in acceptanceProbability (which produces 0/0 = NaN).
+  force(Omega)
+  #### Encode categorical covariates -------------------------------------------
+  if (!is.numeric(catScaling) || length(catScaling) != 1 || catScaling <= 0)
+    stop("'catScaling' must be a single positive number.")
+  encResult <- encodeCategories_internal(x, catScaling = catScaling)
+  catEncoding <- encResult$encoding
+  x <- encResult$encoded
+
   #### Dealing with choice of metric -------------------------------------------
   if (length(metric) == 1) {
     if (metric == "E" || metric == "Euc" || metric == "Euclidean")
@@ -85,6 +137,12 @@ AddiVortes <- function(y, x, m = 200,
   
   ##### Dealing with unscaled data ---------------------------------------------
   xScaled[,metric != 0] <- x[,metric != 0]
+  # Binary columns from categorical encoding keep their {0, catScaling} values
+  # rather than being further scaled, so they directly control distance weight
+  if (!is.null(catEncoding)) {
+    binaryCols <- catEncoding$encodedBinaryCols
+    xScaled[, binaryCols] <- x[, binaryCols]
+  }
   mus <- rep(0, nrow(x))
   mus[metric != 0] <- xCentres[metric != 0]
   
@@ -133,6 +191,23 @@ AddiVortes <- function(y, x, m = 200,
           tess[[i]][1,1] <- tess[[i]][1,1] - sphere_ranges[[sph_ind]][2]
         while (tess[[i]][1,1] < sphere_ranges[[sph_ind]][1])
           tess[[i]][1,1] <- tess[[i]][1,1] + sphere_ranges[[sph_ind]][2]
+      }
+    }
+  }
+  ## Constrain initial centres for binary (one-hot) dimensions to [0, catScaling]
+  ## Initialization always produces single-dimension tessellations, so dim[[i]] is
+  ## a scalar. Guard against any future multi-column initial states by iterating
+  ## over all active dims.
+  if (!is.null(catEncoding) && length(catEncoding$encodedBinaryCols) > 0) {
+    binaryColsInit <- catEncoding$encodedBinaryCols
+    cs <- catEncoding$catScaling
+    for (i in seq_along(tess)) {
+      active_dims <- as.integer(unlist(dim[[i]]))
+      local_bin_pos <- which(active_dims %in% binaryColsInit)
+      if (length(local_bin_pos) > 0) {
+        for (lp in local_bin_pos) {
+          tess[[i]][, lp] <- runif(nrow(tess[[i]]), 0, cs)
+        }
       }
     }
   }
@@ -288,6 +363,17 @@ AddiVortes <- function(y, x, m = 200,
       dim_j_star <- newTessOutput[[2]]
       modification <- newTessOutput[[3]]
       
+      ## Clamp proposed centres for binary (one-hot) dimensions to [0, catScaling]
+      if (!is.null(catEncoding) && length(catEncoding$encodedBinaryCols) > 0) {
+        local_bin_pos <- which(dim_j_star %in% catEncoding$encodedBinaryCols)
+        if (length(local_bin_pos) > 0) {
+          cs <- catEncoding$catScaling
+          for (lp in local_bin_pos) {
+            tess_j_star[, lp] <- pmin(pmax(tess_j_star[, lp], 0), cs)
+          }
+        }
+      }
+      
       # Retrieve old indices from cache
       indexes <- currentIndices[[j]]
       # Calculate new indices for the proposal
@@ -406,6 +492,7 @@ AddiVortes <- function(y, x, m = 200,
     yCentre = yCentre,
     yRange = yRange,
     inSampleRmse = sqrt(mean((y - meanYhat)^2)),
-    metric = metric
+    metric = metric,
+    catEncoding = catEncoding
   )
 }
