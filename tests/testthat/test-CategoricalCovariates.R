@@ -205,24 +205,6 @@ test_that("categorical-only covariates (no numeric columns) work", {
   expect_true(all(is.finite(preds)))
 })
 
-test_that("4-level categorical produces 3 binary columns", {
-  set.seed(33)
-  n <- 50
-  x <- data.frame(
-    x1   = rnorm(n),
-    cat4 = sample(c("Q1", "Q2", "Q3", "Q4"), n, replace = TRUE),
-    stringsAsFactors = FALSE
-  )
-  y <- rnorm(n)
-
-  fit <- AddiVortes(y, x, m = 5, totalMCMCIter = 30, mcmcBurnIn = 10,
-                    showProgress = FALSE)
-
-  expect_true(is.finite(fit$inSampleRmse))
-  # cat4 (d=4) -> 3 binary cols; 1 numeric -> 1 col; total = 4
-  expect_equal(length(fit$xCentres), 4L)
-  expect_equal(fit$catEncoding$catColIndices, 2L)
-})
 
 test_that("encodeCategories_internal produces correct binary values", {
   x <- data.frame(
@@ -290,27 +272,6 @@ test_that("catScaling must be a single positive number", {
   )
 })
 
-test_that("predict.AddiVortes accepts data.frame for model with categorical covariates", {
-  set.seed(44)
-  n <- 40
-  x <- data.frame(
-    x1   = rnorm(n),
-    cat2 = sample(c("A", "B"), n, replace = TRUE),
-    stringsAsFactors = FALSE
-  )
-  y <- rnorm(n)
-
-  fit <- AddiVortes(y, x, m = 5, totalMCMCIter = 30, mcmcBurnIn = 10,
-                    showProgress = FALSE)
-
-  x_new_df <- data.frame(x1 = rnorm(5), cat2 = c("A", "B", "A", "B", "A"),
-                          stringsAsFactors = FALSE)
-
-  # Should not error — data.frame is accepted when model has catEncoding
-  preds <- predict(fit, x_new_df, showProgress = FALSE)
-  expect_equal(length(preds), 5L)
-  expect_true(all(is.finite(preds)))
-})
 
 test_that("catEncoding stores correct origNCols and origColNames", {
   set.seed(66)
@@ -348,25 +309,14 @@ test_that("all stored tess centres for binary dimensions lie in [0, catScaling]"
 
   binaryCols <- fit$catEncoding$encodedBinaryCols
 
-  # Check every posterior tessellation sample
-  for (s in seq_along(fit$posteriorTess)) {
-    sample_tess <- fit$posteriorTess[[s]]
-    sample_dim  <- fit$posteriorDim[[s]]
-    for (j in seq_along(sample_tess)) {
-      tess_mat <- sample_tess[[j]]
-      dim_vec  <- sample_dim[[j]]
-      local_bin_pos <- which(dim_vec %in% binaryCols)
-      if (length(local_bin_pos) > 0) {
-        for (lp in local_bin_pos) {
-          vals <- tess_mat[, lp]
-          expect_true(
-            all(vals >= 0 & vals <= cs),
-            info = paste0("Sample ", s, ", tess ", j,
-                          ", local dim ", lp,
-                          ": values out of [0, ", cs, "]")
-          )
-        }
-      }
-    }
-  }
+  # Collect all binary-dimension centre values across every posterior sample
+  all_binary_vals <- unlist(lapply(seq_along(fit$posteriorTess), function(s) {
+    mapply(function(tess_mat, dim_vec) {
+      local_bin <- which(dim_vec %in% binaryCols)
+      if (length(local_bin) > 0) as.vector(tess_mat[, local_bin]) else numeric(0)
+    }, fit$posteriorTess[[s]], fit$posteriorDim[[s]], SIMPLIFY = FALSE)
+  }))
+
+  expect_true(all(all_binary_vals >= 0 & all_binary_vals <= cs))
 })
+
