@@ -158,7 +158,7 @@ test_that("unseen categories at predict time map to the reference level (all zer
   # (i.e., treated as the reference level)
   x_new <- data.frame(
     x1   = c(0.5, -0.5),
-    cat3 = c("unknown", "low"),   # "unknown" is unseen; "low" is the reference
+    cat3 = c("unknown", "low"),   # "unknown" is unseen; "high" is the reference
     stringsAsFactors = FALSE
   )
   # Both rows should yield finite predictions (not errors or NAs)
@@ -167,12 +167,15 @@ test_that("unseen categories at predict time map to the reference level (all zer
   expect_true(all(is.finite(preds)))
 
   # Encoding the "unknown" row should produce the same binary columns as the
-  # reference level "low" (all indicator columns = 0)
+  # reference level "high" (alphabetically first, so dropped; all indicator = 0)
   enc <- encodeCategories_internal(x_new, encoding = fit$catEncoding)$encoded
-  # Binary columns (for "mid" and "high") should both be 0 for the "unknown" row
+  # Levels sorted alphabetically: "high" (ref, dropped), "low", "mid"
+  # Binary columns: cat3_low, cat3_mid
+  # Row 1: "unknown" (unseen) -> treated as reference "high" -> all zeros
   binary_cols <- fit$catEncoding$encodedBinaryCols
   expect_true(all(enc[1, binary_cols] == 0))
-  expect_true(all(enc[2, binary_cols] == 0))
+  # Row 2: "low" -> cat3_low = 1 (non-reference), cat3_mid = 0
+  expect_equal(unname(enc[2, binary_cols]), c(1, 0))
 })
 
 test_that("categorical-only covariates (no numeric columns) work", {
@@ -255,14 +258,14 @@ test_that("encodeCategories_internal applies stored encoding to new data", {
   # Levels sorted alphabetically: "high" (ref, dropped), "low", "mid"
   # Binary cols: cat3_low, cat3_mid
   expect_equal(colnames(enc), c("cat3_low", "cat3_mid"))
-  # enc[row, col_name] returns a named scalar in R; check.attributes = FALSE
+  # enc[row, col_name] returns a named scalar in R; ignore_attr = TRUE
   # compares values only, ignoring the column name attached to the result.
-  expect_equal(enc[1, "cat3_low"], 0, check.attributes = FALSE)   # "mid" row
-  expect_equal(enc[1, "cat3_mid"], 1, check.attributes = FALSE)   # "mid" row
-  expect_equal(enc[2, "cat3_low"], 0, check.attributes = FALSE)   # "high" row (reference)
-  expect_equal(enc[2, "cat3_mid"], 0, check.attributes = FALSE)   # "high" row (reference)
-  expect_equal(enc[3, "cat3_low"], 1, check.attributes = FALSE)   # "low" row
-  expect_equal(enc[3, "cat3_mid"], 0, check.attributes = FALSE)   # "low" row
+  expect_equal(enc[1, "cat3_low"], 0, ignore_attr = TRUE)   # "mid" row
+  expect_equal(enc[1, "cat3_mid"], 1, ignore_attr = TRUE)   # "mid" row
+  expect_equal(enc[2, "cat3_low"], 0, ignore_attr = TRUE)   # "high" row (reference)
+  expect_equal(enc[2, "cat3_mid"], 0, ignore_attr = TRUE)   # "high" row (reference)
+  expect_equal(enc[3, "cat3_low"], 1, ignore_attr = TRUE)   # "low" row
+  expect_equal(enc[3, "cat3_mid"], 0, ignore_attr = TRUE)   # "low" row
 })
 
 test_that("catScaling must be a single positive number", {
