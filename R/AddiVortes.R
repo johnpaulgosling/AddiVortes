@@ -93,6 +93,11 @@ AddiVortes <- function(y, x, m = 200,
                        metric = "E",
                        catScaling = 1,
                        showProgress = interactive()) {
+  # Force evaluation of Omega using the *original* x before categorical encoding
+  # replaces x with the encoded matrix. Without this, R's lazy evaluation would
+  # use ncol() of the encoded matrix, potentially making Omega = NumCovariates
+  # and causing prob = 1 in acceptanceProbability (which produces 0/0 = NaN).
+  force(Omega)
   #### Encode categorical covariates -------------------------------------------
   if (!is.numeric(catScaling) || length(catScaling) != 1 || catScaling <= 0)
     stop("'catScaling' must be a single positive number.")

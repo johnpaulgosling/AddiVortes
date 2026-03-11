@@ -45,7 +45,7 @@ encodeCategories_internal <- function(x, catScaling = 1, encoding = NULL) {
 
   # Identify categorical columns (character or factor)
   isCat <- sapply(x, function(col) is.character(col) || is.factor(col))
-  catColIndices <- which(isCat)
+  catColIndices <- unname(which(isCat))
 
   # If no categorical columns and no stored encoding, return as-is
   if (length(catColIndices) == 0 && is.null(encoding)) {

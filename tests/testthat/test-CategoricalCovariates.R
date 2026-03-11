@@ -255,12 +255,14 @@ test_that("encodeCategories_internal applies stored encoding to new data", {
   # Levels sorted alphabetically: "high" (ref, dropped), "low", "mid"
   # Binary cols: cat3_low, cat3_mid
   expect_equal(colnames(enc), c("cat3_low", "cat3_mid"))
-  expect_equal(enc[1, "cat3_low"], 0)   # "mid" row
-  expect_equal(enc[1, "cat3_mid"], 1)   # "mid" row
-  expect_equal(enc[2, "cat3_low"], 0)   # "high" row (reference)
-  expect_equal(enc[2, "cat3_mid"], 0)   # "high" row (reference)
-  expect_equal(enc[3, "cat3_low"], 1)   # "low" row
-  expect_equal(enc[3, "cat3_mid"], 0)   # "low" row
+  # enc[row, col_name] returns a named scalar in R; check.attributes = FALSE
+  # compares values only, ignoring the column name attached to the result.
+  expect_equal(enc[1, "cat3_low"], 0, check.attributes = FALSE)   # "mid" row
+  expect_equal(enc[1, "cat3_mid"], 1, check.attributes = FALSE)   # "mid" row
+  expect_equal(enc[2, "cat3_low"], 0, check.attributes = FALSE)   # "high" row (reference)
+  expect_equal(enc[2, "cat3_mid"], 0, check.attributes = FALSE)   # "high" row (reference)
+  expect_equal(enc[3, "cat3_low"], 1, check.attributes = FALSE)   # "low" row
+  expect_equal(enc[3, "cat3_mid"], 0, check.attributes = FALSE)   # "low" row
 })
 
 test_that("catScaling must be a single positive number", {
