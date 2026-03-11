@@ -43,11 +43,13 @@ acceptanceProbability <- function(R_ijOld, n_ijOld,
   d <- length(dim_j_star)
   cStar <- nrow(tess_j_star)
   
-  # Clamp probability to [0, 1] range to avoid NaN in dbinom.
-  # When Omega/NumCovariates > 1 (e.g., Omega=3, NumCovariates=2), 
-  # clamping to 1.0 represents 100% probability of including dimensions.
-  # This allows the model to work with small numbers of covariates.
-  prob <- min(1, max(0, Omega / NumCovariates))
+  # Clamp probability to [0, 1) range to avoid NaN in dbinom.
+  # When Omega/NumCovariates >= 1, clamping to just below 1 represents a very
+  # high (but finite) probability of including dimensions. This keeps the
+  # acceptance probability numerically well-defined: dbinom(k, n, 1) = 0 for
+  # k < n, which causes 0/0 = NaN in the AD/RD ratio formulas.
+  prob_eps <- 1e-10  # keep prob strictly below 1 to avoid 0/0 in dbinom
+  prob <- min(1 - prob_eps, max(0, Omega / NumCovariates))
   
   LogLikelihoodRatio <- 0.5 * (log(prod(n_ijOld * SigmaSquaredMu +
                                           SigmaSquared)) -

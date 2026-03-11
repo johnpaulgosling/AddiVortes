@@ -1,5 +1,18 @@
 # AddiVortes News
 
+## AddiVortes 0.5.2
+
+* Added support for categorical covariates via automatic one-hot encoding.
+  Character and factor columns are converted to d-1 binary indicator variables
+  (first level as reference), controlled by the new `catScaling` parameter.
+* `predict.AddiVortes()` now accepts `data.frame` inputs when the model was
+  trained with categorical covariates, applying the stored encoding automatically.
+* Unseen categories at prediction time are mapped to the reference level (all zeros).
+* Encoding metadata stored in the `catEncoding` field of the fitted model object.
+* Added comprehensive tests for categorical covariate support.
+* Added second example demonstrating categorical covariates with a larger
+  training (n=200) and test set (n=50).
+
 ## AddiVortes 0.5.1
 
 * Reinstated C++ speed-ups for new distance metrics

@@ -12,13 +12,17 @@
 #' @param yRange The range of the output values.
 #' @param inSampleRmse The in-sample RMSE.
 #' @param metric The metric used for scaling covariates (default "E" for Euclidean).
+#' @param catEncoding Optional list of categorical encoding metadata returned by
+#'   \code{encodeCategories_internal}, or \code{NULL} if no categorical covariates
+#'   were present.
 #'
 #' @return An object of class AddiVortes.
 #' @export
 new_AddiVortes <- function(posteriorTess, posteriorDim, 
                               posteriorSigma, posteriorPred,
                               xCentres, xRanges, yCentre, yRange,
-                              inSampleRmse, metric = "E") {
+                              inSampleRmse, metric = "E",
+                              catEncoding = NULL) {
   structure(
     list(
       posteriorTess = posteriorTess,
@@ -30,7 +34,8 @@ new_AddiVortes <- function(posteriorTess, posteriorDim,
       yCentre = yCentre,
       yRange = yRange,
       inSampleRmse = inSampleRmse,
-      metric = metric
+      metric = metric,
+      catEncoding = catEncoding
     ),
     class = "AddiVortes"
   )
@@ -296,10 +301,21 @@ predict.AddiVortes <- function(object, newdata,
   # --- Input validation ---
   if (!inherits(object, "AddiVortes"))
     stop("`object` must be of class 'AddiVortes'.")
-  if (!is.matrix(newdata))
-    stop("`newdata` must be a matrix.")
-  if (ncol(newdata) != length(object$xCentres))
-    stop("Number of columns in `newdata` does not match the original training data.")
+  if (!is.matrix(newdata) && !is.data.frame(newdata))
+    stop("`newdata` must be a matrix or data frame.")
+  
+  # Apply categorical encoding if the model was trained with categorical covariates
+  if (!is.null(object$catEncoding)) {
+    if (ncol(newdata) != object$catEncoding$origNCols)
+      stop("Number of columns in `newdata` does not match the original training data.")
+    encResult <- encodeCategories_internal(newdata, encoding = object$catEncoding)
+    newdata <- encResult$encoded
+  } else {
+    if (!is.matrix(newdata))
+      stop("`newdata` must be a matrix.")
+    if (ncol(newdata) != length(object$xCentres))
+      stop("Number of columns in `newdata` does not match the original training data.")
+  }
   
   posteriorTessSamples <- object$posteriorTess
   posteriorDimSamples  <- object$posteriorDim
@@ -329,6 +345,12 @@ predict.AddiVortes <- function(object, newdata,
     ranges = object$xRanges
   )
   xNewScaled[,object$metric != 0] <- newdata[,object$metric != 0]
+  # Binary columns from categorical encoding are kept at their encoded values
+  # (0 or catScaling) rather than being further scaled
+  if (!is.null(object$catEncoding)) {
+    binaryCols <- object$catEncoding$encodedBinaryCols
+    xNewScaled[, binaryCols] <- newdata[, binaryCols]
+  }
   
   mTessellations <- length(posteriorTessSamples[[1]])
   nObs <- nrow(xNewScaled)
