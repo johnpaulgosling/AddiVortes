@@ -5,13 +5,13 @@ The model uses a backfitting algorithm to sample from the posterior distribution
 the output values for each tessellation. The function returns the RMSE value for
 the test samples.
 For spherical data, it is assumed that the final spherical dimension is the
-polar angle: i.e. that with range 0, 2*pi."><meta property="og:description" content="The AddiVortes function is a Bayesian nonparametric regression model that uses a
+polar angle: i.e. that with range 0 to 2*pi."><meta property="og:description" content="The AddiVortes function is a Bayesian nonparametric regression model that uses a
 tessellation to model the relationship between the covariates and the output values.
 The model uses a backfitting algorithm to sample from the posterior distribution of
 the output values for each tessellation. The function returns the RMSE value for
 the test samples.
 For spherical data, it is assumed that the final spherical dimension is the
-polar angle: i.e. that with range 0, 2*pi."></head><body>
+polar angle: i.e. that with range 0 to 2*pi."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -56,7 +56,7 @@ The model uses a backfitting algorithm to sample from the posterior distribution
 the output values for each tessellation. The function returns the RMSE value for
 the test samples.</p>
 <p>For spherical data, it is assumed that the final spherical dimension is the
-polar angle: i.e. that with range 0, 2*pi.</p>
+polar angle: i.e. that with range 0 to 2*pi.</p>
     </div>
 
     <div class="section level2">
@@ -76,6 +76,7 @@ polar angle: i.e. that with range 0, 2*pi.</p>
 <span>  InitialSigma <span class="op">=</span> <span class="st">"Linear"</span>,</span>
 <span>  thinning <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  metric <span class="op">=</span> <span class="st">"E"</span>,</span>
+<span>  catScaling <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  showProgress <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -89,7 +90,9 @@ polar angle: i.e. that with range 0, 2*pi.</p>
 
 
 <dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>A matrix of the covariates.</p></dd>
+<dd><p>A matrix or data frame of the covariates. Character and factor columns
+are treated as categorical variables and automatically converted to d-1 binary
+indicator variables via one-hot encoding (with the first level as reference).</p></dd>
 
 
 <dt id="arg-m">m<a class="anchor" aria-label="anchor" href="#arg-m"></a></dt>
@@ -140,6 +143,20 @@ polar angle: i.e. that with range 0, 2*pi.</p>
 <dd><p>Either "E" (Euclidean, default) or "S" (Spherical).</p></dd>
 
 
+<dt id="arg-catscaling">catScaling<a class="anchor" aria-label="anchor" href="#arg-catscaling"></a></dt>
+<dd><p>Numeric scalar controlling the scale of binary indicator
+variables created from categorical covariates. Each binary indicator takes
+values 0 (reference level) or <code>catScaling</code> (non-reference level).
+The default value of 1 matches the range of continuous covariates, which are
+normalised to <code>[-0.5, 0.5]</code> (range = 1) during fitting, so categorical
+differences receive comparable weight to continuous differences in the distance
+calculations. Increase above 1 to give categorical differences more weight;
+decrease below 1 to give them less weight. Binary indicator columns are named
+<code>&lt;colname&gt;_&lt;level&gt;</code> (e.g. a column <code>grp</code> with levels <code>"A"</code>,
+<code>"B"</code>, <code>"C"</code> produces columns <code>grp_B</code> and <code>grp_C</code>, with
+<code>"A"</code> as the reference level).</p></dd>
+
+
 <dt id="arg-showprogress">showProgress<a class="anchor" aria-label="anchor" href="#arg-showprogress"></a></dt>
 <dd><p>Logical; if TRUE, progress bars and messages are shown during fitting.</p></dd>
 
@@ -159,6 +176,32 @@ tessellations, dimensions and predictions.</p>
 <span class="r-in"><span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># Fit model with reduced iterations for quick example</span></span></span>
 <span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">AddiVortes</span><span class="op">(</span><span class="va">y</span>, <span class="va">x</span>, m <span class="op">=</span> <span class="fl">5</span>, totalMCMCIter <span class="op">=</span> <span class="fl">50</span>, mcmcBurnIn <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Larger example with categorical covariates (d=2 and d=3) and a test set</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">456</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">n_train</span> <span class="op">&lt;-</span> <span class="fl">200</span></span></span>
+<span class="r-in"><span><span class="va">n_test</span>  <span class="op">&lt;-</span> <span class="fl">50</span></span></span>
+<span class="r-in"><span><span class="va">x_train</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  x1   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_train</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  x2   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n_train</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  grp2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span>, <span class="va">n_train</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  grp3 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"low"</span>, <span class="st">"mid"</span>, <span class="st">"high"</span><span class="op">)</span>, <span class="va">n_train</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">y_train</span> <span class="op">&lt;-</span> <span class="va">x_train</span><span class="op">$</span><span class="va">x1</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">x_train</span><span class="op">$</span><span class="va">grp2</span> <span class="op">==</span> <span class="st">"B"</span>, <span class="fl">1</span>, <span class="fl">0</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_train</span>, sd <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">fit2</span> <span class="op">&lt;-</span> <span class="fu">AddiVortes</span><span class="op">(</span><span class="va">y_train</span>, <span class="va">x_train</span>, m <span class="op">=</span> <span class="fl">10</span>, totalMCMCIter <span class="op">=</span> <span class="fl">200</span>, mcmcBurnIn <span class="op">=</span> <span class="fl">50</span>,</span></span>
+<span class="r-in"><span>                   catScaling <span class="op">=</span> <span class="fl">1</span>, showProgress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">x_test</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  x1   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_test</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  x2   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n_test</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  grp2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span>, <span class="va">n_test</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  grp3 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"low"</span>, <span class="st">"mid"</span>, <span class="st">"high"</span><span class="op">)</span>, <span class="va">n_test</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">y_test</span> <span class="op">&lt;-</span> <span class="va">x_test</span><span class="op">$</span><span class="va">x1</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">x_test</span><span class="op">$</span><span class="va">grp2</span> <span class="op">==</span> <span class="st">"B"</span>, <span class="fl">1</span>, <span class="fl">0</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_test</span>, sd <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">preds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit2</span>, <span class="va">x_test</span>, showProgress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">test_rmse</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">y_test</span> <span class="op">-</span> <span class="va">preds</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

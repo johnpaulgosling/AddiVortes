@@ -15,7 +15,8 @@ new_AddiVortes(
   yCentre,
   yRange,
   inSampleRmse,
-  metric
+  metric = "E",
+  catEncoding = NULL
 )
 ```
 
@@ -56,6 +57,16 @@ new_AddiVortes(
 - inSampleRmse:
 
   The in-sample RMSE.
+
+- metric:
+
+  The metric used for scaling covariates (default "E" for Euclidean).
+
+- catEncoding:
+
+  Optional list of categorical encoding metadata returned by
+  `encodeCategories_internal`, or `NULL` if no categorical covariates
+  were present.
 
 ## Value
 
