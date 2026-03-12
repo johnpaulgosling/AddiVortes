@@ -20,6 +20,10 @@ navbar:
           href: articles/introduction.html
         - text: "Bayesian Regression and Prediction"
           href: articles/prediction.html
+        - text: "Modelling Spherical Data with AddiVortes"
+          href: articles/spherical.html
+        - text: "Using Categorical Covariates with AddiVortes"
+          href: articles/categorical.html
 
 reference:
   - title: "Package Overview"
