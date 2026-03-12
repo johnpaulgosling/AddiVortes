@@ -20,6 +20,10 @@ navbar:
           href: articles/introduction.html
         - text: "Bayesian Regression and Prediction"
           href: articles/prediction.html
+        - text: "Modelling Spherical Data"
+          href: articles/spherical.html
+        - text: "Using Categorical Covariates"
+          href: articles/categorical.html
 
 reference:
   - title: "Package Overview"
@@ -41,4 +45,5 @@ reference:
     desc: "Helper functions and constructors"
     contents:
     - new_AddiVortes
+    - cellIndices
 

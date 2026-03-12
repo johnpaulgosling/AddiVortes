@@ -53,7 +53,9 @@ library(AddiVortes)
 ## Documentation
 
 - [Getting Started Guide](https://johnpaulgosling.github.io/AddiVortes/articles/introduction.html)
-- [Prediction Examples](https://johnpaulgosling.github.io/AddiVortes/articles/prediction.html)
+- [Bayesian Regression and Prediction](https://johnpaulgosling.github.io/AddiVortes/articles/prediction.html)
+- [Modelling Spherical Data](https://johnpaulgosling.github.io/AddiVortes/articles/spherical.html)
+- [Using Categorical Covariates](https://johnpaulgosling.github.io/AddiVortes/articles/categorical.html)
 - [Function Reference](https://johnpaulgosling.github.io/AddiVortes/reference/)
 
 ## Comparison with BART
