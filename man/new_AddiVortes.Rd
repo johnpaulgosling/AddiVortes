@@ -14,7 +14,8 @@ new_AddiVortes(
   yCentre,
   yRange,
   inSampleRmse,
-  metric
+  metric = "E",
+  catEncoding = NULL
 )
 }
 \arguments{
@@ -35,6 +36,12 @@ new_AddiVortes(
 \item{yRange}{The range of the output values.}
 
 \item{inSampleRmse}{The in-sample RMSE.}
+
+\item{metric}{The metric used for scaling covariates (default "E" for Euclidean).}
+
+\item{catEncoding}{Optional list of categorical encoding metadata returned by
+\code{encodeCategories_internal}, or \code{NULL} if no categorical covariates
+were present.}
 }
 \value{
 An object of class AddiVortes.

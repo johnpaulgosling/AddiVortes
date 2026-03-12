@@ -1,7 +1,7 @@
 #' @title scaleData_internal
 #'
 #' @description
-#' Scale a numeric vector, matrix, or data frame to [-0.5, 0.5]
+#' Scale a numeric vector, matrix, or data frame to (-0.5, 0.5)
 #'
 #' Determines if the input is vector-like or matrix/data frame-like.
 #' - If vector-like: scales based on the overall range of the vector.

@@ -8,7 +8,7 @@
 #' the test samples.
 #' 
 #' For spherical data, it is assumed that the final spherical dimension is the
-#' polar angle: i.e. that with range [0, 2*pi].
+#' polar angle: i.e. that with range 0 to 2*pi.
 #'
 #' @param y A vector of the output values.
 #' @param x A matrix or data frame of the covariates. Character and factor columns

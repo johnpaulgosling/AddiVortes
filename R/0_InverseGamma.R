@@ -99,15 +99,15 @@ rinvgamma_internal <- function(n, shape, rate = 1, scale = 1 / rate) {
 #' It relies on `stats::qgamma`.
 #'
 #' @param p Numeric vector of probabilities. Values 
-#' outside $\left[0, 1\right]$ (or the
+#' outside (0, 1) (or the
 #'  corresponding range if `log.p = TRUE`) will result in `NaN`.
 #' @param shape Numeric, the shape parameter ($a$). Must be positive.
 #' @param rate Numeric, the rate parameter ($b$). Must be positive.
 #'  Cannot be specified if `scale` is specified. Defaults to 1.
 #' @param scale Numeric, the scale parameter, equivalent to `1/rate`. Must be
 #'  positive. Cannot be specified if `rate` is specified. Defaults to `1/rate`.
-#' @param lower.tail Logical; if TRUE (default), probabilities are $P[X \le x]$,
-#'  otherwise, $P[X > x]$.
+#' @param lower.tail Logical; if TRUE (default), probabilities are P(X <= x),
+#'  otherwise, P(X > x).
 #' @param log.p Logical; if TRUE, probabilities p are given as log(p).
 #'
 #' @return A numeric vector of quantiles corresponding to the probabilities `p`.
