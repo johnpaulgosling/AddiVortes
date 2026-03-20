@@ -50,4 +50,5 @@ reference:
     desc: "Helper functions and constructors"
     contents:
     - new_AddiVortes
+    - cellIndices
 
