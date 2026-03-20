@@ -1,4 +1,4 @@
-require(testthat)
-require(AddiVortes)
+library(testthat)
+library(AddiVortes)
 
 test_check("AddiVortes")
