@@ -37,3 +37,4 @@ Config/testthat/edition: 3
 URL: https://johnpaulgosling.github.io/AddiVortes/
 VignetteBuilder: knitr
 BugReports: https://github.com/johnpaulgosling/AddiVortes/issues
+LazyData: true
