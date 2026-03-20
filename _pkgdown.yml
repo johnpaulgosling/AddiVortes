@@ -41,6 +41,11 @@ reference:
     - predict.AddiVortes
     - print.AddiVortes
     - summary.AddiVortes
+  - title: "Datasets"
+    contents:
+      - Boston
+      - Cylinder
+      - Weather
   - title: "Utilities"
     desc: "Helper functions and constructors"
     contents:

@@ -1,5 +1,9 @@
 # AddiVortes News
 
+## AddiVortes 0.5.4
+
+* Added data to package to help with vignettes and testing.
+
 ## AddiVortes 0.5.3
 
 * Added vignette "Modelling Spherical Data with AddiVortes" (by Andy Iskauskas

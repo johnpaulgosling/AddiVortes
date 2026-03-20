@@ -1,7 +1,7 @@
 Package: AddiVortes
 Title: (Bayesian) Additive Voronoi Tessellations
-Version: 0.5.3
-Authors@R:
+Version: 0.5.4
+Authors@R: 
     c(person("Adam", "Stone", , "adam.stone2@durham.ac.uk",
              role = c("aut"),
              comment = c(ORCID = "0009-0004-0058-6117")),
@@ -36,3 +36,4 @@ Config/testthat/edition: 3
 URL: https://johnpaulgosling.github.io/AddiVortes/
 VignetteBuilder: knitr
 BugReports: https://github.com/johnpaulgosling/AddiVortes/issues
+LazyData: true
