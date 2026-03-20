@@ -130,6 +130,15 @@ Methods for AddiVortes objects
 - [`summary(`*`<AddiVortes>`*`)`](https://johnpaulgosling.github.io/AddiVortes/reference/summary.AddiVortes.md)
   : Summary Method for AddiVortes
 
+## Datasets
+
+- [`Boston`](https://johnpaulgosling.github.io/AddiVortes/reference/Boston.md)
+  : Boston Dataset
+- [`Cylinder`](https://johnpaulgosling.github.io/AddiVortes/reference/Cylinder.md)
+  : Cylindrical Dataset
+- [`Weather`](https://johnpaulgosling.github.io/AddiVortes/reference/Weather.md)
+  : Weather Dataset
+
 ## Utilities
 
 Helper functions and constructors
