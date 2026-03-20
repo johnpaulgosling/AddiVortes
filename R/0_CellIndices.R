@@ -16,9 +16,7 @@
 #' @return A numeric vector of integers where each element corresponds to a row
 #'   in `x` and its value is the row index of the nearest centre in `tess`.
 #'
-#' @keywords internal
 #' @export
-#' @noRd
 cellIndices <- function(x, tess, dim, metric = "Euclidean") {
   n_tess <- nrow(tess)
   n_x <- nrow(x)
