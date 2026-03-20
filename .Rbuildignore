@@ -7,8 +7,8 @@
 ^doc$
 ^Meta$
 ^README\.Rmd$
-^NEWS\.md$
 ^cran-comments\.md$
+^\.gitattributes$
 ^\.travis\.yml$
 ^\.gitlab-ci\.yml$
 ^codecov\.yml$
