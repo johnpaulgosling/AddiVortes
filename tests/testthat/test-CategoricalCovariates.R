@@ -1,7 +1,8 @@
 # --- Tests for categorical covariate support ---
 
 test_that("AddiVortes fits with one binary categorical covariate (d = 2)", {
-  set.seed(42)
+  skip_on_cran()
+  withr::local_seed(42)
   n <- 30
   # Two numeric covariates plus one binary categorical (d = 2: "A", "B")
   x <- data.frame(
@@ -28,7 +29,8 @@ test_that("AddiVortes fits with one binary categorical covariate (d = 2)", {
 })
 
 test_that("AddiVortes fits with one 3-level categorical covariate (d = 3)", {
-  set.seed(7)
+  skip_on_cran()
+  withr::local_seed(7)
   n <- 40
   # Two numeric covariates plus one categorical with 3 levels (d = 3)
   x <- data.frame(
@@ -51,7 +53,8 @@ test_that("AddiVortes fits with one 3-level categorical covariate (d = 3)", {
 })
 
 test_that("AddiVortes fits with both a d=2 and a d=3 categorical covariate", {
-  set.seed(123)
+  skip_on_cran()
+  withr::local_seed(123)
   n <- 50
   x <- data.frame(
     x1    = rnorm(n),
@@ -77,7 +80,8 @@ test_that("AddiVortes fits with both a d=2 and a d=3 categorical covariate", {
 })
 
 test_that("predict works after fitting with categorical covariates", {
-  set.seed(99)
+  skip_on_cran()
+  withr::local_seed(99)
   n <- 40
   x <- data.frame(
     x1   = rnorm(n),
@@ -104,7 +108,8 @@ test_that("predict works after fitting with categorical covariates", {
 })
 
 test_that("catScaling controls the binary indicator value", {
-  set.seed(55)
+  skip_on_cran()
+  withr::local_seed(55)
   n <- 30
   x <- data.frame(
     x1   = rnorm(n),
@@ -124,7 +129,8 @@ test_that("catScaling controls the binary indicator value", {
 })
 
 test_that("factor columns are handled like character columns", {
-  set.seed(77)
+  skip_on_cran()
+  withr::local_seed(77)
   n <- 30
   x <- data.frame(
     x1   = rnorm(n),
@@ -142,7 +148,8 @@ test_that("factor columns are handled like character columns", {
 })
 
 test_that("unseen categories at predict time map to the reference level (all zeros)", {
-  set.seed(11)
+  skip_on_cran()
+  withr::local_seed(11)
   n <- 40
   x <- data.frame(
     x1   = rnorm(n),
@@ -179,7 +186,8 @@ test_that("unseen categories at predict time map to the reference level (all zer
 })
 
 test_that("categorical-only covariates (no numeric columns) work", {
-  set.seed(22)
+  skip_on_cran()
+  withr::local_seed(22)
   n <- 40
   x <- data.frame(
     grp2 = sample(c("A", "B"), n, replace = TRUE),
@@ -251,7 +259,8 @@ test_that("encodeCategories_internal applies stored encoding to new data", {
 })
 
 test_that("catScaling must be a single positive number", {
-  set.seed(1)
+  skip_on_cran()
+  withr::local_seed(1)
   x <- data.frame(x1 = rnorm(20), cat2 = sample(c("A", "B"), 20, replace = TRUE))
   y <- rnorm(20)
 
@@ -274,7 +283,8 @@ test_that("catScaling must be a single positive number", {
 
 
 test_that("catEncoding stores correct origNCols and origColNames", {
-  set.seed(66)
+  skip_on_cran()
+  withr::local_seed(66)
   n <- 30
   x <- data.frame(
     x1   = rnorm(n),
@@ -294,7 +304,8 @@ test_that("catEncoding stores correct origNCols and origColNames", {
 })
 
 test_that("all stored tess centres for binary dimensions lie in [0, catScaling]", {
-  set.seed(88)
+  skip_on_cran()
+  withr::local_seed(88)
   n <- 40
   cs <- 0.75
   x <- data.frame(

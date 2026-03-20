@@ -1,7 +1,8 @@
 # --- Test Suite for quantile functionality ---
 
 test_that("AddiVortes fit 1 with quantile check", {
-  set.seed(111333)
+  skip_on_cran()
+  withr::local_seed(111333)
   X <- matrix(rnorm(100), 10, 10)
   Y <- rnorm(10)
   X_test <- matrix(rnorm(100), 10, 10)
@@ -32,7 +33,8 @@ test_that("AddiVortes fit 1 with quantile check", {
 })
 
 test_that("AddiVortes fit 2 with reverse quantile check", {
-  set.seed(1789)
+  skip_on_cran()
+  withr::local_seed(1789)
   X <- matrix(runif(500), 100, 5)
   Y <- rnorm(100, -5, 3)
   X_test <- matrix(runif(100), 20, 5)
@@ -55,7 +57,8 @@ test_that("AddiVortes fit 2 with reverse quantile check", {
 })
 
 test_that("AddiVortes fit 3 with quantile count", {
-  set.seed(1234)
+  skip_on_cran()
+  withr::local_seed(1234)
   X <- matrix(rnorm(10000), 1000, 10)
   Y <- runif(1000, -1, 3)
   X_test <- matrix(rnorm(1000), 100, 10)
