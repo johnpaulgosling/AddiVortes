@@ -43,3 +43,5 @@ Helper functions and constructors
 
 - [`new_AddiVortes()`](https://johnpaulgosling.github.io/AddiVortes/reference/new_AddiVortes.md)
   : Create an AddiVortes Object
+- [`cellIndices()`](https://johnpaulgosling.github.io/AddiVortes/reference/cellIndices.md)
+  : Assign Observations to Tessellation Cells
