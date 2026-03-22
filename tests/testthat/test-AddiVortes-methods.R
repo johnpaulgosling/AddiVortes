@@ -4,10 +4,10 @@
 
 # --- Helper: Create a simple test AddiVortes object ---
 create_test_object <- function() {
-  set.seed(42)
+  withr::local_seed(42)
   X <- matrix(rnorm(50), 10, 5)
   Y <- rnorm(10)
-  
+
   AddiVortes(Y, X, m = 3, totalMCMCIter = 20, mcmcBurnIn = 5, showProgress = FALSE)
 }
 
@@ -57,6 +57,7 @@ test_that("print.AddiVortes requires AddiVortes object", {
 })
 
 test_that("print.AddiVortes works with valid object", {
+  skip_on_cran()
   # Test that print works with a valid AddiVortes object
   obj <- create_test_object()
   
@@ -95,6 +96,7 @@ test_that("summary.AddiVortes requires AddiVortes object", {
 })
 
 test_that("summary.AddiVortes works with valid object", {
+  skip_on_cran()
   # Test that summary works with a valid AddiVortes object
   obj <- create_test_object()
   
@@ -116,6 +118,7 @@ test_that("predict.AddiVortes requires AddiVortes object", {
 })
 
 test_that("predict.AddiVortes requires matrix newdata", {
+  skip_on_cran()
   # Test that predict fails if newdata is not a matrix
   obj <- create_test_object()
   
@@ -131,6 +134,7 @@ test_that("predict.AddiVortes requires matrix newdata", {
 })
 
 test_that("predict.AddiVortes checks newdata dimensions", {
+  skip_on_cran()
   # Test that predict fails if newdata has wrong number of columns
   obj <- create_test_object()
   X_wrong <- matrix(rnorm(30), 10, 3)  # Wrong number of columns
@@ -142,6 +146,7 @@ test_that("predict.AddiVortes checks newdata dimensions", {
 })
 
 test_that("predict.AddiVortes works with valid inputs", {
+  skip_on_cran()
   # Test that predict works with valid inputs
   obj <- create_test_object()
   X_new <- matrix(rnorm(25), 5, 5)
@@ -154,6 +159,7 @@ test_that("predict.AddiVortes works with valid inputs", {
 })
 
 test_that("predict.AddiVortes type argument works", {
+  skip_on_cran()
   # Test different type arguments
   obj <- create_test_object()
   X_new <- matrix(rnorm(25), 5, 5)
@@ -172,6 +178,7 @@ test_that("predict.AddiVortes type argument works", {
 })
 
 test_that("predict.AddiVortes interval argument works", {
+  skip_on_cran()
   # Test different interval arguments
   obj <- create_test_object()
   X_new <- matrix(rnorm(25), 5, 5)
@@ -223,6 +230,7 @@ test_that("plot.AddiVortes requires AddiVortes object", {
 })
 
 test_that("plot.AddiVortes requires x_train and y_train", {
+  skip_on_cran()
   # Test that plot fails without required training data
   obj <- create_test_object()
   
@@ -233,6 +241,7 @@ test_that("plot.AddiVortes requires x_train and y_train", {
 })
 
 test_that("plot.AddiVortes checks x_train is a matrix", {
+  skip_on_cran()
   # Test that plot fails if x_train is not a matrix
   obj <- create_test_object()
   Y <- rnorm(10)
@@ -244,6 +253,7 @@ test_that("plot.AddiVortes checks x_train is a matrix", {
 })
 
 test_that("plot.AddiVortes checks y_train is numeric", {
+  skip_on_cran()
   # Test that plot fails if y_train is not numeric
   obj <- create_test_object()
   X <- matrix(rnorm(50), 10, 5)
@@ -255,6 +265,7 @@ test_that("plot.AddiVortes checks y_train is numeric", {
 })
 
 test_that("plot.AddiVortes checks dimensions match", {
+  skip_on_cran()
   # Test that plot fails if dimensions don't match
   obj <- create_test_object()
   X <- matrix(rnorm(50), 10, 5)
@@ -289,6 +300,7 @@ test_that("plot.AddiVortes handles empty posterior samples", {
 })
 
 test_that("plot.AddiVortes validates which parameter", {
+  skip_on_cran()
   # Test that plot validates the which parameter
   obj <- create_test_object()
   X <- matrix(rnorm(50), 10, 5)

@@ -2,7 +2,7 @@
 
 test_that("rinvgamma_internal generates samples correctly", {
   # Set seed for reproducibility of random numbers
-  set.seed(123)
+  withr::local_seed(123)
 
   # 1. Check if the number of samples is correct
   expect_length(rinvgamma_internal(n = 10, shape = 2, rate = 1), 10)
@@ -17,10 +17,10 @@ test_that("rinvgamma_internal generates samples correctly", {
 
 test_that("rinvgamma_internal handles rate and scale parameters correctly", {
   # Set seed to ensure the same gamma deviates are generated
-  set.seed(456)
+  withr::local_seed(456)
   samples_from_rate <- rinvgamma_internal(n = 10, shape = 3, rate = 4)
 
-  set.seed(456)
+  withr::local_seed(456)
   # scale = 1/4 should give identical results to rate = 4
   samples_from_scale <- rinvgamma_internal(n = 10, shape = 3, scale = 0.25)
 
