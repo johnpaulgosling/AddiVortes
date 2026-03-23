@@ -104,6 +104,54 @@ test_that("summary.AddiVortes works with valid object", {
   expect_output(summary(obj), "Model Information:")
 })
 
+test_that("covariate summary helper reports counts and categorical encoding", {
+  x <- data.frame(
+    cont = c(1, 2, 3),
+    sph = c(4, 5, 6),
+    grp = factor(c("A", "B", "C"))
+  )
+
+  summary_lines <- AddiVortes:::formatCovariateSummary_internal(
+    x,
+    metric = c("E", "S", "E"),
+    catEncoding = list(encodedBinaryCols = 1:2)
+  )
+
+  expect_equal(
+    summary_lines,
+    c(
+      "Covariate summary: 1 continuous, 1 spherical, 1 categorical.",
+      "Categorical covariates are expanded to 2 one-hot encoded binary columns, with the first level of each categorical variable used as the reference category."
+    )
+  )
+})
+
+test_that("AddiVortes startup output reports categorical encoding", {
+  skip_on_cran()
+  withr::local_seed(123)
+
+  x <- data.frame(
+    cont1 = rnorm(8),
+    grp = factor(sample(c("A", "B", "C"), 8, replace = TRUE)),
+    cont2 = runif(8)
+  )
+  y <- rnorm(8)
+
+  output <- capture.output(
+    fit <- AddiVortes(y, x, m = 2, totalMCMCIter = 2, mcmcBurnIn = 0, showProgress = TRUE)
+  )
+
+  expect_s3_class(fit, "AddiVortes")
+  expect_match(
+    paste(output, collapse = "\n"),
+    "Covariate summary: 2 continuous, 1 categorical\\."
+  )
+  expect_match(
+    paste(output, collapse = "\n"),
+    "Categorical covariates are expanded to"
+  )
+})
+
 # --- Tests for predict.AddiVortes() ---
 
 test_that("predict.AddiVortes requires AddiVortes object", {

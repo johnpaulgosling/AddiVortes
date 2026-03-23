@@ -65,7 +65,7 @@
 #' 
 #' fit2 <- AddiVortes(y_train, x_train, m = 10, totalMCMCIter = 200, mcmcBurnIn = 50,
 #'                    catScaling = 1, showProgress = FALSE)
-#' 
+#'
 #' x_test <- data.frame(
 #'   x1   = rnorm(n_test),
 #'   x2   = runif(n_test),
@@ -103,6 +103,7 @@ AddiVortes <- function(y, x, m = 200,
     stop("'catScaling' must be a single positive number.")
   encResult <- encodeCategories_internal(x, catScaling = catScaling)
   catEncoding <- encResult$encoding
+  covariateSummary <- formatCovariateSummary_internal(x, metric, catEncoding)
   x <- encResult$encoded
 
   #### Dealing with choice of metric -------------------------------------------
@@ -289,6 +290,9 @@ AddiVortes <- function(y, x, m = 200,
   # Initial message and progress bar setup
   if (showProgress) {
     cat("Fitting AddiVortes model to input data...\n")
+    if (length(covariateSummary) > 0) {
+      cat(paste(covariateSummary, collapse = "\n"), "\n\n", sep = "")
+    }
     cat("Input dimensions: ", nrow(xScaled),
         " observations, ", ncol(xScaled),
         " covariates\n", sep = "")
@@ -495,4 +499,65 @@ AddiVortes <- function(y, x, m = 200,
     metric = metric,
     catEncoding = catEncoding
   )
+}
+
+countCovariateTypes_internal <- function(x, metric) {
+  if (!is.data.frame(x)) {
+    x <- as.data.frame(x, stringsAsFactors = FALSE)
+  }
+
+  is_categorical <- vapply(x, function(col) is.character(col) || is.factor(col), logical(1))
+  metric_vec <- rep_len(metric, ncol(x))
+  metric_vec <- as.character(metric_vec)
+  metric_vec[metric_vec %in% c("E", "Euc", "Euclidean")] <- "0"
+  metric_vec[metric_vec %in% c("S", "Sphere", "Spherical")] <- "1"
+  metric_vec <- suppressWarnings(as.integer(metric_vec))
+
+  list(
+    continuous = sum(metric_vec[!is_categorical] == 0L, na.rm = TRUE),
+    spherical = sum(metric_vec[!is_categorical] == 1L, na.rm = TRUE),
+    categorical = sum(is_categorical)
+  )
+}
+
+formatCovariateSummary_internal <- function(x, metric, catEncoding = NULL) {
+  counts <- countCovariateTypes_internal(x, metric)
+  parts <- character(0)
+
+  if (counts$continuous > 0) {
+    parts <- c(parts, sprintf("%d continuous", counts$continuous))
+  }
+  if (counts$spherical > 0) {
+    parts <- c(parts, sprintf("%d spherical", counts$spherical))
+  }
+  if (counts$categorical > 0) {
+    parts <- c(parts, sprintf("%d categorical", counts$categorical))
+  }
+
+  if (length(parts) == 0) {
+    return(character(0))
+  }
+
+  lines <- c(sprintf("Covariate summary: %s.", paste(parts, collapse = ", ")))
+
+  if (counts$categorical > 0) {
+    if (!is.null(catEncoding) && !is.null(catEncoding$encodedBinaryCols)) {
+      binary_cols <- length(catEncoding$encodedBinaryCols)
+      lines <- c(
+        lines,
+        sprintf(
+          "Categorical covariates are expanded to %d one-hot encoded binary column%s, with the first level of each categorical variable used as the reference category.",
+          binary_cols,
+          if (binary_cols == 1L) "" else "s"
+        )
+      )
+    } else {
+      lines <- c(
+        lines,
+        "Categorical covariates are expanded to one-hot encoded binary columns, with the first level of each categorical variable used as the reference category."
+      )
+    }
+  }
+
+  lines
 }
