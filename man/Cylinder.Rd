@@ -20,6 +20,7 @@ Cylinder
 }
 \description{
 Synthetic data generated for cylindrical parameters. The response is given by
-the function f(z, theta) = sin(z)cos(theta) + z*sin(theta)^2, with added noise.
+the function f(z, theta) = sin(z)cos(theta) + z*sin(theta)^2, with added
+noise.
 }
 \keyword{datasets}

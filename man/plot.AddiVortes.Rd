@@ -60,7 +60,9 @@ plot(fit, x_train = x_train_data, y_train = y_train_data)
 plot(fit, x_train = x_train_data, y_train = y_train_data, which = c(1, 3))
 
 # With custom sigma trace
-plot(fit, x_train = x_train_data, y_train = y_train_data, 
-     sigma_trace = my_sigma_samples)
+plot(fit,
+  x_train = x_train_data, y_train = y_train_data,
+  sigma_trace = my_sigma_samples
+)
 }
 }

@@ -44,7 +44,8 @@ indicator variables via one-hot encoding (with the first level as reference).}
 
 \item{sd}{The standard deviation used in centre proposals.}
 
-\item{Omega}{Omega/(number of covariates) is the prior probability of adding a dimension.}
+\item{Omega}{Omega/(number of covariates) is the prior probability of
+adding a dimension.}
 
 \item{LambdaRate}{The rate of the Poisson distribution for the number of centres.}
 
@@ -73,11 +74,11 @@ An AddiVortes object containing the posterior samples of the
 tessellations, dimensions and predictions.
 }
 \description{
-The AddiVortes function is a Bayesian nonparametric regression model that uses a
-tessellation to model the relationship between the covariates and the output values.
-The model uses a backfitting algorithm to sample from the posterior distribution of
-the output values for each tessellation. The function returns the RMSE value for
-the test samples.
+The AddiVortes function is a Bayesian nonparametric regression model that
+uses a tessellation to model the relationship between the covariates and
+the output values. The model uses a backfitting algorithm to sample from
+the posterior distribution of the output values for each tessellation.
+The function returns the RMSE value for the test samples.
 
 For spherical data, it is assumed that the final spherical dimension is the
 polar angle: i.e. that with range 0 to 2*pi.
@@ -94,7 +95,7 @@ fit <- AddiVortes(y, x, m = 5, totalMCMCIter = 50, mcmcBurnIn = 10)
 # Larger example with categorical covariates (d=2 and d=3) and a test set
 set.seed(456)
 n_train <- 200
-n_test  <- 50
+n_test <- 50
 x_train <- data.frame(
   x1   = rnorm(n_train),
   x2   = runif(n_train),
@@ -103,8 +104,10 @@ x_train <- data.frame(
 )
 y_train <- x_train$x1 + ifelse(x_train$grp2 == "B", 1, 0) + rnorm(n_train, sd = 0.5)
 
-fit2 <- AddiVortes(y_train, x_train, m = 10, totalMCMCIter = 200, mcmcBurnIn = 50,
-                   catScaling = 1, showProgress = FALSE)
+fit2 <- AddiVortes(y_train, x_train,
+  m = 10, totalMCMCIter = 200, mcmcBurnIn = 50,
+  catScaling = 1, showProgress = FALSE
+)
 
 x_test <- data.frame(
   x1   = rnorm(n_test),

@@ -15,7 +15,8 @@ A data.frame with 506 rows and 14 columns:
 }
 }
 \source{
-Harrison, D. and Rubinfeld, D.L. `Hedonic prices and the demand for clean air', J. Environ. Economics & Management, vol.5, 81-102, 1978
+Harrison, D. and Rubinfeld, D.L. `Hedonic prices and the demand for
+clean air', J. Environ. Economics & Management, vol. 5, 81-102, 1978
 }
 \usage{
 Boston

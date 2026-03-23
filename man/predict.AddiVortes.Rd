@@ -81,14 +81,18 @@ X_new <- matrix(rnorm(25), 5, 5)
 pred_mean <- predict(fit, X_new, type = "response")
 
 # Credible intervals (uncertainty in mean only)
-pred_conf <- predict(fit, X_new, type = "quantile", 
-                    interval = "credible",
-                    quantiles = c(0.025, 0.975))
+pred_conf <- predict(fit, X_new,
+  type = "quantile",
+  interval = "credible",
+  quantiles = c(0.025, 0.975)
+)
 
 # Prediction intervals (includes error variance)
-pred_pred <- predict(fit, X_new, type = "quantile",
-                    interval = "prediction",
-                    quantiles = c(0.025, 0.975))
+pred_pred <- predict(fit, X_new,
+  type = "quantile",
+  interval = "prediction",
+  quantiles = c(0.025, 0.975)
+)
 
 # Prediction intervals are wider than credible intervals
 mean(pred_pred[, 2] - pred_pred[, 1]) > mean(pred_conf[, 2] - pred_conf[, 1])
