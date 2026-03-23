@@ -13,8 +13,10 @@ test_that("AddiVortes fits with one binary categorical covariate (d = 2)", {
   )
   y <- rnorm(n)
 
-  fit <- AddiVortes(y, x, m = 5, totalMCMCIter = 30, mcmcBurnIn = 10,
-                    showProgress = FALSE)
+  fit <- AddiVortes(y, x,
+    m = 5, totalMCMCIter = 30, mcmcBurnIn = 10,
+    showProgress = FALSE
+  )
 
   # Model should fit without error and produce finite RMSE
   expect_true(is.finite(fit$inSampleRmse))
@@ -41,8 +43,10 @@ test_that("AddiVortes fits with one 3-level categorical covariate (d = 3)", {
   )
   y <- rnorm(n)
 
-  fit <- AddiVortes(y, x, m = 5, totalMCMCIter = 30, mcmcBurnIn = 10,
-                    showProgress = FALSE)
+  fit <- AddiVortes(y, x,
+    m = 5, totalMCMCIter = 30, mcmcBurnIn = 10,
+    showProgress = FALSE
+  )
 
   expect_true(is.finite(fit$inSampleRmse))
   expect_false(is.null(fit$catEncoding))
@@ -57,16 +61,18 @@ test_that("AddiVortes fits with both a d=2 and a d=3 categorical covariate", {
   withr::local_seed(123)
   n <- 50
   x <- data.frame(
-    x1    = rnorm(n),
-    cat2  = sample(c("yes", "no"), n, replace = TRUE),
-    x2    = runif(n),
-    cat3  = sample(c("red", "green", "blue"), n, replace = TRUE),
+    x1 = rnorm(n),
+    cat2 = sample(c("yes", "no"), n, replace = TRUE),
+    x2 = runif(n),
+    cat3 = sample(c("red", "green", "blue"), n, replace = TRUE),
     stringsAsFactors = FALSE
   )
   y <- rnorm(n)
 
-  fit <- AddiVortes(y, x, m = 5, totalMCMCIter = 30, mcmcBurnIn = 10,
-                    showProgress = FALSE)
+  fit <- AddiVortes(y, x,
+    m = 5, totalMCMCIter = 30, mcmcBurnIn = 10,
+    showProgress = FALSE
+  )
 
   expect_true(is.finite(fit$inSampleRmse))
   expect_false(is.null(fit$catEncoding))
@@ -84,19 +90,21 @@ test_that("predict works after fitting with categorical covariates", {
   withr::local_seed(99)
   n <- 40
   x <- data.frame(
-    x1   = rnorm(n),
+    x1 = rnorm(n),
     cat2 = sample(c("A", "B"), n, replace = TRUE),
     cat3 = sample(c("p", "q", "r"), n, replace = TRUE),
     stringsAsFactors = FALSE
   )
   y <- rnorm(n)
 
-  fit <- AddiVortes(y, x, m = 5, totalMCMCIter = 30, mcmcBurnIn = 10,
-                    showProgress = FALSE)
+  fit <- AddiVortes(y, x,
+    m = 5, totalMCMCIter = 30, mcmcBurnIn = 10,
+    showProgress = FALSE
+  )
 
   # Predict on new data with the same column structure
   x_new <- data.frame(
-    x1   = rnorm(10),
+    x1 = rnorm(10),
     cat2 = sample(c("A", "B"), 10, replace = TRUE),
     cat3 = sample(c("p", "q", "r"), 10, replace = TRUE),
     stringsAsFactors = FALSE
@@ -112,16 +120,20 @@ test_that("catScaling controls the binary indicator value", {
   withr::local_seed(55)
   n <- 30
   x <- data.frame(
-    x1   = rnorm(n),
+    x1 = rnorm(n),
     cat2 = sample(c("A", "B"), n, replace = TRUE),
     stringsAsFactors = FALSE
   )
   y <- rnorm(n)
 
-  fit_default <- AddiVortes(y, x, m = 5, totalMCMCIter = 20, mcmcBurnIn = 5,
-                             catScaling = 1, showProgress = FALSE)
-  fit_half    <- AddiVortes(y, x, m = 5, totalMCMCIter = 20, mcmcBurnIn = 5,
-                             catScaling = 0.5, showProgress = FALSE)
+  fit_default <- AddiVortes(y, x,
+    m = 5, totalMCMCIter = 20, mcmcBurnIn = 5,
+    catScaling = 1, showProgress = FALSE
+  )
+  fit_half <- AddiVortes(y, x,
+    m = 5, totalMCMCIter = 20, mcmcBurnIn = 5,
+    catScaling = 0.5, showProgress = FALSE
+  )
 
   # Both models should store their respective catScaling
   expect_equal(fit_default$catEncoding$catScaling, 1)
@@ -133,14 +145,16 @@ test_that("factor columns are handled like character columns", {
   withr::local_seed(77)
   n <- 30
   x <- data.frame(
-    x1   = rnorm(n),
+    x1 = rnorm(n),
     cat2 = factor(sample(c("A", "B"), n, replace = TRUE)),
     stringsAsFactors = FALSE
   )
   y <- rnorm(n)
 
-  fit <- AddiVortes(y, x, m = 5, totalMCMCIter = 20, mcmcBurnIn = 5,
-                    showProgress = FALSE)
+  fit <- AddiVortes(y, x,
+    m = 5, totalMCMCIter = 20, mcmcBurnIn = 5,
+    showProgress = FALSE
+  )
 
   expect_true(is.finite(fit$inSampleRmse))
   # factor with d = 2 levels produces 1 binary column; total = 1 numeric + 1 binary = 2
@@ -152,20 +166,22 @@ test_that("unseen categories at predict time map to the reference level (all zer
   withr::local_seed(11)
   n <- 40
   x <- data.frame(
-    x1   = rnorm(n),
+    x1 = rnorm(n),
     cat3 = sample(c("low", "mid", "high"), n, replace = TRUE),
     stringsAsFactors = FALSE
   )
   y <- rnorm(n)
 
-  fit <- AddiVortes(y, x, m = 5, totalMCMCIter = 30, mcmcBurnIn = 10,
-                    showProgress = FALSE)
+  fit <- AddiVortes(y, x,
+    m = 5, totalMCMCIter = 30, mcmcBurnIn = 10,
+    showProgress = FALSE
+  )
 
   # "unknown" is not a level seen during training; it should map to all zeros
   # (i.e., treated as the reference level)
   x_new <- data.frame(
-    x1   = c(0.5, -0.5),
-    cat3 = c("unknown", "low"),   # "unknown" is unseen; "high" is the reference
+    x1 = c(0.5, -0.5),
+    cat3 = c("unknown", "low"), # "unknown" is unseen; "high" is the reference
     stringsAsFactors = FALSE
   )
   # Both rows should yield finite predictions (not errors or NAs)
@@ -196,8 +212,10 @@ test_that("categorical-only covariates (no numeric columns) work", {
   )
   y <- rnorm(n)
 
-  fit <- AddiVortes(y, x, m = 5, totalMCMCIter = 30, mcmcBurnIn = 10,
-                    showProgress = FALSE)
+  fit <- AddiVortes(y, x,
+    m = 5, totalMCMCIter = 30, mcmcBurnIn = 10,
+    showProgress = FALSE
+  )
 
   expect_true(is.finite(fit$inSampleRmse))
   # grp2 -> 1 binary col, grp3 -> 2 binary cols; total = 3 encoded cols
@@ -216,7 +234,7 @@ test_that("categorical-only covariates (no numeric columns) work", {
 
 test_that("encodeCategories_internal produces correct binary values", {
   x <- data.frame(
-    num  = c(1, 2, 3, 4),
+    num = c(1, 2, 3, 4),
     cat2 = c("A", "B", "A", "B"),
     stringsAsFactors = FALSE
   )
@@ -250,12 +268,12 @@ test_that("encodeCategories_internal applies stored encoding to new data", {
   expect_equal(colnames(enc), c("cat3_low", "cat3_mid"))
   # enc[row, col_name] returns a named scalar in R; ignore_attr = TRUE
   # compares values only, ignoring the column name attached to the result.
-  expect_equal(enc[1, "cat3_low"], 0, ignore_attr = TRUE)   # "mid" row
-  expect_equal(enc[1, "cat3_mid"], 1, ignore_attr = TRUE)   # "mid" row
-  expect_equal(enc[2, "cat3_low"], 0, ignore_attr = TRUE)   # "high" row (reference)
-  expect_equal(enc[2, "cat3_mid"], 0, ignore_attr = TRUE)   # "high" row (reference)
-  expect_equal(enc[3, "cat3_low"], 1, ignore_attr = TRUE)   # "low" row
-  expect_equal(enc[3, "cat3_mid"], 0, ignore_attr = TRUE)   # "low" row
+  expect_equal(enc[1, "cat3_low"], 0, ignore_attr = TRUE) # "mid" row
+  expect_equal(enc[1, "cat3_mid"], 1, ignore_attr = TRUE) # "mid" row
+  expect_equal(enc[2, "cat3_low"], 0, ignore_attr = TRUE) # "high" row (reference)
+  expect_equal(enc[2, "cat3_mid"], 0, ignore_attr = TRUE) # "high" row (reference)
+  expect_equal(enc[3, "cat3_low"], 1, ignore_attr = TRUE) # "low" row
+  expect_equal(enc[3, "cat3_mid"], 0, ignore_attr = TRUE) # "low" row
 })
 
 test_that("catScaling must be a single positive number", {
@@ -265,18 +283,24 @@ test_that("catScaling must be a single positive number", {
   y <- rnorm(20)
 
   expect_error(
-    AddiVortes(y, x, m = 3, totalMCMCIter = 10, mcmcBurnIn = 3,
-               catScaling = 0, showProgress = FALSE),
+    AddiVortes(y, x,
+      m = 3, totalMCMCIter = 10, mcmcBurnIn = 3,
+      catScaling = 0, showProgress = FALSE
+    ),
     "must be a single positive number"
   )
   expect_error(
-    AddiVortes(y, x, m = 3, totalMCMCIter = 10, mcmcBurnIn = 3,
-               catScaling = -1, showProgress = FALSE),
+    AddiVortes(y, x,
+      m = 3, totalMCMCIter = 10, mcmcBurnIn = 3,
+      catScaling = -1, showProgress = FALSE
+    ),
     "must be a single positive number"
   )
   expect_error(
-    AddiVortes(y, x, m = 3, totalMCMCIter = 10, mcmcBurnIn = 3,
-               catScaling = c(1, 2), showProgress = FALSE),
+    AddiVortes(y, x,
+      m = 3, totalMCMCIter = 10, mcmcBurnIn = 3,
+      catScaling = c(1, 2), showProgress = FALSE
+    ),
     "must be a single positive number"
   )
 })
@@ -287,15 +311,17 @@ test_that("catEncoding stores correct origNCols and origColNames", {
   withr::local_seed(66)
   n <- 30
   x <- data.frame(
-    x1   = rnorm(n),
-    grp  = sample(c("a", "b", "c"), n, replace = TRUE),
-    x2   = runif(n),
+    x1 = rnorm(n),
+    grp = sample(c("a", "b", "c"), n, replace = TRUE),
+    x2 = runif(n),
     stringsAsFactors = FALSE
   )
   y <- rnorm(n)
 
-  fit <- AddiVortes(y, x, m = 5, totalMCMCIter = 20, mcmcBurnIn = 5,
-                    showProgress = FALSE)
+  fit <- AddiVortes(y, x,
+    m = 5, totalMCMCIter = 20, mcmcBurnIn = 5,
+    showProgress = FALSE
+  )
 
   expect_equal(fit$catEncoding$origNCols, 3L)
   expect_equal(fit$catEncoding$origColNames, c("x1", "grp", "x2"))
@@ -309,14 +335,16 @@ test_that("all stored tess centres for binary dimensions lie in [0, catScaling]"
   n <- 40
   cs <- 0.75
   x <- data.frame(
-    x1   = rnorm(n),
+    x1 = rnorm(n),
     cat3 = sample(c("a", "b", "c"), n, replace = TRUE),
     stringsAsFactors = FALSE
   )
   y <- rnorm(n)
 
-  fit <- AddiVortes(y, x, m = 8, totalMCMCIter = 60, mcmcBurnIn = 20,
-                    catScaling = cs, showProgress = FALSE)
+  fit <- AddiVortes(y, x,
+    m = 8, totalMCMCIter = 60, mcmcBurnIn = 20,
+    catScaling = cs, showProgress = FALSE
+  )
 
   binaryCols <- fit$catEncoding$encodedBinaryCols
 
@@ -330,4 +358,3 @@ test_that("all stored tess centres for binary dimensions lie in [0, catScaling]"
 
   expect_true(all(all_binary_vals >= 0 & all_binary_vals <= cs))
 })
-

@@ -11,7 +11,7 @@
 #'   centre and each column corresponds to a dimension.
 #' @param dim_j An integer vector specifying the column indices of the covariates
 #'   that define the dimensions of the current tessellation.
-#' @param sd The standard deviation parameter for the normal distribution (`rnorm`) 
+#' @param sd The standard deviation parameter for the normal distribution (`rnorm`)
 #'   used to generate new coordinate values for centres and dimensions.
 #' @param mu The mean parameter for the normal distribution used to generate new
 #'   coordinate values for centres and dimensions.
@@ -30,18 +30,20 @@
 #'
 #' @keywords internal
 #' @noRd
-#' 
+#'
 #' @useDynLib AddiVortes, .registration = TRUE
 proposeTessellation <- function(tess_j, dim_j, sd, mu, covariateIndices,
                                 NumCovariates, metric) {
   # Call the C++ implementation via the .Call interface
-  results <- .Call("propose_tessellation_cpp",
-                   tess_j,
-                   dim_j,
-                   as.double(sd),
-                   as.double(mu),
-                   as.integer(NumCovariates),
-                   as.integer(metric))
-  
+  results <- .Call(
+    "propose_tessellation_cpp",
+    tess_j,
+    dim_j,
+    as.double(sd),
+    as.double(mu),
+    as.integer(NumCovariates),
+    as.integer(metric)
+  )
+
   return(results)
 }

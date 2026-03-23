@@ -82,11 +82,12 @@ encodeCategories_internal <- function(x, catScaling = 1, encoding = NULL) {
   for (j in seq_len(nCols)) {
     if (j %in% catColIndices) {
       levs <- colEncodings[[j]]$levels
-      levs_non_ref <- levs[-1]  # drop first level (reference category)
+      levs_non_ref <- levs[-1] # drop first level (reference category)
       colData <- as.character(x[[j]])
       for (lev in levs_non_ref) {
         colIdx <- colIdx + 1L
-        resultCols[[length(resultCols) + 1L]] <- as.numeric(colData == lev) * catScaling
+        resultCols[[length(resultCols) + 1L]] <- as.numeric(colData == lev) *
+          catScaling
         resultNames <- c(resultNames, paste0(colNames[j], "_", lev))
         encodedBinaryCols <- c(encodedBinaryCols, colIdx)
       }
@@ -102,11 +103,11 @@ encodeCategories_internal <- function(x, catScaling = 1, encoding = NULL) {
 
   if (isBuilding) {
     encoding <- list(
-      catColIndices    = catColIndices,
-      colEncodings     = colEncodings,
-      catScaling       = catScaling,
-      origNCols        = nCols,
-      origColNames     = colNames,
+      catColIndices = catColIndices,
+      colEncodings = colEncodings,
+      catScaling = catScaling,
+      origNCols = nCols,
+      origColNames = colNames,
       encodedBinaryCols = encodedBinaryCols
     )
   }

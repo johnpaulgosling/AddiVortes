@@ -19,7 +19,7 @@ fittingFunction <- function(lambda,
                             nu,
                             SigmaSquaredHat) {
   return((SigmaSquaredHat - qinvgamma_internal(q,
-                                               shape = nu / 2,
-                                               rate = nu * lambda / 2
+    shape = nu / 2,
+    rate = nu * lambda / 2
   ))^2)
 }

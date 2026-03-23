@@ -26,14 +26,14 @@ knnx_index <- function(data, query, k = 1, dim, metric) {
   if (k <= 0 || k > nrow(data)) {
     stop("k must be positive and not greater than number of reference points")
   }
-  
+
   # Call C++ implementation
   result <- .Call("knnx_index_cpp", data, query, as.integer(k), dim, metric)
-  
+
   # For k=1, return as vector (to match FNN::knnx.index behavior)
   if (k == 1) {
     result <- as.vector(result)
   }
-  
+
   return(result)
 }

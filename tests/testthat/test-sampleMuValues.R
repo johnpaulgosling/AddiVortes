@@ -11,6 +11,6 @@ test_that("Simple Tesselation", {
   )
 
   expect_equal(results, 0.146,
-               tolerance = 0.01
+    tolerance = 0.01
   )
 })

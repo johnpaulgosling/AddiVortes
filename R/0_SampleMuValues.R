@@ -27,11 +27,11 @@ sampleMuValues <- function(j, Tess,
 
   # 3. Calculate the vector of standard deviations for rnorm
   #    Calculate variance first for clarity, then sqrt
-  #    Ensure SigmaSquared, SigmaSquaredMu are non-negative as expected 
+  #    Ensure SigmaSquared, SigmaSquaredMu are non-negative as expected
   # for variances
   varianceVec <- (SigmaSquared * SigmaSquaredMu) / denominatorVec
   # Handle potential negative variance if inputs aren't guaranteed non-negative,
-  # though typically variance terms are >= 0. sqrt() will produce NaN for 
+  # though typically variance terms are >= 0. sqrt() will produce NaN for
   # negative input.
   sdVec <- sqrt(varianceVec)
 

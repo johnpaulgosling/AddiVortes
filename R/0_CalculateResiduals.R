@@ -31,7 +31,7 @@
 #'
 #' @keywords internal
 #' @noRd
-#' 
+#'
 #' @useDynLib AddiVortes, .registration = TRUE
 calculateResiduals <- function(y, j, SumOfAllTess, Pred, lastTessPred,
                                indexes, indexesStar, num_centres_new) {
@@ -44,16 +44,18 @@ calculateResiduals <- function(y, j, SumOfAllTess, Pred, lastTessPred,
     SumOfAllTess <- SumOfAllTess + lastTessPred - CurrentTessPred
   }
   R_j <- y - SumOfAllTess
-  
+
   # --- Call the C++ function via the .Call interface ---
   num_levels_old <- length(Pred[[j]])
-  cpp_results <- .Call("calculate_residuals_cpp",
-                       as.double(R_j),
-                       as.integer(indexes),
-                       as.integer(indexesStar),
-                       as.integer(num_levels_old),
-                       as.integer(num_centres_new))
-  
+  cpp_results <- .Call(
+    "calculate_residuals_cpp",
+    as.double(R_j),
+    as.integer(indexes),
+    as.integer(indexesStar),
+    as.integer(num_levels_old),
+    as.integer(num_centres_new)
+  )
+
   # --- Return the results in the original list format ---
   # The .Call function returns a named list, which we access using $
   return(list(

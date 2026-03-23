@@ -8,7 +8,7 @@
 #' has the probability density function:
 #' $f(x) = \frac{b^a}{\Gamma(a)} x^{-a-1} \exp(-b/x)$
 #' for $x > 0$, $a > 0$, $b > 0$.
-#' This implementation uses the relationship that if 
+#' This implementation uses the relationship that if
 #' $Y \sim Gamma(shape=a,rate=b)$,
 #' then $1/Y \sim InvGamma(shape=a, rate=b)$.
 #'
@@ -22,7 +22,7 @@
 #' @return A numeric vector of length `n` containing random deviates from the
 #'   Inverse Gamma(shape, rate) distribution.
 #'
-#' @references Based on the source code of `invgamma::rinvgamma` by 
+#' @references Based on the source code of `invgamma::rinvgamma` by
 #' Stefan Kloppenborg. Relies on `stats::rgamma`.
 #'
 #' @keywords internal
@@ -37,12 +37,12 @@ rinvgamma_internal <- function(n, shape, rate = 1, scale = 1 / rate) {
   if (n == 0) {
     return(numeric(0))
   }
-  
+
   # Check shape
   if (length(shape) != 1 || !is.numeric(shape) || shape <= 0) {
     stop("'shape' must be a single positive number.")
   }
-  
+
   # Handle rate vs scale parameters, ensuring only one effective parameter
   # is used and it's positive.
   if (!missing(rate) && !missing(scale)) {
@@ -53,7 +53,7 @@ rinvgamma_internal <- function(n, shape, rate = 1, scale = 1 / rate) {
       stop("'scale' must be a single positive number.")
     }
   }
-  
+
   # Determine the rate parameter to use, based on logic from invgamma source
   if (missing(rate) && !missing(scale)) {
     if (!is.numeric(scale) || length(scale) != 1 || scale <= 0) {
@@ -67,14 +67,14 @@ rinvgamma_internal <- function(n, shape, rate = 1, scale = 1 / rate) {
     }
     actual_rate <- rate
   }
-  
+
   gamma_sample <- stats::rgamma(
     n = n,
     shape = shape,
     rate = actual_rate
   )
   inv_gamma_sample <- 1 / gamma_sample
-  
+
   return(inv_gamma_sample)
 }
 
@@ -82,23 +82,23 @@ rinvgamma_internal <- function(n, shape, rate = 1, scale = 1 / rate) {
 #'
 #' This function computes quantiles (the inverse CDF) of the inverse gamma
 #' distribution, providing similar functionality to potentially available
-#' functions in external packages (like `invgamma::qinvgamma`) without adding 
+#' functions in external packages (like `invgamma::qinvgamma`) without adding
 #' an external dependency.
 #'
 #' The inverse gamma distribution with shape $a$ (alpha) and rate $b$ (beta)
 #' has the probability density function:
 #' $f(x) = \frac{b^a}{\Gamma(a)} x^{-a-1} \exp(-b/x)$
 #' for $x > 0$, $a > 0$, $b > 0$.
-#' This implementation uses the relationship that if 
+#' This implementation uses the relationship that if
 #' $Y \sim Gamma(shape=a, rate=b)$,
-#' and $Q_Y(p, lower.tail=FALSE)$ is the quantile function of 
+#' and $Q_Y(p, lower.tail=FALSE)$ is the quantile function of
 #' $Y$ giving the value $y$
 #' such that $P(Y \ge y) = p$, then the quantile $x$ for the inverse gamma
-#' distribution such that $P(X \le x) = p$ is given by 
+#' distribution such that $P(X \le x) = p$ is given by
 #' $x = 1 / Q_Y(p, lower.tail=FALSE)$.
 #' It relies on `stats::qgamma`.
 #'
-#' @param p Numeric vector of probabilities. Values 
+#' @param p Numeric vector of probabilities. Values
 #' outside (0, 1) (or the
 #'  corresponding range if `log.p = TRUE`) will result in `NaN`.
 #' @param shape Numeric, the shape parameter ($a$). Must be positive.
@@ -112,7 +112,7 @@ rinvgamma_internal <- function(n, shape, rate = 1, scale = 1 / rate) {
 #'
 #' @return A numeric vector of quantiles corresponding to the probabilities `p`.
 #'
-#' @references Based on the relationship between Gamma and 
+#' @references Based on the relationship between Gamma and
 #' Inverse Gamma distributions and relies on `stats::qgamma`.
 #'
 #' @keywords internal
@@ -122,73 +122,72 @@ qinvgamma_internal <- function(p, shape, rate = 1, scale = 1 / rate,
                                lower.tail = TRUE, log.p = FALSE) {
   # Check shape
   if (length(shape) != 1 || !is.numeric(shape) ||
-      shape <= 0 || !is.finite(shape)) {
+    shape <= 0 || !is.finite(shape)) {
     stop("'shape' must be a single positive finite number.")
   }
-  
+
   # Handle rate vs scale parameters, ensuring only one effective
   # parameter is used and it's positive and finite.
   rate_missing <- missing(rate)
   scale_missing <- missing(scale)
-  
+
   if (!rate_missing && !scale_missing) {
     # Both provided, check consistency implicitly via default scale=1/rate
     # Need explicit check if defaults were different or if strict error desired
     # Using rate's value if both provided (matches rinvgamma default behaviour)
     if (!is.numeric(rate) || length(rate) != 1 ||
-        rate <= 0 || !is.finite(rate)) {
+      rate <= 0 || !is.finite(rate)) {
       stop("'rate' must be a single positive finite number.")
     }
     actual_rate <- rate
   } else if (rate_missing && !scale_missing) {
     # Only scale provided
     if (!is.numeric(scale) || length(scale) != 1 ||
-        scale <= 0 || !is.finite(scale)) {
+      scale <= 0 || !is.finite(scale)) {
       stop("'scale' must be a single positive finite number.")
     }
     actual_rate <- 1 / scale
   } else {
     # Use rate (either provided or default=1)
     if (!is.numeric(rate) || length(rate) != 1 ||
-        rate <= 0 || !is.finite(rate)) {
+      rate <= 0 || !is.finite(rate)) {
       stop("'rate' must be a single positive finite number.")
     }
     actual_rate <- rate
   }
-  
+
   # Check p
   if (!is.numeric(p)) {
     stop("'p' must be numeric.")
   }
-  
+
   # Vectorised calculation using stats::qgamma
   # The quantile x for InvGamma(a, b) such that P(X <= x) = p
   # corresponds to 1 / y where y is the quantile for Gamma(a, b)
   # such that P(Y >= y) = p.
   # This means y = qgamma(p, shape, rate, lower.tail = FALSE)
   # So, x = 1 / qgamma(p, shape, rate, lower.tail = FALSE)
-  
+
   # Handle edge cases for p before calling qgamma which might warn or error
   # qgamma handles p=0/p=1 (or log equivalents) correctly for lower.tail=FALSE
   # qgamma(0, ..., lower.tail=FALSE) = Inf => 1/Inf = 0
   # qgamma(1, ..., lower.tail=FALSE) = 0   => 1/0 = Inf
-  
-  
-  
+
+
   # Note: We must pass log.p to qgamma as well!
   quantiles_gamma_upper <- stats::qgamma(p,
-                                         shape = shape,
-                                         rate = actual_rate,
-                                         lower.tail = !lower.tail,
-                                         log.p = log.p
+    shape = shape,
+    rate = actual_rate,
+    lower.tail = !lower.tail,
+    log.p = log.p
   )
-  
+
   # Inverse relationship
   quantiles_invgamma <- 1 / quantiles_gamma_upper
-  
+
   # Explicitly set InvGamma quantile for p=0 (lower tail) to 0
   # and p=1 (lower tail) to Inf, respecting log.p and lower.tail flags.
-  
+
   # Determine the effective probability values corresponding to P(X <= x)
   if (log.p) {
     if (any(p > 0 & !is.na(p))) {
@@ -203,15 +202,15 @@ qinvgamma_internal <- function(p, shape, rate = 1, scale = 1 / rate,
     }
     prob_eff <- p
   }
-  
+
   if (!lower.tail) {
     # Convert P(X > x) probability to P(X <= x) probability
-    prob_eff <- 1 - prob_eff 
+    prob_eff <- 1 - prob_eff
   }
-  
+
   # Apply edge case corrections based on effective probability P(X <= x)
   quantiles_invgamma[prob_eff == 0] <- 0
   quantiles_invgamma[prob_eff == 1] <- Inf
-  
+
   return(quantiles_invgamma)
 }

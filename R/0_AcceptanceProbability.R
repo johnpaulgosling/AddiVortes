@@ -1,7 +1,7 @@
 #' @title Calculate Acceptance Probability
-#' @description This function calculates the log of the acceptance probability 
-#'   for a proposed modification to a tessellation in a Bayesian model. It is 
-#'   used within a Metropolis-Hastings algorithm to decide whether to accept a 
+#' @description This function calculates the log of the acceptance probability
+#'   for a proposed modification to a tessellation in a Bayesian model. It is
+#'   used within a Metropolis-Hastings algorithm to decide whether to accept a
 #'   new tessellation.
 #'
 #' @param R_ijOld A numeric vector of residuals for each cell in the current
@@ -14,15 +14,16 @@
 #'   cell of the proposed new tessellation.
 #' @param tess_j_star The proposed new tessellation structure, which is a matrix
 #'   of centres.
-#' @param dim_j_star A vector of integers representing the dimensions included in
-#'   the proposed new tessellation.
+#' @param dim_j_star A vector of integers representing the dimensions included
+#'   in the proposed new tessellation.
 #' @param SigmaSquared The variance of the model's residuals.
 #' @param Modification A character string indicating the type of modification
 #'   proposed. Accepted values are "AD" (Add Dimension), "RD" (Remove
 #'   Dimension), "AC" (Add Centre), "RC" (Remove Centre), "Change" and "Swap".
 #' @param SigmaSquaredMu The variance of the random effects component of the
 #'   model.
-#' @param Omega Omega/(number of covariates) is the prior probability of adding a dimension.
+#' @param Omega Omega/(number of covariates) is the prior probability of adding
+#' a dimension.
 #' @param LambdaRate The rate parameter for the Poisson prior on the number of
 #'   centres in the tessellation.
 #' @param NumCovariates The total number of covariates available in the dataset.
@@ -39,30 +40,29 @@ acceptanceProbability <- function(R_ijOld, n_ijOld,
                                   Modification, SigmaSquaredMu,
                                   Omega, LambdaRate,
                                   NumCovariates) {
-  
   d <- length(dim_j_star)
   cStar <- nrow(tess_j_star)
-  
+
   # Clamp probability to [0, 1) range to avoid NaN in dbinom.
   # When Omega/NumCovariates >= 1, clamping to just below 1 represents a very
   # high (but finite) probability of including dimensions. This keeps the
   # acceptance probability numerically well-defined: dbinom(k, n, 1) = 0 for
   # k < n, which causes 0/0 = NaN in the AD/RD ratio formulas.
-  prob_eps <- 1e-10  # keep prob strictly below 1 to avoid 0/0 in dbinom
+  prob_eps <- 1e-10 # keep prob strictly below 1 to avoid 0/0 in dbinom
   prob <- min(1 - prob_eps, max(0, Omega / NumCovariates))
-  
+
   LogLikelihoodRatio <- 0.5 * (log(prod(n_ijOld * SigmaSquaredMu +
-                                          SigmaSquared)) -
-                                 log(prod(n_ijNew * SigmaSquaredMu +
-                                            SigmaSquared))) +
+    SigmaSquared)) -
+    log(prod(n_ijNew * SigmaSquaredMu +
+      SigmaSquared))) +
     ((SigmaSquaredMu / (2 * SigmaSquared)) *
-       (sum((R_ijNew^2) / (n_ijNew * SigmaSquaredMu + SigmaSquared)) -
-          sum((R_ijOld^2) / (n_ijOld * SigmaSquaredMu + SigmaSquared))))
-  
+      (sum((R_ijNew^2) / (n_ijNew * SigmaSquaredMu + SigmaSquared)) -
+        sum((R_ijOld^2) / (n_ijOld * SigmaSquaredMu + SigmaSquared))))
+
   if (Modification == "AD") {
     TessStructure <- (dbinom(d - 1, NumCovariates - 1, prob)) /
       (dbinom(d - 2, NumCovariates - 1, prob) *
-         (NumCovariates - d + 1))
+        (NumCovariates - d + 1))
     TransitionRatio <- (NumCovariates - d + 1) / d
     AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) +
       log(TransitionRatio)
@@ -73,7 +73,7 @@ acceptanceProbability <- function(R_ijOld, n_ijOld,
     }
   } else if (Modification == "RD") {
     TessStructure <- (dbinom(d - 1, NumCovariates, prob) *
-                        (NumCovariates - d)) /
+      (NumCovariates - d)) /
       (dbinom(d, NumCovariates, prob))
     TransitionRatio <- (d + 1) / (NumCovariates - d)
     AcceptanceProb <- LogLikelihoodRatio + log(TessStructure) +

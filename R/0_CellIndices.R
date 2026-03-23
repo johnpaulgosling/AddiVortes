@@ -26,12 +26,13 @@ cellIndices <- function(x, tess, dim, metric = "Euclidean") {
   } else { # multiple
     if (ncol(tess) != ncol(x)) {
       new_tess <- matrix(0, nrow = n_tess, ncol = ncol(x))
-      new_tess[,dim] <- tess
+      new_tess[, dim] <- tess
       tess <- new_tess
     }
-    CellsForGivenTess <- knnx_index(tess, 
-                                    x, 1,
-                                    dim, metric
+    CellsForGivenTess <- knnx_index(
+      tess,
+      x, 1,
+      dim, metric
     )
   }
   return(CellsForGivenTess)

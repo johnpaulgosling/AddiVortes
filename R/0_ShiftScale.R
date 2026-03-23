@@ -61,7 +61,7 @@ scaleData_internal <- function(data) {
 
     originalColnames <- colnames(matWork) # Store original names
     if (is.null(originalColnames) && ncol(matWork) > 0) {
-      originalColnames <- paste0("V", 1:ncol(matWork)) # Assign default if null
+      originalColnames <- paste0("V", seq_len(ncol(matWork))) # Assign default if null
     }
 
     for (i in 1:numCols) {
@@ -90,8 +90,7 @@ scaleData_internal <- function(data) {
 
     # Convert back to data frame if original was data frame
     if (isDf) {
-      # Important: Ensure columns that were originally factors/characters remain numeric after scaling
-      # The as.data.frame conversion should handle this correctly if scaledMatWork is purely numeric where scaling occurred.
+      # Keep numeric results as a data frame while leaving non-numeric columns untouched.
       scaledData <- as.data.frame(scaledMatWork)
       # Restore original non-numeric columns if needed (though warning was given)
       # For simplicity here, we assume conversion is okay, relying on the warning.
@@ -150,7 +149,7 @@ applyScaling_internal <- function(mat, centres, ranges) {
   scaledMatWork <- matrix(NA_real_, nrow = nrow(matWork), ncol = numCols)
   originalColnames <- colnames(matWork)
   if (is.null(originalColnames) && ncol(matWork) > 0) {
-    originalColnames <- paste0("V", 1:ncol(matWork)) # Assign default if null
+    originalColnames <- paste0("V", seq_len(ncol(matWork))) # Assign default if null
   }
 
   for (i in 1:numCols) {
@@ -160,14 +159,23 @@ applyScaling_internal <- function(mat, centres, ranges) {
     # Check if the column data itself is numeric
     if (!is.numeric(colData)) {
       # If params exist for this column but data is non-numeric, this is an error
-      warning("Column ", i, " ('", colName, "') is not numeric. Cannot apply scaling. Returning original data for this column.", call. = FALSE)
+      warning(
+        "Column ", i, " ('", colName, "') is not numeric. ",
+        "Cannot apply scaling. Returning original data for this column.",
+        call. = FALSE
+      )
       scaledMatWork[, i] <- colData
       next
     }
 
     # Check if the parameters for this column are valid (not NA)
     if (is.na(centres[i]) || is.na(ranges[i])) {
-      warning("Scaling parameters for column ", i, " ('", colName, "') are NA (likely due to non-numeric original training column). Returning original data for this column.", call. = FALSE)
+      warning(
+        "Scaling parameters for column ", i, " ('", colName, "') are NA ",
+        "(likely due to non-numeric original training column). ",
+        "Returning original data for this column.",
+        call. = FALSE
+      )
       scaledMatWork[, i] <- colData
       next
     }

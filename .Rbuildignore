@@ -12,3 +12,5 @@
 ^\.travis\.yml$
 ^\.gitlab-ci\.yml$
 ^codecov\.yml$
+^\.lintr$
+^\.lintr\.R$

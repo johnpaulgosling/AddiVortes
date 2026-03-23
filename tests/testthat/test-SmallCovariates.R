@@ -12,11 +12,12 @@ test_that("AddiVortes works with 1 covariate", {
   # Fit model - should not crash or produce errors
   expect_no_error(
     results <- AddiVortes(Y, X,
-                         m = 5,
-                         Omega = 1,
-                         totalMCMCIter = 50,
-                         mcmcBurnIn = 10,
-                         showProgress = FALSE)
+      m = 5,
+      Omega = 1,
+      totalMCMCIter = 50,
+      mcmcBurnIn = 10,
+      showProgress = FALSE
+    )
   )
 
   # Check that results are valid
@@ -39,11 +40,12 @@ test_that("AddiVortes works with 2 covariates", {
   # Fit model - should not crash or produce errors
   expect_no_error(
     results <- AddiVortes(Y, X,
-                         m = 5,
-                         Omega = 1,
-                         totalMCMCIter = 50,
-                         mcmcBurnIn = 10,
-                         showProgress = FALSE)
+      m = 5,
+      Omega = 1,
+      totalMCMCIter = 50,
+      mcmcBurnIn = 10,
+      showProgress = FALSE
+    )
   )
 
   # Check that results are valid
@@ -66,11 +68,12 @@ test_that("AddiVortes works with 3 covariates", {
   # Fit model - should not crash or produce errors
   expect_no_error(
     results <- AddiVortes(Y, X,
-                         m = 5,
-                         Omega = 1,
-                         totalMCMCIter = 50,
-                         mcmcBurnIn = 10,
-                         showProgress = FALSE)
+      m = 5,
+      Omega = 1,
+      totalMCMCIter = 50,
+      mcmcBurnIn = 10,
+      showProgress = FALSE
+    )
   )
 
   # Check that results are valid
@@ -91,11 +94,12 @@ test_that("Predictions work with 1 covariate", {
   X_test <- matrix(rnorm(10), 10, 1)
 
   results <- AddiVortes(Y, X,
-                       m = 5,
-                       Omega = 1,
-                       totalMCMCIter = 50,
-                       mcmcBurnIn = 10,
-                       showProgress = FALSE)
+    m = 5,
+    Omega = 1,
+    totalMCMCIter = 50,
+    mcmcBurnIn = 10,
+    showProgress = FALSE
+  )
 
   # Test predictions
   expect_no_error(
@@ -114,11 +118,12 @@ test_that("Predictions work with 2 covariates", {
   X_test <- matrix(rnorm(20), 10, 2)
 
   results <- AddiVortes(Y, X,
-                       m = 5,
-                       Omega = 1,
-                       totalMCMCIter = 50,
-                       mcmcBurnIn = 10,
-                       showProgress = FALSE)
+    m = 5,
+    Omega = 1,
+    totalMCMCIter = 50,
+    mcmcBurnIn = 10,
+    showProgress = FALSE
+  )
 
   # Test predictions
   expect_no_error(
@@ -137,11 +142,12 @@ test_that("Predictions work with 3 covariates", {
   X_test <- matrix(rnorm(30), 10, 3)
 
   results <- AddiVortes(Y, X,
-                       m = 5,
-                       Omega = 1,
-                       totalMCMCIter = 50,
-                       mcmcBurnIn = 10,
-                       showProgress = FALSE)
+    m = 5,
+    Omega = 1,
+    totalMCMCIter = 50,
+    mcmcBurnIn = 10,
+    showProgress = FALSE
+  )
 
   # Test predictions
   expect_no_error(
@@ -162,11 +168,12 @@ test_that("No NaN or Inf values in results with small covariates", {
   # Run with more iterations to exercise more of the MCMC
   expect_no_error(
     results1 <- AddiVortes(Y1, X1,
-                          m = 10,
-                          Omega = 1,
-                          totalMCMCIter = 100,
-                          mcmcBurnIn = 20,
-                          showProgress = FALSE)
+      m = 10,
+      Omega = 1,
+      totalMCMCIter = 100,
+      mcmcBurnIn = 20,
+      showProgress = FALSE
+    )
   )
 
   # Verify all sigma values are finite and positive
@@ -179,11 +186,12 @@ test_that("No NaN or Inf values in results with small covariates", {
 
   expect_no_error(
     results2 <- AddiVortes(Y2, X2,
-                          m = 10,
-                          Omega = 1,
-                          totalMCMCIter = 100,
-                          mcmcBurnIn = 20,
-                          showProgress = FALSE)
+      m = 10,
+      Omega = 1,
+      totalMCMCIter = 100,
+      mcmcBurnIn = 20,
+      showProgress = FALSE
+    )
   )
 
   expect_true(all(is.finite(results2$posteriorSigma)))
@@ -195,11 +203,12 @@ test_that("No NaN or Inf values in results with small covariates", {
 
   expect_no_error(
     results3 <- AddiVortes(Y3, X3,
-                          m = 10,
-                          Omega = 1,
-                          totalMCMCIter = 100,
-                          mcmcBurnIn = 20,
-                          showProgress = FALSE)
+      m = 10,
+      Omega = 1,
+      totalMCMCIter = 100,
+      mcmcBurnIn = 20,
+      showProgress = FALSE
+    )
   )
 
   expect_true(all(is.finite(results3$posteriorSigma)))
