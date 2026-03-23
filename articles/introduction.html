@@ -87,8 +87,10 @@ we will use the well-known Boston Housing dataset.</p>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="va"><a href="https://johnpaulgosling.github.io/AddiVortes/">AddiVortes</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Load the Boston Housing dataset from a URL</span></span>
-<span><span class="va">Boston</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"https://raw.githubusercontent.com/anonymous2738/"</span>,</span>
-<span>                          <span class="st">"AddiVortesAlgorithm/DataSets/BostonHousing_Data.csv"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">Boston</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span></span>
+<span>  <span class="st">"https://raw.githubusercontent.com/anonymous2738/"</span>,</span>
+<span>  <span class="st">"AddiVortesAlgorithm/DataSets/BostonHousing_Data.csv"</span></span>
+<span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span></span>
 <span><span class="co"># Separate predictors (X) and the response variable (Y)</span></span>
@@ -124,19 +126,21 @@ training data. We will specify several parameters for the algorithm,
 such as the number of iterations and trees.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Run the AddiVortes algorithm on the training data</span></span>
-<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AddiVortes.html">AddiVortes</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">Y_Boston</span><span class="op">[</span><span class="va">TrainSet</span><span class="op">]</span>, </span>
-<span>                      x <span class="op">=</span> <span class="va">X_Boston</span><span class="op">[</span><span class="va">TrainSet</span>, <span class="op">]</span>,</span>
-<span>                      m <span class="op">=</span> <span class="fl">200</span>, </span>
-<span>                      totalMCMCIter <span class="op">=</span> <span class="fl">2000</span>, </span>
-<span>                      mcmcBurnIn <span class="op">=</span> <span class="fl">200</span>, </span>
-<span>                      nu <span class="op">=</span> <span class="fl">6</span>, </span>
-<span>                      q <span class="op">=</span> <span class="fl">0.85</span>, </span>
-<span>                      k <span class="op">=</span> <span class="fl">3</span>, </span>
-<span>                      sd <span class="op">=</span> <span class="fl">0.8</span>, </span>
-<span>                      Omega <span class="op">=</span> <span class="fl">3</span>, </span>
-<span>                      LambdaRate <span class="op">=</span> <span class="fl">25</span>,</span>
-<span>                      InitialSigma <span class="op">=</span> <span class="st">"Linear"</span>,</span>
-<span>                      showProgress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AddiVortes.html">AddiVortes</a></span><span class="op">(</span></span>
+<span>  y <span class="op">=</span> <span class="va">Y_Boston</span><span class="op">[</span><span class="va">TrainSet</span><span class="op">]</span>,</span>
+<span>  x <span class="op">=</span> <span class="va">X_Boston</span><span class="op">[</span><span class="va">TrainSet</span>, <span class="op">]</span>,</span>
+<span>  m <span class="op">=</span> <span class="fl">200</span>,</span>
+<span>  totalMCMCIter <span class="op">=</span> <span class="fl">2000</span>,</span>
+<span>  mcmcBurnIn <span class="op">=</span> <span class="fl">200</span>,</span>
+<span>  nu <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>  q <span class="op">=</span> <span class="fl">0.85</span>,</span>
+<span>  k <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  sd <span class="op">=</span> <span class="fl">0.8</span>,</span>
+<span>  Omega <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  LambdaRate <span class="op">=</span> <span class="fl">25</span>,</span>
+<span>  InitialSigma <span class="op">=</span> <span class="st">"Linear"</span>,</span>
+<span>  showProgress <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="making-predictions-and-evaluating-performance">4. Making Predictions and Evaluating Performance<a class="anchor" aria-label="anchor" href="#making-predictions-and-evaluating-performance"></a>
@@ -147,8 +151,9 @@ unseen test data. We will then calculate the Root Mean Squared Error
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Generate predictions on the test set</span></span>
 <span><span class="va">preds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">results</span>,</span>
-<span>                 <span class="va">X_Boston</span><span class="op">[</span><span class="va">TestSet</span>, <span class="op">]</span>,</span>
-<span>                 showProgress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span>  <span class="va">X_Boston</span><span class="op">[</span><span class="va">TestSet</span>, <span class="op">]</span>,</span>
+<span>  showProgress <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># The RMSE is contained in the results object</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"In-Sample RMSE:"</span>, <span class="va">results</span><span class="op">$</span><span class="va">inSampleRmse</span>, <span class="st">"\n"</span><span class="op">)</span></span>
@@ -169,13 +174,13 @@ intervals to visualise the model’s uncertainty.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Plot true values vs. predicted values</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">Y_Boston</span><span class="op">[</span><span class="va">TestSet</span><span class="op">]</span>,</span>
-<span>     <span class="va">preds</span>,</span>
-<span>     xlab <span class="op">=</span> <span class="st">"True Values"</span>,</span>
-<span>     ylab <span class="op">=</span> <span class="st">"Predicted Values"</span>,</span>
-<span>     main <span class="op">=</span> <span class="st">"AddiVortes Predictions vs True Values"</span>,</span>
-<span>     xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">Y_Boston</span><span class="op">[</span><span class="va">TestSet</span><span class="op">]</span>, <span class="va">preds</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>     ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">Y_Boston</span><span class="op">[</span><span class="va">TestSet</span><span class="op">]</span>, <span class="va">preds</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>     pch <span class="op">=</span> <span class="fl">19</span>, col <span class="op">=</span> <span class="st">"darkblue"</span></span>
+<span>  <span class="va">preds</span>,</span>
+<span>  xlab <span class="op">=</span> <span class="st">"True Values"</span>,</span>
+<span>  ylab <span class="op">=</span> <span class="st">"Predicted Values"</span>,</span>
+<span>  main <span class="op">=</span> <span class="st">"AddiVortes Predictions vs True Values"</span>,</span>
+<span>  xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">Y_Boston</span><span class="op">[</span><span class="va">TestSet</span><span class="op">]</span>, <span class="va">preds</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">Y_Boston</span><span class="op">[</span><span class="va">TestSet</span><span class="op">]</span>, <span class="va">preds</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  pch <span class="op">=</span> <span class="fl">19</span>, col <span class="op">=</span> <span class="st">"darkblue"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Add the line of equality (y = x) for reference</span></span>
@@ -183,20 +188,23 @@ intervals to visualise the model’s uncertainty.</p>
 <span></span>
 <span><span class="co"># Get quantile predictions to create error bars/intervals</span></span>
 <span><span class="va">preds_quantile</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">results</span>,</span>
-<span>                          <span class="va">X_Boston</span><span class="op">[</span><span class="va">TestSet</span>, <span class="op">]</span>,</span>
-<span>                          <span class="st">"quantile"</span>,</span>
-<span>                          showProgress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span>  <span class="va">X_Boston</span><span class="op">[</span><span class="va">TestSet</span>, <span class="op">]</span>,</span>
+<span>  <span class="st">"quantile"</span>,</span>
+<span>  showProgress <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Add error segments for each prediction</span></span>
-<span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">preds_quantile</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">preds_quantile</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/graphics/segments.html" class="external-link">segments</a></span><span class="op">(</span><span class="va">Y_Boston</span><span class="op">[</span><span class="va">TestSet</span><span class="op">]</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>, <span class="va">preds_quantile</span><span class="op">[</span><span class="va">i</span>, <span class="fl">1</span><span class="op">]</span>,</span>
-<span>           <span class="va">Y_Boston</span><span class="op">[</span><span class="va">TestSet</span><span class="op">]</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>, <span class="va">preds_quantile</span><span class="op">[</span><span class="va">i</span>, <span class="fl">2</span><span class="op">]</span>,</span>
-<span>           col <span class="op">=</span> <span class="st">"darkblue"</span>, lwd <span class="op">=</span> <span class="fl">1</span></span>
+<span>    <span class="va">Y_Boston</span><span class="op">[</span><span class="va">TestSet</span><span class="op">]</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>, <span class="va">preds_quantile</span><span class="op">[</span><span class="va">i</span>, <span class="fl">2</span><span class="op">]</span>,</span>
+<span>    col <span class="op">=</span> <span class="st">"darkblue"</span>, lwd <span class="op">=</span> <span class="fl">1</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topleft"</span>, legend<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Prediction"</span>, <span class="st">"y=x Line"</span>, <span class="st">"95% Interval"</span><span class="op">)</span>, </span>
-<span>       col<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"darkblue"</span>, <span class="st">"darkred"</span>, <span class="st">"darkblue"</span><span class="op">)</span>,</span>
-<span>       lty<span class="op">=</span><span class="fl">1</span>, pch<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">19</span>, <span class="cn">NA</span>, <span class="cn">NA</span><span class="op">)</span>, lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topleft"</span>,</span>
+<span>  legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Prediction"</span>, <span class="st">"y=x Line"</span>, <span class="st">"95% Interval"</span><span class="op">)</span>,</span>
+<span>  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"darkblue"</span>, <span class="st">"darkred"</span>, <span class="st">"darkblue"</span><span class="op">)</span>,</span>
+<span>  lty <span class="op">=</span> <span class="fl">1</span>, pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">19</span>, <span class="cn">NA</span>, <span class="cn">NA</span><span class="op">)</span>, lwd <span class="op">=</span> <span class="fl">2</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <p><img src="introduction_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

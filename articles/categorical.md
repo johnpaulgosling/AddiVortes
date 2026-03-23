@@ -71,24 +71,26 @@ set.seed(123)
 n <- 400
 
 x <- data.frame(
-  age     = rnorm(n, mean = 40, sd = 10),
-  income  = runif(n, 20, 120),               # income in thousands
-  region  = sample(c("East", "North", "South", "West"), n, replace = TRUE),
+  age = rnorm(n, mean = 40, sd = 10),
+  income = runif(n, 20, 120), # income in thousands
+  region = sample(c("East", "North", "South", "West"), n, replace = TRUE),
   product = sample(c("Basic", "Premium", "Deluxe"), n, replace = TRUE),
   stringsAsFactors = FALSE
 )
 
 # True response: depends on continuous and categorical variables
-region_effect  <- ifelse(x$region  == "North",  5,
-                  ifelse(x$region  == "South", -5, 0))
+region_effect <- ifelse(x$region == "North", 5,
+  ifelse(x$region == "South", -5, 0)
+)
 product_effect <- ifelse(x$product == "Premium", 10,
-                  ifelse(x$product == "Deluxe",  20, 0))
+  ifelse(x$product == "Deluxe", 20, 0)
+)
 
 y <- 0.3 * x$age +
-     0.1 * x$income +
-     region_effect  +
-     product_effect +
-     rnorm(n, sd = 3)
+  0.1 * x$income +
+  region_effect +
+  product_effect +
+  rnorm(n, sd = 3)
 ```
 
 Note that `region` has 4 levels and `product` has 3 levels. When passed
@@ -150,18 +152,18 @@ handles the encoding internally.
 set.seed(42)
 train_idx <- sample(n, 300)
 
-x_train <- x[ train_idx, ]
-y_train <- y[ train_idx]
-x_test  <- x[-train_idx, ]
-y_test  <- y[-train_idx]
+x_train <- x[train_idx, ]
+y_train <- y[train_idx]
+x_test <- x[-train_idx, ]
+y_test <- y[-train_idx]
 
 fit <- AddiVortes(
-  y            = y_train,
-  x            = x_train,
-  m            = 50,
+  y = y_train,
+  x = x_train,
+  m = 50,
   totalMCMCIter = 500,
-  mcmcBurnIn   = 100,
-  catScaling   = 1,         # default: binary columns span [0, 1]
+  mcmcBurnIn = 100,
+  catScaling = 1, # default: binary columns span [0, 1]
   showProgress = FALSE
 )
 ```
@@ -176,10 +178,12 @@ cat("\nReference levels used:\n")
 #> Reference levels used:
 for (j in fit$catEncoding$catColIndices) {
   orig_col <- fit$catEncoding$origColNames[j]
-  ref_lev  <- fit$catEncoding$colEncodings[[j]]$levels[1]
-  all_lev  <- fit$catEncoding$colEncodings[[j]]$levels
-  cat(" ", orig_col, ": reference =", ref_lev,
-      "| all levels:", paste(all_lev, collapse = ", "), "\n")
+  ref_lev <- fit$catEncoding$colEncodings[[j]]$levels[1]
+  all_lev <- fit$catEncoding$colEncodings[[j]]$levels
+  cat(
+    " ", orig_col, ": reference =", ref_lev,
+    "| all levels:", paste(all_lev, collapse = ", "), "\n"
+  )
 }
 #>   region : reference = East | all levels: East, North, South, West 
 #>   product : reference = Basic | all levels: Basic, Deluxe, Premium
@@ -212,15 +216,17 @@ prod_cols <- c("Basic" = "steelblue", "Premium" = "darkorange", "Deluxe" = "dark
 point_cols <- prod_cols[x_test$product]
 
 plot(y_test, preds,
-     col  = point_cols, pch = 19, cex = 0.8,
-     xlab = "Observed values",
-     ylab = "Predicted values",
-     main = "Predicted vs. Observed (coloured by product category)")
+  col = point_cols, pch = 19, cex = 0.8,
+  xlab = "Observed values",
+  ylab = "Predicted values",
+  main = "Predicted vs. Observed (coloured by product category)"
+)
 abline(0, 1, lwd = 2, lty = 2, col = "grey40")
 legend("topleft",
-       legend = names(prod_cols),
-       col    = prod_cols,
-       pch    = 19, title = "Product", bty = "n")
+  legend = names(prod_cols),
+  col = prod_cols,
+  pch = 19, title = "Product", bty = "n"
+)
 ```
 
 ![](categorical_files/figure-html/plot_predictions-1.png)
@@ -236,10 +242,10 @@ falls back to the baseline.
 ``` r
 # Create a test point with an unseen product level "Luxury"
 x_new <- data.frame(
-  age     = 45,
-  income  = 80,
-  region  = "North",
-  product = "Luxury",   # unseen level
+  age = 45,
+  income = 80,
+  region = "North",
+  product = "Luxury", # unseen level
   stringsAsFactors = FALSE
 )
 ```
@@ -249,8 +255,10 @@ pred_new <- predict(fit, x_new, showProgress = FALSE)
 ```
 
 ``` r
-cat("Prediction for unseen category 'Luxury' (treated as 'Basic'):",
-    round(pred_new, 3), "\n")
+cat(
+  "Prediction for unseen category 'Luxury' (treated as 'Basic'):",
+  round(pred_new, 3), "\n"
+)
 #> Prediction for unseen category 'Luxury' (treated as 'Basic'): 25.783
 ```
 
@@ -264,12 +272,12 @@ RMSEs.
 
 ``` r
 fit_cs2 <- AddiVortes(
-  y            = y_train,
-  x            = x_train,
-  m            = 50,
+  y = y_train,
+  x = x_train,
+  m = 50,
   totalMCMCIter = 500,
-  mcmcBurnIn   = 100,
-  catScaling   = 2,         # give categorical differences twice as much weight
+  mcmcBurnIn = 100,
+  catScaling = 2, # give categorical differences twice as much weight
   showProgress = FALSE
 )
 ```

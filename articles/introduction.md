@@ -18,8 +18,10 @@ the well-known Boston Housing dataset.
 require(AddiVortes)
 
 # Load the Boston Housing dataset from a URL
-Boston <- read.csv(paste0("https://raw.githubusercontent.com/anonymous2738/",
-                          "AddiVortesAlgorithm/DataSets/BostonHousing_Data.csv"))
+Boston <- read.csv(paste0(
+  "https://raw.githubusercontent.com/anonymous2738/",
+  "AddiVortesAlgorithm/DataSets/BostonHousing_Data.csv"
+))
 
 
 # Separate predictors (X) and the response variable (Y)
@@ -57,19 +59,21 @@ iterations and trees.
 
 ``` r
 # Run the AddiVortes algorithm on the training data
-results <- AddiVortes(y = Y_Boston[TrainSet], 
-                      x = X_Boston[TrainSet, ],
-                      m = 200, 
-                      totalMCMCIter = 2000, 
-                      mcmcBurnIn = 200, 
-                      nu = 6, 
-                      q = 0.85, 
-                      k = 3, 
-                      sd = 0.8, 
-                      Omega = 3, 
-                      LambdaRate = 25,
-                      InitialSigma = "Linear",
-                      showProgress = FALSE)
+results <- AddiVortes(
+  y = Y_Boston[TrainSet],
+  x = X_Boston[TrainSet, ],
+  m = 200,
+  totalMCMCIter = 2000,
+  mcmcBurnIn = 200,
+  nu = 6,
+  q = 0.85,
+  k = 3,
+  sd = 0.8,
+  Omega = 3,
+  LambdaRate = 25,
+  InitialSigma = "Linear",
+  showProgress = FALSE
+)
 ```
 
 ### 4. Making Predictions and Evaluating Performance
@@ -81,8 +85,9 @@ see how well the model performed.
 ``` r
 # Generate predictions on the test set
 preds <- predict(results,
-                 X_Boston[TestSet, ],
-                 showProgress = FALSE)
+  X_Boston[TestSet, ],
+  showProgress = FALSE
+)
 
 # The RMSE is contained in the results object
 cat("In-Sample RMSE:", results$inSampleRmse, "\n")
@@ -104,13 +109,13 @@ visualise the model’s uncertainty.
 ``` r
 # Plot true values vs. predicted values
 plot(Y_Boston[TestSet],
-     preds,
-     xlab = "True Values",
-     ylab = "Predicted Values",
-     main = "AddiVortes Predictions vs True Values",
-     xlim = range(c(Y_Boston[TestSet], preds)),
-     ylim = range(c(Y_Boston[TestSet], preds)),
-     pch = 19, col = "darkblue"
+  preds,
+  xlab = "True Values",
+  ylab = "Predicted Values",
+  main = "AddiVortes Predictions vs True Values",
+  xlim = range(c(Y_Boston[TestSet], preds)),
+  ylim = range(c(Y_Boston[TestSet], preds)),
+  pch = 19, col = "darkblue"
 )
 
 # Add the line of equality (y = x) for reference
@@ -118,20 +123,23 @@ abline(a = 0, b = 1, col = "darkred", lwd = 2)
 
 # Get quantile predictions to create error bars/intervals
 preds_quantile <- predict(results,
-                          X_Boston[TestSet, ],
-                          "quantile",
-                          showProgress = FALSE)
+  X_Boston[TestSet, ],
+  "quantile",
+  showProgress = FALSE
+)
 
 # Add error segments for each prediction
-for (i in 1:nrow(preds_quantile)) {
+for (i in seq_len(nrow(preds_quantile))) {
   segments(Y_Boston[TestSet][i], preds_quantile[i, 1],
-           Y_Boston[TestSet][i], preds_quantile[i, 2],
-           col = "darkblue", lwd = 1
+    Y_Boston[TestSet][i], preds_quantile[i, 2],
+    col = "darkblue", lwd = 1
   )
 }
-legend("topleft", legend=c("Prediction", "y=x Line", "95% Interval"), 
-       col=c("darkblue", "darkred", "darkblue"),
-       lty=1, pch=c(19, NA, NA), lwd=2)
+legend("topleft",
+  legend = c("Prediction", "y=x Line", "95% Interval"),
+  col = c("darkblue", "darkred", "darkblue"),
+  lty = 1, pch = c(19, NA, NA), lwd = 2
+)
 ```
 
 ![](introduction_files/figure-html/unnamed-chunk-5-1.png)

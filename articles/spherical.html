@@ -138,8 +138,8 @@ longitude.</p>
 <span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">300</span></span>
 <span></span>
 <span><span class="co"># Sample random locations on the globe</span></span>
-<span><span class="va">lat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="op">-</span><span class="va">pi</span> <span class="op">/</span> <span class="fl">2</span>, <span class="va">pi</span> <span class="op">/</span> <span class="fl">2</span><span class="op">)</span>  <span class="co"># latitude in radians: [-pi/2, pi/2]</span></span>
-<span><span class="va">lon</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="op">-</span><span class="va">pi</span>,     <span class="va">pi</span><span class="op">)</span>       <span class="co"># longitude in radians: [-pi, pi]</span></span>
+<span><span class="va">lat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="op">-</span><span class="va">pi</span> <span class="op">/</span> <span class="fl">2</span>, <span class="va">pi</span> <span class="op">/</span> <span class="fl">2</span><span class="op">)</span> <span class="co"># latitude in radians: [-pi/2, pi/2]</span></span>
+<span><span class="va">lon</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="op">-</span><span class="va">pi</span>, <span class="va">pi</span><span class="op">)</span> <span class="co"># longitude in radians: [-pi, pi]</span></span>
 <span></span>
 <span><span class="co"># True function: warmer at the equator, slight east-west gradient</span></span>
 <span><span class="va">y_true</span> <span class="op">&lt;-</span> <span class="fl">20</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">cos</a></span><span class="op">(</span><span class="va">lat</span><span class="op">)</span> <span class="op">+</span> <span class="fl">5</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">sin</a></span><span class="op">(</span><span class="va">lon</span><span class="op">)</span></span>
@@ -161,14 +161,16 @@ response values:</p>
 <span><span class="va">lon_deg</span> <span class="op">&lt;-</span> <span class="va">lon</span> <span class="op">*</span> <span class="fl">180</span> <span class="op">/</span> <span class="va">pi</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">lon_deg</span>, <span class="va">lat_deg</span>,</span>
-<span>     col  <span class="op">=</span> <span class="va">cols</span><span class="op">[</span><span class="va">col_index</span><span class="op">]</span>, pch <span class="op">=</span> <span class="fl">19</span>, cex <span class="op">=</span> <span class="fl">0.7</span>,</span>
-<span>     xlab <span class="op">=</span> <span class="st">"Longitude (degrees)"</span>,</span>
-<span>     ylab <span class="op">=</span> <span class="st">"Latitude (degrees)"</span>,</span>
-<span>     main <span class="op">=</span> <span class="st">"Simulated Response on the Globe"</span><span class="op">)</span></span>
+<span>  col <span class="op">=</span> <span class="va">cols</span><span class="op">[</span><span class="va">col_index</span><span class="op">]</span>, pch <span class="op">=</span> <span class="fl">19</span>, cex <span class="op">=</span> <span class="fl">0.7</span>,</span>
+<span>  xlab <span class="op">=</span> <span class="st">"Longitude (degrees)"</span>,</span>
+<span>  ylab <span class="op">=</span> <span class="st">"Latitude (degrees)"</span>,</span>
+<span>  main <span class="op">=</span> <span class="st">"Simulated Response on the Globe"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"bottomleft"</span>,</span>
-<span>       legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"High"</span>, <span class="st">"Low"</span><span class="op">)</span>,</span>
-<span>       col    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"red"</span>, <span class="st">"blue"</span><span class="op">)</span>,</span>
-<span>       pch    <span class="op">=</span> <span class="fl">19</span>, bty <span class="op">=</span> <span class="st">"n"</span><span class="op">)</span></span></code></pre></div>
+<span>  legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"High"</span>, <span class="st">"Low"</span><span class="op">)</span>,</span>
+<span>  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"red"</span>, <span class="st">"blue"</span><span class="op">)</span>,</span>
+<span>  pch <span class="op">=</span> <span class="fl">19</span>, bty <span class="op">=</span> <span class="st">"n"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <p><img src="spherical_files/figure-html/plot_data-1.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level3">
@@ -180,12 +182,12 @@ then use great-circle distance when assigning observations to Voronoi
 cells.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_sph</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AddiVortes.html">AddiVortes</a></span><span class="op">(</span></span>
-<span>  y            <span class="op">=</span> <span class="va">y</span>,</span>
-<span>  x            <span class="op">=</span> <span class="va">x</span>,</span>
-<span>  m            <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  y <span class="op">=</span> <span class="va">y</span>,</span>
+<span>  x <span class="op">=</span> <span class="va">x</span>,</span>
+<span>  m <span class="op">=</span> <span class="fl">50</span>,</span>
 <span>  totalMCMCIter <span class="op">=</span> <span class="fl">500</span>,</span>
-<span>  mcmcBurnIn   <span class="op">=</span> <span class="fl">100</span>,</span>
-<span>  metric       <span class="op">=</span> <span class="st">"S"</span>,        <span class="co"># use great-circle distance for all columns</span></span>
+<span>  mcmcBurnIn <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  metric <span class="op">=</span> <span class="st">"S"</span>, <span class="co"># use great-circle distance for all columns</span></span>
 <span>  showProgress <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
@@ -197,12 +199,12 @@ longitude as ordinary continuous variables and will not handle the
 wrap-around near ±π correctly.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_euc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AddiVortes.html">AddiVortes</a></span><span class="op">(</span></span>
-<span>  y            <span class="op">=</span> <span class="va">y</span>,</span>
-<span>  x            <span class="op">=</span> <span class="va">x</span>,</span>
-<span>  m            <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  y <span class="op">=</span> <span class="va">y</span>,</span>
+<span>  x <span class="op">=</span> <span class="va">x</span>,</span>
+<span>  m <span class="op">=</span> <span class="fl">50</span>,</span>
 <span>  totalMCMCIter <span class="op">=</span> <span class="fl">500</span>,</span>
-<span>  mcmcBurnIn   <span class="op">=</span> <span class="fl">100</span>,</span>
-<span>  metric       <span class="op">=</span> <span class="st">"E"</span>,        <span class="co"># Euclidean distance (default)</span></span>
+<span>  mcmcBurnIn <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  metric <span class="op">=</span> <span class="st">"E"</span>, <span class="co"># Euclidean distance (default)</span></span>
 <span>  showProgress <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
@@ -220,10 +222,10 @@ highlight where the Euclidean metric is most likely to struggle.</p>
 <span><span class="va">n_test</span> <span class="op">&lt;-</span> <span class="fl">200</span></span>
 <span></span>
 <span><span class="va">lat_test</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n_test</span>, <span class="op">-</span><span class="va">pi</span> <span class="op">/</span> <span class="fl">2</span>, <span class="va">pi</span> <span class="op">/</span> <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="va">lon_test</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n_test</span>, <span class="op">-</span><span class="va">pi</span>,     <span class="va">pi</span><span class="op">)</span></span>
+<span><span class="va">lon_test</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n_test</span>, <span class="op">-</span><span class="va">pi</span>, <span class="va">pi</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">y_true_test</span> <span class="op">&lt;-</span> <span class="fl">20</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">cos</a></span><span class="op">(</span><span class="va">lat_test</span><span class="op">)</span> <span class="op">+</span> <span class="fl">5</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">sin</a></span><span class="op">(</span><span class="va">lon_test</span><span class="op">)</span></span>
-<span><span class="va">y_test</span>      <span class="op">&lt;-</span> <span class="va">y_true_test</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_test</span>, sd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">y_test</span> <span class="op">&lt;-</span> <span class="va">y_true_test</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_test</span>, sd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">x_test</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">lat_test</span>, <span class="va">lon_test</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
@@ -248,20 +250,22 @@ to the diagonal.</p>
 <code class="sourceCode R"><span><span class="va">y_range</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">y_test</span>, <span class="va">preds_sph</span>, <span class="va">preds_euc</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">y_test</span>, <span class="va">preds_sph</span>,</span>
-<span>     pch  <span class="op">=</span> <span class="fl">19</span>, col <span class="op">=</span> <span class="st">"darkblue"</span>, cex <span class="op">=</span> <span class="fl">0.7</span>,</span>
-<span>     xlab <span class="op">=</span> <span class="st">"Observed values"</span>,</span>
-<span>     ylab <span class="op">=</span> <span class="st">"Predicted values"</span>,</span>
-<span>     main <span class="op">=</span> <span class="st">"Spherical vs. Euclidean Metric: Predicted vs. Observed"</span>,</span>
-<span>     xlim <span class="op">=</span> <span class="va">y_range</span>, ylim <span class="op">=</span> <span class="va">y_range</span><span class="op">)</span></span>
+<span>  pch <span class="op">=</span> <span class="fl">19</span>, col <span class="op">=</span> <span class="st">"darkblue"</span>, cex <span class="op">=</span> <span class="fl">0.7</span>,</span>
+<span>  xlab <span class="op">=</span> <span class="st">"Observed values"</span>,</span>
+<span>  ylab <span class="op">=</span> <span class="st">"Predicted values"</span>,</span>
+<span>  main <span class="op">=</span> <span class="st">"Spherical vs. Euclidean Metric: Predicted vs. Observed"</span>,</span>
+<span>  xlim <span class="op">=</span> <span class="va">y_range</span>, ylim <span class="op">=</span> <span class="va">y_range</span></span>
+<span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/points.html" class="external-link">points</a></span><span class="op">(</span><span class="va">y_test</span>, <span class="va">preds_euc</span>, pch <span class="op">=</span> <span class="fl">4</span>, col <span class="op">=</span> <span class="st">"darkred"</span>, cex <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, lwd <span class="op">=</span> <span class="fl">2</span>, lty <span class="op">=</span> <span class="fl">2</span>, col <span class="op">=</span> <span class="st">"grey40"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topleft"</span>,</span>
-<span>       legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Spherical metric"</span>, <span class="st">"Euclidean metric"</span>, <span class="st">"y = x"</span><span class="op">)</span>,</span>
-<span>       col    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"darkblue"</span>, <span class="st">"darkred"</span>, <span class="st">"grey40"</span><span class="op">)</span>,</span>
-<span>       pch    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">19</span>, <span class="fl">4</span>, <span class="cn">NA</span><span class="op">)</span>,</span>
-<span>       lty    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="cn">NA</span>, <span class="fl">2</span><span class="op">)</span>,</span>
-<span>       lwd    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="cn">NA</span>, <span class="fl">2</span><span class="op">)</span>,</span>
-<span>       bty    <span class="op">=</span> <span class="st">"n"</span><span class="op">)</span></span></code></pre></div>
+<span>  legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Spherical metric"</span>, <span class="st">"Euclidean metric"</span>, <span class="st">"y = x"</span><span class="op">)</span>,</span>
+<span>  col    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"darkblue"</span>, <span class="st">"darkred"</span>, <span class="st">"grey40"</span><span class="op">)</span>,</span>
+<span>  pch    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">19</span>, <span class="fl">4</span>, <span class="cn">NA</span><span class="op">)</span>,</span>
+<span>  lty    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="cn">NA</span>, <span class="fl">2</span><span class="op">)</span>,</span>
+<span>  lwd    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="cn">NA</span>, <span class="fl">2</span><span class="op">)</span>,</span>
+<span>  bty    <span class="op">=</span> <span class="st">"n"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <p><img src="spherical_files/figure-html/plot_predictions-1.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level3">

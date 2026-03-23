@@ -63,8 +63,8 @@ set.seed(42)
 n <- 300
 
 # Sample random locations on the globe
-lat <- runif(n, -pi / 2, pi / 2)  # latitude in radians: [-pi/2, pi/2]
-lon <- runif(n, -pi,     pi)       # longitude in radians: [-pi, pi]
+lat <- runif(n, -pi / 2, pi / 2) # latitude in radians: [-pi/2, pi/2]
+lon <- runif(n, -pi, pi) # longitude in radians: [-pi, pi]
 
 # True function: warmer at the equator, slight east-west gradient
 y_true <- 20 * cos(lat) + 5 * sin(lon)
@@ -89,14 +89,16 @@ lat_deg <- lat * 180 / pi
 lon_deg <- lon * 180 / pi
 
 plot(lon_deg, lat_deg,
-     col  = cols[col_index], pch = 19, cex = 0.7,
-     xlab = "Longitude (degrees)",
-     ylab = "Latitude (degrees)",
-     main = "Simulated Response on the Globe")
+  col = cols[col_index], pch = 19, cex = 0.7,
+  xlab = "Longitude (degrees)",
+  ylab = "Latitude (degrees)",
+  main = "Simulated Response on the Globe"
+)
 legend("bottomleft",
-       legend = c("High", "Low"),
-       col    = c("red", "blue"),
-       pch    = 19, bty = "n")
+  legend = c("High", "Low"),
+  col = c("red", "blue"),
+  pch = 19, bty = "n"
+)
 ```
 
 ![](spherical_files/figure-html/plot_data-1.png)
@@ -109,12 +111,12 @@ distance when assigning observations to Voronoi cells.
 
 ``` r
 fit_sph <- AddiVortes(
-  y            = y,
-  x            = x,
-  m            = 50,
+  y = y,
+  x = x,
+  m = 50,
   totalMCMCIter = 500,
-  mcmcBurnIn   = 100,
-  metric       = "S",        # use great-circle distance for all columns
+  mcmcBurnIn = 100,
+  metric = "S", # use great-circle distance for all columns
   showProgress = FALSE
 )
 ```
@@ -131,12 +133,12 @@ ordinary continuous variables and will not handle the wrap-around near
 
 ``` r
 fit_euc <- AddiVortes(
-  y            = y,
-  x            = x,
-  m            = 50,
+  y = y,
+  x = x,
+  m = 50,
   totalMCMCIter = 500,
-  mcmcBurnIn   = 100,
-  metric       = "E",        # Euclidean distance (default)
+  mcmcBurnIn = 100,
+  metric = "E", # Euclidean distance (default)
   showProgress = FALSE
 )
 ```
@@ -157,10 +159,10 @@ set.seed(101)
 n_test <- 200
 
 lat_test <- runif(n_test, -pi / 2, pi / 2)
-lon_test <- runif(n_test, -pi,     pi)
+lon_test <- runif(n_test, -pi, pi)
 
 y_true_test <- 20 * cos(lat_test) + 5 * sin(lon_test)
-y_test      <- y_true_test + rnorm(n_test, sd = 2)
+y_test <- y_true_test + rnorm(n_test, sd = 2)
 
 x_test <- cbind(lat_test, lon_test)
 ```
@@ -190,20 +192,22 @@ the diagonal.
 y_range <- range(c(y_test, preds_sph, preds_euc))
 
 plot(y_test, preds_sph,
-     pch  = 19, col = "darkblue", cex = 0.7,
-     xlab = "Observed values",
-     ylab = "Predicted values",
-     main = "Spherical vs. Euclidean Metric: Predicted vs. Observed",
-     xlim = y_range, ylim = y_range)
+  pch = 19, col = "darkblue", cex = 0.7,
+  xlab = "Observed values",
+  ylab = "Predicted values",
+  main = "Spherical vs. Euclidean Metric: Predicted vs. Observed",
+  xlim = y_range, ylim = y_range
+)
 points(y_test, preds_euc, pch = 4, col = "darkred", cex = 0.7)
 abline(0, 1, lwd = 2, lty = 2, col = "grey40")
 legend("topleft",
-       legend = c("Spherical metric", "Euclidean metric", "y = x"),
-       col    = c("darkblue", "darkred", "grey40"),
-       pch    = c(19, 4, NA),
-       lty    = c(NA, NA, 2),
-       lwd    = c(NA, NA, 2),
-       bty    = "n")
+  legend = c("Spherical metric", "Euclidean metric", "y = x"),
+  col    = c("darkblue", "darkred", "grey40"),
+  pch    = c(19, 4, NA),
+  lty    = c(NA, NA, 2),
+  lwd    = c(NA, NA, 2),
+  bty    = "n"
+)
 ```
 
 ![](spherical_files/figure-html/plot_predictions-1.png)

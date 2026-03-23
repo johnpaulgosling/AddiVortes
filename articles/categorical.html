@@ -172,24 +172,26 @@ on all four:</p>
 <span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">400</span></span>
 <span></span>
 <span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  age     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, mean <span class="op">=</span> <span class="fl">40</span>, sd <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
-<span>  income  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">20</span>, <span class="fl">120</span><span class="op">)</span>,               <span class="co"># income in thousands</span></span>
-<span>  region  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"East"</span>, <span class="st">"North"</span>, <span class="st">"South"</span>, <span class="st">"West"</span><span class="op">)</span>, <span class="va">n</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, mean <span class="op">=</span> <span class="fl">40</span>, sd <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
+<span>  income <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">20</span>, <span class="fl">120</span><span class="op">)</span>, <span class="co"># income in thousands</span></span>
+<span>  region <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"East"</span>, <span class="st">"North"</span>, <span class="st">"South"</span>, <span class="st">"West"</span><span class="op">)</span>, <span class="va">n</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>  product <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Basic"</span>, <span class="st">"Premium"</span>, <span class="st">"Deluxe"</span><span class="op">)</span>, <span class="va">n</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>  stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># True response: depends on continuous and categorical variables</span></span>
-<span><span class="va">region_effect</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">region</span>  <span class="op">==</span> <span class="st">"North"</span>,  <span class="fl">5</span>,</span>
-<span>                  <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">region</span>  <span class="op">==</span> <span class="st">"South"</span>, <span class="op">-</span><span class="fl">5</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">region_effect</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">region</span> <span class="op">==</span> <span class="st">"North"</span>, <span class="fl">5</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">region</span> <span class="op">==</span> <span class="st">"South"</span>, <span class="op">-</span><span class="fl">5</span>, <span class="fl">0</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span><span class="va">product_effect</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">product</span> <span class="op">==</span> <span class="st">"Premium"</span>, <span class="fl">10</span>,</span>
-<span>                  <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">product</span> <span class="op">==</span> <span class="st">"Deluxe"</span>,  <span class="fl">20</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">x</span><span class="op">$</span><span class="va">product</span> <span class="op">==</span> <span class="st">"Deluxe"</span>, <span class="fl">20</span>, <span class="fl">0</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fl">0.3</span> <span class="op">*</span> <span class="va">x</span><span class="op">$</span><span class="va">age</span> <span class="op">+</span></span>
-<span>     <span class="fl">0.1</span> <span class="op">*</span> <span class="va">x</span><span class="op">$</span><span class="va">income</span> <span class="op">+</span></span>
-<span>     <span class="va">region_effect</span>  <span class="op">+</span></span>
-<span>     <span class="va">product_effect</span> <span class="op">+</span></span>
-<span>     <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, sd <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fl">0.1</span> <span class="op">*</span> <span class="va">x</span><span class="op">$</span><span class="va">income</span> <span class="op">+</span></span>
+<span>  <span class="va">region_effect</span> <span class="op">+</span></span>
+<span>  <span class="va">product_effect</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, sd <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
 <p>Note that <code>region</code> has 4 levels and <code>product</code>
 has 3 levels. When passed to <code>AddiVortes</code> as character
 columns, they will be encoded as 3 and 2 binary columns respectively —
@@ -247,18 +249,18 @@ the data frame with character or factor columns directly.
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span><span class="va">train_idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">300</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">x_train</span> <span class="op">&lt;-</span> <span class="va">x</span><span class="op">[</span> <span class="va">train_idx</span>, <span class="op">]</span></span>
-<span><span class="va">y_train</span> <span class="op">&lt;-</span> <span class="va">y</span><span class="op">[</span> <span class="va">train_idx</span><span class="op">]</span></span>
-<span><span class="va">x_test</span>  <span class="op">&lt;-</span> <span class="va">x</span><span class="op">[</span><span class="op">-</span><span class="va">train_idx</span>, <span class="op">]</span></span>
-<span><span class="va">y_test</span>  <span class="op">&lt;-</span> <span class="va">y</span><span class="op">[</span><span class="op">-</span><span class="va">train_idx</span><span class="op">]</span></span>
+<span><span class="va">x_train</span> <span class="op">&lt;-</span> <span class="va">x</span><span class="op">[</span><span class="va">train_idx</span>, <span class="op">]</span></span>
+<span><span class="va">y_train</span> <span class="op">&lt;-</span> <span class="va">y</span><span class="op">[</span><span class="va">train_idx</span><span class="op">]</span></span>
+<span><span class="va">x_test</span> <span class="op">&lt;-</span> <span class="va">x</span><span class="op">[</span><span class="op">-</span><span class="va">train_idx</span>, <span class="op">]</span></span>
+<span><span class="va">y_test</span> <span class="op">&lt;-</span> <span class="va">y</span><span class="op">[</span><span class="op">-</span><span class="va">train_idx</span><span class="op">]</span></span>
 <span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AddiVortes.html">AddiVortes</a></span><span class="op">(</span></span>
-<span>  y            <span class="op">=</span> <span class="va">y_train</span>,</span>
-<span>  x            <span class="op">=</span> <span class="va">x_train</span>,</span>
-<span>  m            <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  y <span class="op">=</span> <span class="va">y_train</span>,</span>
+<span>  x <span class="op">=</span> <span class="va">x_train</span>,</span>
+<span>  m <span class="op">=</span> <span class="fl">50</span>,</span>
 <span>  totalMCMCIter <span class="op">=</span> <span class="fl">500</span>,</span>
-<span>  mcmcBurnIn   <span class="op">=</span> <span class="fl">100</span>,</span>
-<span>  catScaling   <span class="op">=</span> <span class="fl">1</span>,         <span class="co"># default: binary columns span [0, 1]</span></span>
+<span>  mcmcBurnIn <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  catScaling <span class="op">=</span> <span class="fl">1</span>, <span class="co"># default: binary columns span [0, 1]</span></span>
 <span>  showProgress <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
@@ -271,10 +273,12 @@ the data frame with character or factor columns directly.
 <span><span class="co">#&gt; Reference levels used:</span></span>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">j</span> <span class="kw">in</span> <span class="va">fit</span><span class="op">$</span><span class="va">catEncoding</span><span class="op">$</span><span class="va">catColIndices</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">orig_col</span> <span class="op">&lt;-</span> <span class="va">fit</span><span class="op">$</span><span class="va">catEncoding</span><span class="op">$</span><span class="va">origColNames</span><span class="op">[</span><span class="va">j</span><span class="op">]</span></span>
-<span>  <span class="va">ref_lev</span>  <span class="op">&lt;-</span> <span class="va">fit</span><span class="op">$</span><span class="va">catEncoding</span><span class="op">$</span><span class="va">colEncodings</span><span class="op">[[</span><span class="va">j</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">levels</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span></span>
-<span>  <span class="va">all_lev</span>  <span class="op">&lt;-</span> <span class="va">fit</span><span class="op">$</span><span class="va">catEncoding</span><span class="op">$</span><span class="va">colEncodings</span><span class="op">[[</span><span class="va">j</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">levels</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">" "</span>, <span class="va">orig_col</span>, <span class="st">": reference ="</span>, <span class="va">ref_lev</span>,</span>
-<span>      <span class="st">"| all levels:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">all_lev</span>, collapse <span class="op">=</span> <span class="st">", "</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span>  <span class="va">ref_lev</span> <span class="op">&lt;-</span> <span class="va">fit</span><span class="op">$</span><span class="va">catEncoding</span><span class="op">$</span><span class="va">colEncodings</span><span class="op">[[</span><span class="va">j</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">levels</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span></span>
+<span>  <span class="va">all_lev</span> <span class="op">&lt;-</span> <span class="va">fit</span><span class="op">$</span><span class="va">catEncoding</span><span class="op">$</span><span class="va">colEncodings</span><span class="op">[[</span><span class="va">j</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">levels</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span></span>
+<span>    <span class="st">" "</span>, <span class="va">orig_col</span>, <span class="st">": reference ="</span>, <span class="va">ref_lev</span>,</span>
+<span>    <span class="st">"| all levels:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">all_lev</span>, collapse <span class="op">=</span> <span class="st">", "</span><span class="op">)</span>, <span class="st">"\n"</span></span>
+<span>  <span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt;   region : reference = East | all levels: East, North, South, West </span></span>
 <span><span class="co">#&gt;   product : reference = Basic | all levels: Basic, Deluxe, Premium</span></span></code></pre></div>
@@ -301,15 +305,17 @@ is applied consistently.</p>
 <span><span class="va">point_cols</span> <span class="op">&lt;-</span> <span class="va">prod_cols</span><span class="op">[</span><span class="va">x_test</span><span class="op">$</span><span class="va">product</span><span class="op">]</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">y_test</span>, <span class="va">preds</span>,</span>
-<span>     col  <span class="op">=</span> <span class="va">point_cols</span>, pch <span class="op">=</span> <span class="fl">19</span>, cex <span class="op">=</span> <span class="fl">0.8</span>,</span>
-<span>     xlab <span class="op">=</span> <span class="st">"Observed values"</span>,</span>
-<span>     ylab <span class="op">=</span> <span class="st">"Predicted values"</span>,</span>
-<span>     main <span class="op">=</span> <span class="st">"Predicted vs. Observed (coloured by product category)"</span><span class="op">)</span></span>
+<span>  col <span class="op">=</span> <span class="va">point_cols</span>, pch <span class="op">=</span> <span class="fl">19</span>, cex <span class="op">=</span> <span class="fl">0.8</span>,</span>
+<span>  xlab <span class="op">=</span> <span class="st">"Observed values"</span>,</span>
+<span>  ylab <span class="op">=</span> <span class="st">"Predicted values"</span>,</span>
+<span>  main <span class="op">=</span> <span class="st">"Predicted vs. Observed (coloured by product category)"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, lwd <span class="op">=</span> <span class="fl">2</span>, lty <span class="op">=</span> <span class="fl">2</span>, col <span class="op">=</span> <span class="st">"grey40"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topleft"</span>,</span>
-<span>       legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">prod_cols</span><span class="op">)</span>,</span>
-<span>       col    <span class="op">=</span> <span class="va">prod_cols</span>,</span>
-<span>       pch    <span class="op">=</span> <span class="fl">19</span>, title <span class="op">=</span> <span class="st">"Product"</span>, bty <span class="op">=</span> <span class="st">"n"</span><span class="op">)</span></span></code></pre></div>
+<span>  legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">prod_cols</span><span class="op">)</span>,</span>
+<span>  col <span class="op">=</span> <span class="va">prod_cols</span>,</span>
+<span>  pch <span class="op">=</span> <span class="fl">19</span>, title <span class="op">=</span> <span class="st">"Product"</span>, bty <span class="op">=</span> <span class="st">"n"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <p><img src="categorical_files/figure-html/plot_predictions-1.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level3">
@@ -323,17 +329,19 @@ a previously unseen level and falls back to the baseline.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create a test point with an unseen product level "Luxury"</span></span>
 <span><span class="va">x_new</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  age     <span class="op">=</span> <span class="fl">45</span>,</span>
-<span>  income  <span class="op">=</span> <span class="fl">80</span>,</span>
-<span>  region  <span class="op">=</span> <span class="st">"North"</span>,</span>
-<span>  product <span class="op">=</span> <span class="st">"Luxury"</span>,   <span class="co"># unseen level</span></span>
+<span>  age <span class="op">=</span> <span class="fl">45</span>,</span>
+<span>  income <span class="op">=</span> <span class="fl">80</span>,</span>
+<span>  region <span class="op">=</span> <span class="st">"North"</span>,</span>
+<span>  product <span class="op">=</span> <span class="st">"Luxury"</span>, <span class="co"># unseen level</span></span>
 <span>  stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pred_new</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">x_new</span>, showProgress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Prediction for unseen category 'Luxury' (treated as 'Basic'):"</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">pred_new</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span></span>
+<span>  <span class="st">"Prediction for unseen category 'Luxury' (treated as 'Basic'):"</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">pred_new</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span></span>
+<span><span class="op">)</span></span>
 <span><span class="co">#&gt; Prediction for unseen category 'Luxury' (treated as 'Basic'): 25.783</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -346,12 +354,12 @@ with <code>catScaling = 2</code> (double weight for categorical
 differences) — and compare their test RMSEs.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_cs2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AddiVortes.html">AddiVortes</a></span><span class="op">(</span></span>
-<span>  y            <span class="op">=</span> <span class="va">y_train</span>,</span>
-<span>  x            <span class="op">=</span> <span class="va">x_train</span>,</span>
-<span>  m            <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  y <span class="op">=</span> <span class="va">y_train</span>,</span>
+<span>  x <span class="op">=</span> <span class="va">x_train</span>,</span>
+<span>  m <span class="op">=</span> <span class="fl">50</span>,</span>
 <span>  totalMCMCIter <span class="op">=</span> <span class="fl">500</span>,</span>
-<span>  mcmcBurnIn   <span class="op">=</span> <span class="fl">100</span>,</span>
-<span>  catScaling   <span class="op">=</span> <span class="fl">2</span>,         <span class="co"># give categorical differences twice as much weight</span></span>
+<span>  mcmcBurnIn <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  catScaling <span class="op">=</span> <span class="fl">2</span>, <span class="co"># give categorical differences twice as much weight</span></span>
 <span>  showProgress <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
