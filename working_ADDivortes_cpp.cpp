@@ -106,7 +106,7 @@ bool in_vector(int value, const std::vector<int>& vec) {
 
 extern "C" {
   
-  SEXP knnx_index_cpp(SEXP data_sexp, SEXP tess_sexp, SEXP dim_sexp, SEXP tessstar_sexp, SEXP k_sexp, SEXP dimstar_sexp, SEXP dist_sexp, SEXP modification_sexp, SEXP row_column_modified_sexp, SEXP old_idx_sexp) {
+  SEXP knnx_index_cpp_local(SEXP data_sexp, SEXP tess_sexp, SEXP dim_sexp, SEXP tessstar_sexp, SEXP k_sexp, SEXP dimstar_sexp, SEXP dist_sexp, SEXP modification_sexp, SEXP row_column_modified_sexp, SEXP old_idx_sexp) {
     
     double* p_data = REAL(data_sexp);
     double* p_tess = REAL(tess_sexp);
@@ -322,7 +322,7 @@ extern "C" {
     return result_list;
   }
   
-  SEXP propose_tessellation_cpp(SEXP tess_j_sexp, SEXP dim_j_sexp, SEXP sd_sexp, SEXP mu_sexp, SEXP num_cov_sexp) {
+  SEXP propose_tessellation_cpp_local(SEXP tess_j_sexp, SEXP dim_j_sexp, SEXP sd_sexp, SEXP mu_sexp, SEXP num_cov_sexp) {
     
     double* p_tess_j = REAL(tess_j_sexp);
     int* p_dim_j = INTEGER(dim_j_sexp);
@@ -536,14 +536,14 @@ extern "C" {
           R_j[i] = p_y[i] - p_sum[i];
         }
         
-        SEXP newTessOutput = propose_tessellation_cpp(VECTOR_ELT(return_tess, j), VECTOR_ELT(return_dim, j), sd_sexp, mu_sexp, p_sexp);
+        SEXP newTessOutput = propose_tessellation_cpp_local(VECTOR_ELT(return_tess, j), VECTOR_ELT(return_dim, j), sd_sexp, mu_sexp, p_sexp);
         PROTECT(newTessOutput);
         SEXP tess_j_star_sexp = VECTOR_ELT(newTessOutput, 0);
         SEXP dim_j_star_sexp = VECTOR_ELT(newTessOutput, 1);
         SEXP mod_sexp = VECTOR_ELT(newTessOutput, 2);
         SEXP rcm_sexp = VECTOR_ELT(newTessOutput, 3);
         
-        SEXP dist_calc = knnx_index_cpp(x_sexp, VECTOR_ELT(return_tess, j), VECTOR_ELT(return_dim, j), tess_j_star_sexp, k_sexp, dim_j_star_sexp, VECTOR_ELT(return_sqdist, j), mod_sexp, rcm_sexp, old_idx_sexp);
+        SEXP dist_calc = knnx_index_cpp_local(x_sexp, VECTOR_ELT(return_tess, j), VECTOR_ELT(return_dim, j), tess_j_star_sexp, k_sexp, dim_j_star_sexp, VECTOR_ELT(return_sqdist, j), mod_sexp, rcm_sexp, old_idx_sexp);
         PROTECT(dist_calc);
         SEXP indexesStar_sexp = VECTOR_ELT(dist_calc, 0);
         SEXP sqdist_j_star_sexp = VECTOR_ELT(dist_calc, 1);
