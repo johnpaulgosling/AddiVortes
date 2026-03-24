@@ -297,11 +297,11 @@ static void propose_tess_internal(
   if ((p < 0.2 && nDims != numCovariates) ||
       (nDims == 1 && nDims != numCovariates && p < 0.4)) {
     modification = MOD_AD;
-    int new_d;
+    int new_d_0; // 0-based global dim index
     do {
-      new_d = (int)(unif_rand() * numCovariates) + 1;
-    } while (in_vector(new_d, new_dim));
-    new_dim.push_back(new_d);
+      new_d_0 = (int)(unif_rand() * numCovariates); // 0-based: [0, numCovariates)
+    } while (in_vector(new_d_0, new_dim));
+    new_dim.push_back(new_d_0); // store 0-based
 
     int new_nd = nDims + 1;
     std::vector<double> tmp(nCentres * new_nd);
@@ -309,9 +309,9 @@ static void propose_tess_internal(
       for (int c = 0; c < nDims; c++) {
         tmp[r + c * nCentres] = new_tess[r + c * nCentres];
       }
-      double nv = mu_ptr[new_d - 1] + norm_rand() * sd_ptr[new_d - 1];
-      if (metric[new_d - 1] == 1) {
-        if (!sphere_index.empty() && (new_d - 1) == sphere_index.back()) {
+      double nv = mu_ptr[new_d_0] + norm_rand() * sd_ptr[new_d_0];
+      if (metric[new_d_0] == 1) {
+        if (!sphere_index.empty() && new_d_0 == sphere_index.back()) {
           nv = period_shift(nv, M_PI);
         }
       }
@@ -341,11 +341,12 @@ static void propose_tess_internal(
   // Add Centre (AC)
   } else if (p < 0.6 || (p < 0.8 && nCentres == 1)) {
     modification = MOD_AC;
-    // Insert a new row at the end of each column
+    // Insert a new row at the end of each column, using the global dimension's proposal params
     for (int i = 0; i < nDims; i++) {
-      double nv = mu_ptr[i] + norm_rand() * sd_ptr[i];
-      if (metric[i] == 1) {
-        if (!sphere_index.empty() && i == (int)sphere_index.back()) {
+      int gd = new_dim[i]; // 0-based global dimension index
+      double nv = mu_ptr[gd] + norm_rand() * sd_ptr[gd];
+      if (metric[gd] == 1) {
+        if (!sphere_index.empty() && gd == (int)sphere_index.back()) {
           nv = period_shift(nv, M_PI);
         }
       }
@@ -370,9 +371,10 @@ static void propose_tess_internal(
     modification = MOD_CHANGE;
     int ctr = (int)(unif_rand() * nCentres);
     for (int c = 0; c < nDims; c++) {
-      double nv = mu_ptr[c] + norm_rand() * sd_ptr[c];
-      if (metric[c] == 1) {
-        if (!sphere_index.empty() && c == (int)sphere_index.back()) {
+      int gd = new_dim[c]; // 0-based global dimension index
+      double nv = mu_ptr[gd] + norm_rand() * sd_ptr[gd];
+      if (metric[gd] == 1) {
+        if (!sphere_index.empty() && gd == (int)sphere_index.back()) {
           nv = period_shift(nv, M_PI);
         }
       }
@@ -383,15 +385,15 @@ static void propose_tess_internal(
   } else {
     modification = MOD_SWAP;
     int dim_chg = (int)(unif_rand() * nDims);
-    int new_d;
+    int new_d_0; // 0-based global dim index for the replacement
     do {
-      new_d = (int)(unif_rand() * numCovariates) + 1;
-    } while (in_vector(new_d, new_dim));
-    new_dim[dim_chg] = new_d;
+      new_d_0 = (int)(unif_rand() * numCovariates); // 0-based
+    } while (in_vector(new_d_0, new_dim));
+    new_dim[dim_chg] = new_d_0; // store 0-based
     for (int r = 0; r < nCentres; r++) {
-      double nv = mu_ptr[dim_chg] + norm_rand() * sd_ptr[dim_chg];
-      if (metric[dim_chg] == 1) {
-        if (!sphere_index.empty() && dim_chg == (int)sphere_index.back()) {
+      double nv = mu_ptr[new_d_0] + norm_rand() * sd_ptr[new_d_0];
+      if (metric[new_d_0] == 1) {
+        if (!sphere_index.empty() && new_d_0 == (int)sphere_index.back()) {
           nv = period_shift(nv, M_PI);
         }
       }
