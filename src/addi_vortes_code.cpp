@@ -5,6 +5,7 @@
 #include <algorithm> // For std::find
 #include <cmath>     // For sqrt
 #include <cstring>   // For memcpy
+#include <limits>    // For std::numeric_limits
 
 // 2. Add this to prevent R from creating problematic macros
 #define R_NO_REMAP
@@ -177,9 +178,64 @@ extern "C" {
       }
     }
 
+    // --- k=1 fast paths ---
+    // Prediction always uses k=1, so avoid the distances-vector allocation and
+    // partial_sort entirely.  Two specialisations:
+    //   • Pure Euclidean: no temporary sub-vectors needed — compute squared
+    //     differences directly over the active dims only (O(d) not O(p)).
+    //   • Has spherical (or mixed): keep the copy-and-replace pattern required
+    //     for great-circle distance, but still do a linear min-scan.
+
+    if (k == 1 && !has_spherical) {
+      // ── Pure Euclidean, k=1 ─────────────────────────────────────────────────
+      for (int q = 0; q < query_rows; ++q) {
+        double best = std::numeric_limits<double>::infinity();
+        int best_t = 0;
+        for (int t = 0; t < tess_rows; ++t) {
+          double dist = 0.0;
+          for (int i = 0; i < static_cast<int>(active_dim_idx.size()); ++i) {
+            const int d = active_dim_idx[i];
+            double diff = p_query[q + d * query_rows] - p_tess[t + d * tess_rows];
+            dist += diff * diff;
+          }
+          if (dist < best) { best = dist; best_t = t; }
+        }
+        p_result[q] = best_t + 1; // 1-based
+      }
+      UNPROTECT(1);
+      return result;
+    }
+
+    if (k == 1) {
+      // ── Spherical (or mixed), k=1 ───────────────────────────────────────────
+      for (int q = 0; q < query_rows; ++q) {
+        for (int d = 0; d < query_cols; ++d) {
+          if (metric[d] == 0) q_pt_E[coind[d]] = p_query[q + d * query_rows];
+          if (metric[d] == 1) q_pt_S[coind[d]] = p_query[q + d * query_rows];
+        }
+        double best = std::numeric_limits<double>::infinity();
+        int best_t = 0;
+        for (int t = 0; t < tess_rows; ++t) {
+          double dval = 0.0;
+          if (has_euclidean) t_pt_E = q_pt_E;
+          t_pt_S = q_pt_S;
+          for (int i = 0; i < static_cast<int>(active_dim_idx.size()); ++i) {
+            const int d = active_dim_idx[i];
+            if (metric[d] == 0) t_pt_E[coind[d]] = p_tess[t + d * tess_rows];
+            if (metric[d] == 1) t_pt_S[coind[d]] = p_tess[t + d * tess_rows];
+          }
+          if (has_spherical) dval += spherical_distance(q_pt_S, t_pt_S);
+          if (has_euclidean) dval += euclidean_distance(q_pt_E, t_pt_E);
+          if (dval < best) { best = dval; best_t = t; }
+        }
+        p_result[q] = best_t + 1; // 1-based
+      }
+      UNPROTECT(1);
+      return result;
+    }
+
+    // --- General k > 1 path ---
     double dval;
-    
-    // --- Main Logic: For each query point, find k nearest neighbors ---
     for (int q = 0; q < query_rows; ++q) {
       for (int d = 0; d < query_cols; ++d) {
         if (metric[d] == 0) {
@@ -268,7 +324,7 @@ static void knn1_internal(
     // No vector copies, no function-call overhead.  Reduces work from O(p) to
     // O(d) per (obs, centre) pair — significant when d << p (the common case).
     for (int obs = 0; obs < n; obs++) {
-      double best = 1e300;
+      double best = std::numeric_limits<double>::infinity();
       int best_c = 0;
       for (int c = 0; c < nC; c++) {
         double dist = 0.0;
@@ -296,7 +352,7 @@ static void knn1_internal(
         if (metric[g] == 0) q_E[coind[g]] = v;
         else                 q_S[coind[g]] = v;
       }
-      double best = 1e300;
+      double best = std::numeric_limits<double>::infinity();
       int best_c = 0;
       for (int c = 0; c < nC; c++) {
         if (hasE) t_E = q_E;
