@@ -307,7 +307,8 @@ AddiVortes <- function(y, x, m = 200,
     init_dim,
     init_pred,
     binaryCols_r,
-    as.double(catScaling_r)
+    as.double(catScaling_r),
+    as.logical(showProgress)
   )
 
   if (showProgress) cat("MCMC sampling completed.\n\n")

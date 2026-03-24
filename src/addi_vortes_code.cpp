@@ -785,6 +785,7 @@ extern "C" {
   //   binaryCols_sexp     integer vector of binary column indices (1-based),
   //                       or R_NilValue when there are no categorical covariates
   //   catScaling_sexp     double — upper bound for binary column clamping
+  //   showProgress_sexp   logical — whether to print iteration progress
   //
   // Returns a named R list:
   //   posteriorTess    — list[numSamples] of list[m] of matrices
@@ -811,7 +812,8 @@ extern "C" {
       SEXP init_dim_sexp,
       SEXP init_pred_sexp,
       SEXP binaryCols_sexp,
-      SEXP catScaling_sexp) {
+      SEXP catScaling_sexp,
+      SEXP showProgress_sexp) {
 
     // -------------------------------------------------------------------------
     // 1. Unpack scalar / vector inputs
@@ -832,6 +834,7 @@ extern "C" {
     const double* sd    = REAL(sd_sexp);
     const double* mus   = REAL(mus_sexp);
     double catScaling   = REAL(catScaling_sexp)[0];
+    bool   showProgress = LOGICAL(showProgress_sexp)[0];
 
     int* metric_ptr = INTEGER(metric_sexp);
     std::vector<int> metric(metric_ptr, metric_ptr + p);
@@ -923,7 +926,14 @@ extern "C" {
     std::vector<double> lastTessPred(n, 0.0);
     int storageIdx = 0;
 
+    int progressStep = std::max(1, totalIter / 10);
+
     for (int iter = 1; iter <= totalIter; iter++) {
+
+      if (showProgress && (iter % progressStep == 0 || iter == totalIter)) {
+        Rprintf("  Iteration %d / %d\n", iter, totalIter);
+        R_FlushConsole();
+      }
 
       // Sample sigma squared from inverse-gamma
       double sum_sq = 0.0;
