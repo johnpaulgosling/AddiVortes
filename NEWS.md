@@ -1,5 +1,19 @@
 # AddiVortes News
 
+## AddiVortes 0.6.0
+
+* Moved the entire MCMC back-fitting loop into a single C++ call
+  (`addi_vortes_mcmc_cpp`), eliminating repeated R <-> C++ round-trips that
+  were the main source of fitting overhead.  All per-iteration work —
+  sigma^2 sampling (inverse-gamma), tessellation proposals, kNN cell
+  assignment, partial-residual aggregation, Metropolis-Hastings acceptance
+  step, and cell-mean sampling — now executes inside one C function with a
+  single `GetRNGstate` / `PutRNGstate` pair.
+* The `AddiVortes` class and all associated S3 methods (`predict`,
+  `print`, `summary`, `plot`) are unchanged.
+* The `cellIndices` / `knnx_index_cpp` path used by `predict` is
+  unchanged.
+
 ## AddiVortes 0.5.4
 
 * Added data to package to help with vignettes and testing.

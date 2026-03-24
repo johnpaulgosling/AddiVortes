@@ -5,6 +5,7 @@
 #include <algorithm> // For std::find
 #include <cmath>     // For sqrt
 #include <cstring>   // For memcpy
+#include <set>       // For std::set
 
 // 2. Add this to prevent R from creating problematic macros
 #define R_NO_REMAP
@@ -13,6 +14,7 @@
 #include <R.h>
 #include <Rinternals.h>
 #include <R_ext/Random.h> // For unif_rand() and norm_rand()
+#include <Rmath.h>        // For rgamma
 
 // Helper function to check if a value is in a vector
 bool in_vector(int value, const std::vector<int>& vec) {
@@ -95,6 +97,307 @@ double spherical_distance(const std::vector<double>& p1, const std::vector<doubl
     }
   }
   return(angle_diff * angle_diff);
+}
+
+// ============================================================
+// Internal helpers used only by addi_vortes_mcmc_cpp
+// ============================================================
+
+// Modification type constants
+static const int MOD_AD     = 0;
+static const int MOD_RD     = 1;
+static const int MOD_AC     = 2;
+static const int MOD_RC     = 3;
+static const int MOD_CHANGE = 4;
+static const int MOD_SWAP   = 5;
+
+// knn1_internal: assign each of the n observations (rows of xScaled, n x p column-major)
+// to its nearest centre in tess_j (nCentres x nDims column-major, with dim_j giving the
+// 0-based global column indices).  Writes 0-based centre indices into result (length n).
+static void knn1_internal(
+  const double* xScaled, int n, int p,
+  const double* tess_j, int nCentres, int nDims,
+  const std::vector<int>& dim_j,
+  const std::vector<int>& metric,
+  int nE, int nS,
+  const std::vector<int>& coind,
+  std::vector<int>& result
+) {
+  if (nCentres == 1) {
+    std::fill(result.begin(), result.end(), 0);
+    return;
+  }
+
+  const bool hasE = nE > 0;
+  const bool hasS = nS > 0;
+  std::vector<double> q_pt_E(nE), q_pt_S(nS);
+  std::vector<double> t_pt_E(nE), t_pt_S(nS);
+
+  for (int obs = 0; obs < n; obs++) {
+    // Extract observation coordinates into E and S sub-vectors
+    for (int d = 0; d < p; d++) {
+      if (metric[d] == 0) {
+        q_pt_E[coind[d]] = xScaled[obs + d * n];
+      } else {
+        q_pt_S[coind[d]] = xScaled[obs + d * n];
+      }
+    }
+
+    double best_dist = 1e300;
+    int best_centre = 0;
+
+    for (int c = 0; c < nCentres; c++) {
+      // Start from the query point, then overwrite the active dimensions
+      if (hasE) t_pt_E = q_pt_E;
+      if (hasS) t_pt_S = q_pt_S;
+
+      for (int d_local = 0; d_local < nDims; d_local++) {
+        int d_global = dim_j[d_local];
+        double tval = tess_j[c + d_local * nCentres];
+        if (metric[d_global] == 0) {
+          t_pt_E[coind[d_global]] = tval;
+        } else {
+          t_pt_S[coind[d_global]] = tval;
+        }
+      }
+
+      double dval = 0.0;
+      if (hasE) dval += euclidean_distance(q_pt_E, t_pt_E);
+      if (hasS) dval += spherical_distance(q_pt_S, t_pt_S);
+
+      if (dval < best_dist) {
+        best_dist = dval;
+        best_centre = c;
+      }
+    }
+    result[obs] = best_centre;
+  }
+}
+
+// log(dbinom(x, n, p)) – implemented without Rmath to avoid potential naming conflicts
+static double log_dbinom(int x, int n, double p) {
+  if (x < 0 || x > n) return -1e300;
+  if (p <= 0.0) return (x == 0) ? 0.0 : -1e300;
+  if (p >= 1.0) return (x == n) ? 0.0 : -1e300;
+  return lgamma(n + 1.0) - lgamma(x + 1.0) - lgamma(n - x + 1.0)
+         + x * log(p) + (n - x) * log(1.0 - p);
+}
+
+// log(dpois(x, lambda))
+static double log_dpois(int x, double lambda) {
+  if (x < 0 || lambda <= 0.0) return -1e300;
+  return x * log(lambda) - lambda - lgamma(x + 1.0);
+}
+
+// Log acceptance probability for the Metropolis-Hastings step.
+// d and cStar refer to the NEW tessellation (after the proposed modification).
+// modification is one of MOD_*.
+static double acceptance_prob_internal(
+  const std::vector<double>& R_ijOld, const std::vector<int>& n_ijOld,
+  const std::vector<double>& R_ijNew, const std::vector<int>& n_ijNew,
+  int cStar, int d,
+  double SigmaSquared, int modification,
+  double SigmaSquaredMu, double Omega, double LambdaRate, int NumCovariates
+) {
+  const double prob_eps = 1e-10;
+  double prob = Omega / NumCovariates;
+  if (prob < 0.0) prob = 0.0;
+  if (prob > 1.0 - prob_eps) prob = 1.0 - prob_eps;
+
+  // Log-likelihood ratio
+  double logLR = 0.0;
+  for (int k = 0; k < (int)n_ijOld.size(); k++) {
+    logLR += 0.5 * log((double)n_ijOld[k] * SigmaSquaredMu + SigmaSquared);
+  }
+  for (int k = 0; k < (int)n_ijNew.size(); k++) {
+    logLR -= 0.5 * log((double)n_ijNew[k] * SigmaSquaredMu + SigmaSquared);
+  }
+  double sum_new = 0.0, sum_old = 0.0;
+  for (int k = 0; k < (int)n_ijNew.size(); k++) {
+    double denom = (double)n_ijNew[k] * SigmaSquaredMu + SigmaSquared;
+    sum_new += R_ijNew[k] * R_ijNew[k] / denom;
+  }
+  for (int k = 0; k < (int)n_ijOld.size(); k++) {
+    double denom = (double)n_ijOld[k] * SigmaSquaredMu + SigmaSquared;
+    sum_old += R_ijOld[k] * R_ijOld[k] / denom;
+  }
+  logLR += (SigmaSquaredMu / (2.0 * SigmaSquared)) * (sum_new - sum_old);
+
+  double acc = logLR;
+
+  if (modification == MOD_AD) {
+    double tessStr = log_dbinom(d - 1, NumCovariates - 1, prob)
+                   - log_dbinom(d - 2, NumCovariates - 1, prob)
+                   - log((double)(NumCovariates - d + 1));
+    double transR  = log((double)(NumCovariates - d + 1)) - log((double)d);
+    acc += tessStr + transR;
+    if (d == 1)                    acc += log(0.5);
+    else if (d == NumCovariates - 1) acc += log(2.0);
+  } else if (modification == MOD_RD) {
+    double tessStr = log_dbinom(d - 1, NumCovariates, prob)
+                   + log((double)(NumCovariates - d))
+                   - log_dbinom(d, NumCovariates, prob);
+    double transR  = log((double)(d + 1)) - log((double)(NumCovariates - d));
+    acc += tessStr + transR;
+    if (d == NumCovariates) acc += log(0.5);
+    else if (d == 2)        acc += log(2.0);
+  } else if (modification == MOD_AC) {
+    double tessStr = log_dpois(cStar - 1, LambdaRate) - log_dpois(cStar - 2, LambdaRate);
+    double transR  = -log((double)cStar);
+    acc += tessStr + transR + 0.5 * log(SigmaSquared);
+    if (cStar == 1) acc += log(0.5);
+  } else if (modification == MOD_RC) {
+    double tessStr = log_dpois(cStar - 1, LambdaRate) - log_dpois(cStar, LambdaRate);
+    double transR  = log((double)(cStar + 1));
+    acc += tessStr + transR - 0.5 * log(SigmaSquared);
+    if (cStar == 2) acc += log(2.0);
+  }
+  // MOD_CHANGE and MOD_SWAP: TessStructure = 1, TransitionRatio = 1 → add 0
+
+  return acc;
+}
+
+// Sample mu values for each cell.  Writes norm_rand()-based samples into pred_j.
+static void sample_mu_internal(
+  const std::vector<double>& R_ij,
+  const std::vector<int>& n_ij,
+  double SigmaSquaredMu, double SigmaSquared,
+  std::vector<double>& pred_j
+) {
+  int N = (int)R_ij.size();
+  pred_j.resize(N);
+  for (int k = 0; k < N; k++) {
+    double denom    = SigmaSquaredMu * (double)n_ij[k] + SigmaSquared;
+    double mean_k   = SigmaSquaredMu * R_ij[k] / denom;
+    double sd_k     = sqrt(SigmaSquared * SigmaSquaredMu / denom);
+    pred_j[k]       = mean_k + norm_rand() * sd_k;
+  }
+}
+
+// Propose a new tessellation.  Mirrors propose_tessellation_cpp exactly (same RNG calls)
+// but operates on C++ vectors.  modification is set to one of MOD_*.
+static void propose_tess_internal(
+  const std::vector<double>& tess_j, int nCentres, int nDims,
+  const std::vector<int>& dim_j,
+  const double* sd_ptr, const double* mu_ptr,
+  int numCovariates,
+  const std::vector<int>& metric,
+  const std::vector<int>& sphere_index,
+  std::vector<double>& new_tess,
+  std::vector<int>& new_dim,
+  int& modification
+) {
+  new_dim  = dim_j;
+  new_tess = tess_j;
+  modification = MOD_CHANGE;
+
+  double p = unif_rand();
+
+  // Add Dimension (AD)
+  if ((p < 0.2 && nDims != numCovariates) ||
+      (nDims == 1 && nDims != numCovariates && p < 0.4)) {
+    modification = MOD_AD;
+    int new_d;
+    do {
+      new_d = (int)(unif_rand() * numCovariates) + 1;
+    } while (in_vector(new_d, new_dim));
+    new_dim.push_back(new_d);
+
+    int new_nd = nDims + 1;
+    std::vector<double> tmp(nCentres * new_nd);
+    for (int r = 0; r < nCentres; r++) {
+      for (int c = 0; c < nDims; c++) {
+        tmp[r + c * nCentres] = new_tess[r + c * nCentres];
+      }
+      double nv = mu_ptr[new_d - 1] + norm_rand() * sd_ptr[new_d - 1];
+      if (metric[new_d - 1] == 1) {
+        if (!sphere_index.empty() && (new_d - 1) == sphere_index.back()) {
+          nv = period_shift(nv, M_PI);
+        }
+      }
+      tmp[r + nDims * nCentres] = nv;
+    }
+    new_tess = tmp;
+
+  // Remove Dimension (RD)
+  } else if (p < 0.4 && nDims > 1) {
+    modification = MOD_RD;
+    int rem = (int)(unif_rand() * nDims);
+    new_dim.erase(new_dim.begin() + rem);
+    std::vector<double> tmp;
+    tmp.reserve(nCentres * (nDims - 1));
+    int cur_col = 0;
+    for (int c = 0; c < nDims; c++) {
+      if (c != rem) {
+        for (int r = 0; r < nCentres; r++) {
+          tmp.push_back(new_tess[r + c * nCentres]);
+        }
+        cur_col++;
+      }
+    }
+    (void)cur_col;
+    new_tess = tmp;
+
+  // Add Centre (AC)
+  } else if (p < 0.6 || (p < 0.8 && nCentres == 1)) {
+    modification = MOD_AC;
+    // Insert a new row at the end of each column
+    for (int i = 0; i < nDims; i++) {
+      double nv = mu_ptr[i] + norm_rand() * sd_ptr[i];
+      if (metric[i] == 1) {
+        if (!sphere_index.empty() && i == (int)sphere_index.back()) {
+          nv = period_shift(nv, M_PI);
+        }
+      }
+      new_tess.insert(new_tess.begin() + (i * (nCentres + 1)) + nCentres, nv);
+    }
+
+  // Remove Centre (RC)
+  } else if (p < 0.8 && nCentres > 1) {
+    modification = MOD_RC;
+    int rem_row = (int)(unif_rand() * nCentres);
+    std::vector<double> tmp;
+    tmp.reserve((nCentres - 1) * nDims);
+    for (int c = 0; c < nDims; c++) {
+      for (int r = 0; r < nCentres; r++) {
+        if (r != rem_row) tmp.push_back(new_tess[r + c * nCentres]);
+      }
+    }
+    new_tess = tmp;
+
+  // Change one centre (default)
+  } else if (p < 0.9 || nDims == numCovariates) {
+    modification = MOD_CHANGE;
+    int ctr = (int)(unif_rand() * nCentres);
+    for (int c = 0; c < nDims; c++) {
+      double nv = mu_ptr[c] + norm_rand() * sd_ptr[c];
+      if (metric[c] == 1) {
+        if (!sphere_index.empty() && c == (int)sphere_index.back()) {
+          nv = period_shift(nv, M_PI);
+        }
+      }
+      new_tess[ctr + c * nCentres] = nv;
+    }
+
+  // Swap one dimension
+  } else {
+    modification = MOD_SWAP;
+    int dim_chg = (int)(unif_rand() * nDims);
+    int new_d;
+    do {
+      new_d = (int)(unif_rand() * numCovariates) + 1;
+    } while (in_vector(new_d, new_dim));
+    new_dim[dim_chg] = new_d;
+    for (int r = 0; r < nCentres; r++) {
+      double nv = mu_ptr[dim_chg] + norm_rand() * sd_ptr[dim_chg];
+      if (metric[dim_chg] == 1) {
+        if (!sphere_index.empty() && dim_chg == (int)sphere_index.back()) {
+          nv = period_shift(nv, M_PI);
+        }
+      }
+      new_tess[r + dim_chg * nCentres] = nv;
+    }
+  }
 }
 
 extern "C" {
@@ -489,4 +792,387 @@ extern "C" {
     return result_list;
   }
   
+  // ---------------------------------------------------------------------------
+  // 3. addi_vortes_mcmc_cpp
+  // ---------------------------------------------------------------------------
+  // Runs the full MCMC back-fitting loop for the AddiVortes model in a single
+  // C++ call, eliminating repeated R <-> C++ round-trips.
+  //
+  // Arguments (18):
+  //   xScaled_sexp       – n x p covariate matrix (column-major double)
+  //   yScaled_sexp       – n-vector of scaled responses
+  //   m_sexp             – number of tessellations
+  //   totalMCMCIter_sexp – total MCMC iterations
+  //   mcmcBurnIn_sexp    – burn-in count
+  //   thinning_sexp      – thinning rate for posterior storage
+  //   nu_sexp            – prior degrees of freedom
+  //   lambda_sexp        – prior scale for sigma^2
+  //   SigmaSquaredMu_sexp– prior variance for cell means
+  //   Omega_sexp         – dimension inclusion prior rate
+  //   LambdaRate_sexp    – Poisson rate for number of centres
+  //   metric_sexp        – p-integer vector (0=Euclidean, 1=Spherical)
+  //   sd_prop_sexp       – p-vector of proposal SDs
+  //   mus_sexp           – p-vector of proposal means
+  //   init_tess_sexp     – list of m initial tessellation matrices
+  //   init_dim_sexp      – list of m initial dimension integer vectors (1-based)
+  //   binaryCols_sexp    – integer vector of 1-based binary column indices (or 0-length)
+  //   catScaling_sexp    – scalar: upper clamp for binary tessellation centres
+  //
+  // Returns a named list:
+  //   posteriorTess      – list[numPosteriorSamples] of list[m] of matrices
+  //   posteriorDim       – list[numPosteriorSamples] of list[m] of int vectors
+  //   posteriorPred      – list[numPosteriorSamples] of list[m] of real vectors
+  //   posteriorSigma     – real vector[numPosteriorSamples]
+  //   predictionMatrix   – n x numPosteriorSamples matrix
+  SEXP addi_vortes_mcmc_cpp(
+    SEXP xScaled_sexp, SEXP yScaled_sexp,
+    SEXP m_sexp, SEXP totalMCMCIter_sexp,
+    SEXP mcmcBurnIn_sexp, SEXP thinning_sexp,
+    SEXP nu_sexp, SEXP lambda_sexp,
+    SEXP SigmaSquaredMu_sexp,
+    SEXP Omega_sexp, SEXP LambdaRate_sexp,
+    SEXP metric_sexp, SEXP sd_prop_sexp, SEXP mus_sexp,
+    SEXP init_tess_sexp, SEXP init_dim_sexp,
+    SEXP binaryCols_sexp, SEXP catScaling_sexp
+  ) {
+    // ---- Unpack scalars ----
+    int n           = Rf_nrows(xScaled_sexp);
+    int p           = Rf_ncols(xScaled_sexp);
+    int m           = INTEGER(m_sexp)[0];
+    int totalIter   = INTEGER(totalMCMCIter_sexp)[0];
+    int burnIn      = INTEGER(mcmcBurnIn_sexp)[0];
+    int thinning    = INTEGER(thinning_sexp)[0];
+    double nu       = REAL(nu_sexp)[0];
+    double lambda   = REAL(lambda_sexp)[0];
+    double sigMu    = REAL(SigmaSquaredMu_sexp)[0];
+    double Omega    = REAL(Omega_sexp)[0];
+    double lambdaR  = REAL(LambdaRate_sexp)[0];
+    double catScale = REAL(catScaling_sexp)[0];
+
+    // ---- Unpack arrays ----
+    const double* xScaled   = REAL(xScaled_sexp);
+    const double* yScaled   = REAL(yScaled_sexp);
+    const double* sd_ptr    = REAL(sd_prop_sexp);
+    const double* mu_ptr    = REAL(mus_sexp);
+
+    std::vector<int> metric(INTEGER(metric_sexp),
+                            INTEGER(metric_sexp) + Rf_length(metric_sexp));
+
+    // Binary columns (0-based)
+    int nBin = Rf_length(binaryCols_sexp);
+    std::set<int> binaryColsSet;
+    if (nBin > 0) {
+      int* bcp = INTEGER(binaryCols_sexp);
+      for (int i = 0; i < nBin; i++) binaryColsSet.insert(bcp[i] - 1);
+    }
+
+    // ---- Posterior sample count ----
+    int numPS = 0;
+    if (totalIter > burnIn) {
+      numPS = (totalIter - burnIn) / thinning;
+    }
+
+    // ---- Precompute metric helpers (mirrors knnx_index_cpp) ----
+    int nE = 0, nS = 0;
+    std::vector<int> coind(p);
+    for (int d = 0; d < p; d++) {
+      if (metric[d] == 0) { coind[d] = nE++; }
+      else                  { coind[d] = nS++; }
+    }
+
+    // Sphere index (0-based global dim indices where metric==1)
+    std::vector<int> sphere_index;
+    for (int d = 0; d < p; d++) {
+      if (metric[d] == 1) sphere_index.push_back(d);
+    }
+
+    // ---- Unpack initial tessellations ----
+    // tess_data[j]: flat column-major matrix (nCentres_j x nDims_j)
+    // dim_data[j]:  0-based active global column indices
+    std::vector<std::vector<double>> tess_data(m);
+    std::vector<std::vector<int>>    dim_data(m);
+    std::vector<int>                 nCentres_v(m), nDims_v(m);
+
+    for (int j = 0; j < m; j++) {
+      SEXP tj   = VECTOR_ELT(init_tess_sexp, j);
+      SEXP dj   = VECTOR_ELT(init_dim_sexp,  j);
+      int  nr   = Rf_nrows(tj);
+      int  nd   = Rf_length(dj);
+      nCentres_v[j] = nr;
+      nDims_v[j]    = nd;
+      tess_data[j].assign(REAL(tj), REAL(tj) + nr * nd);
+      // Convert from 1-based R to 0-based C++
+      int* dp = INTEGER(dj);
+      dim_data[j].resize(nd);
+      for (int k = 0; k < nd; k++) dim_data[j][k] = dp[k] - 1;
+    }
+
+    // ---- Compute mean_y (used for initial pred and sumOfAllTess) ----
+    double sum_y = 0.0;
+    for (int i = 0; i < n; i++) sum_y += yScaled[i];
+    double mean_y = (n > 0) ? sum_y / n : 0.0;
+
+    // ---- Initialise state ----
+    // pred_data[j]: predicted value per centre (initially mean_y/m for each)
+    // idx_data[j]:  0-based centre assignment per obs (initially 0, since 1 centre)
+    // sumOfAllTess: n-vector, initially mean_y everywhere
+    std::vector<std::vector<double>> pred_data(m);
+    std::vector<std::vector<int>>    idx_data(m);
+    for (int j = 0; j < m; j++) {
+      pred_data[j].assign(nCentres_v[j], mean_y / m);
+      idx_data[j].assign(n, 0);
+    }
+    std::vector<double> sumOfAllTess(n, mean_y);
+    std::vector<double> last_tess_pred(n, 0.0);
+
+    // ---- Posterior storage (C++ side, converted to SEXP after the loop) ----
+    // Outer index: sample index (0 .. numPS-1)
+    // Inner index: tessellation j (0 .. m-1)
+    std::vector<std::vector<std::vector<double>>> post_tess(numPS, std::vector<std::vector<double>>(m));
+    std::vector<std::vector<std::vector<int>>>    post_dim( numPS, std::vector<std::vector<int>>(m));
+    std::vector<std::vector<std::vector<double>>> post_pred(numPS, std::vector<std::vector<double>>(m));
+    std::vector<std::vector<int>>                 post_nrows(numPS, std::vector<int>(m));
+    std::vector<double>                           post_sigma(numPS, 0.0);
+    std::vector<double>                           predMatrix((size_t)n * numPS, 0.0);
+
+    int storeIdx = 0; // next slot in posterior arrays
+
+    // ---- Temporaries reused across iterations ----
+    std::vector<int>    new_dim_prop;
+    std::vector<double> new_tess_prop;
+    std::vector<int>    new_idx(n);
+    std::vector<double> R_ijOld, R_ijNew;
+    std::vector<int>    n_ijOld, n_ijNew;
+    std::vector<double> new_pred_j;
+    std::vector<double> R_j(n);
+
+    // ---- MCMC loop ----
+    GetRNGstate();
+
+    for (int i = 0; i < totalIter; i++) {
+
+      // -- Sample sigma^2 from InvGamma --
+      double ss_resid = 0.0;
+      for (int obs = 0; obs < n; obs++) {
+        double diff = yScaled[obs] - sumOfAllTess[obs];
+        ss_resid += diff * diff;
+      }
+      double shape    = (nu + n) / 2.0;
+      double rate_val = (nu * lambda + ss_resid) / 2.0;
+      double sigSq    = 1.0 / rgamma(shape, 1.0 / rate_val);
+
+      // -- Back-fitting over tessellations --
+      for (int j = 0; j < m; j++) {
+
+        int nC = nCentres_v[j];
+        int nD = nDims_v[j];
+
+        // Propose new tessellation
+        int mod_type;
+        propose_tess_internal(
+          tess_data[j], nC, nD, dim_data[j],
+          sd_ptr, mu_ptr, p, metric, sphere_index,
+          new_tess_prop, new_dim_prop, mod_type
+        );
+
+        // Clamp binary-column coordinates to [0, catScaling]
+        if (!binaryColsSet.empty()) {
+          int new_nC  = (int)new_dim_prop.size() > 0 ?
+                        (int)new_tess_prop.size() / (int)new_dim_prop.size() : 0;
+          for (int d_local = 0; d_local < (int)new_dim_prop.size(); d_local++) {
+            int d_global = new_dim_prop[d_local];
+            if (binaryColsSet.count(d_global)) {
+              for (int r = 0; r < new_nC; r++) {
+                double& v = new_tess_prop[r + d_local * new_nC];
+                if (v < 0.0)        v = 0.0;
+                if (v > catScale)   v = catScale;
+              }
+            }
+          }
+        }
+
+        int new_nC = (int)new_dim_prop.size() > 0 ?
+                     (int)new_tess_prop.size() / (int)new_dim_prop.size() : 0;
+        int new_nD = (int)new_dim_prop.size();
+
+        // Compute new cell assignments
+        new_idx.resize(n);
+        knn1_internal(xScaled, n, p,
+                      new_tess_prop.data(), new_nC, new_nD, new_dim_prop,
+                      metric, nE, nS, coind, new_idx);
+
+        // Calculate partial residuals R_j, then aggregate per cell
+        // (mirrors calculateResiduals in R)
+        if (j == 0) {
+          for (int obs = 0; obs < n; obs++) {
+            sumOfAllTess[obs] -= pred_data[j][idx_data[j][obs]];
+          }
+        } else {
+          for (int obs = 0; obs < n; obs++) {
+            sumOfAllTess[obs] += last_tess_pred[obs] - pred_data[j][idx_data[j][obs]];
+          }
+        }
+        for (int obs = 0; obs < n; obs++) R_j[obs] = yScaled[obs] - sumOfAllTess[obs];
+
+        // Aggregate residuals for old tessellation
+        int old_nLevels = nC;
+        R_ijOld.assign(old_nLevels, 0.0);
+        n_ijOld.assign(old_nLevels, 0);
+        for (int obs = 0; obs < n; obs++) {
+          int k = idx_data[j][obs];
+          R_ijOld[k] += R_j[obs];
+          n_ijOld[k]++;
+        }
+
+        // Aggregate residuals for proposed tessellation
+        R_ijNew.assign(new_nC, 0.0);
+        n_ijNew.assign(new_nC, 0);
+        for (int obs = 0; obs < n; obs++) {
+          int k = new_idx[obs];
+          R_ijNew[k] += R_j[obs];
+          n_ijNew[k]++;
+        }
+
+        // Check for empty cells in proposal
+        bool any_empty = false;
+        for (int k = 0; k < new_nC; k++) {
+          if (n_ijNew[k] == 0) { any_empty = true; break; }
+        }
+
+        bool accepted = false;
+        if (!any_empty) {
+          double logAcc = acceptance_prob_internal(
+            R_ijOld, n_ijOld, R_ijNew, n_ijNew,
+            new_nC, new_nD, sigSq, mod_type,
+            sigMu, Omega, lambdaR, p
+          );
+          if (log(unif_rand()) < logAcc) {
+            accepted = true;
+          }
+        }
+
+        if (accepted) {
+          tess_data[j]  = new_tess_prop;
+          dim_data[j]   = new_dim_prop;
+          nCentres_v[j] = new_nC;
+          nDims_v[j]    = new_nD;
+          idx_data[j]   = new_idx;
+          sample_mu_internal(R_ijNew, n_ijNew, sigMu, sigSq, pred_data[j]);
+          for (int obs = 0; obs < n; obs++) {
+            last_tess_pred[obs] = pred_data[j][new_idx[obs]];
+          }
+        } else {
+          sample_mu_internal(R_ijOld, n_ijOld, sigMu, sigSq, pred_data[j]);
+          for (int obs = 0; obs < n; obs++) {
+            last_tess_pred[obs] = pred_data[j][idx_data[j][obs]];
+          }
+        }
+
+        // After the last tessellation, add its prediction to sumOfAllTess
+        if (j == m - 1) {
+          for (int obs = 0; obs < n; obs++) {
+            sumOfAllTess[obs] += last_tess_pred[obs];
+          }
+        }
+      } // end for j
+
+      // Store posterior sample (after burn-in, respecting thinning)
+      if (i >= burnIn && ((i - burnIn) % thinning == 0)) {
+        int s = storeIdx++;
+        for (int j = 0; j < m; j++) {
+          post_tess[s][j]  = tess_data[j];
+          post_dim[s][j]   = dim_data[j];  // 0-based; converted to 1-based when building SEXP
+          post_pred[s][j]  = pred_data[j];
+          post_nrows[s][j] = nCentres_v[j];
+        }
+        post_sigma[s] = sigSq;
+        for (int obs = 0; obs < n; obs++) {
+          predMatrix[(size_t)obs + (size_t)s * n] = sumOfAllTess[obs];
+        }
+      }
+    } // end for i (MCMC)
+
+    PutRNGstate();
+
+    // ============================================================
+    // Build the R return value
+    // ============================================================
+    // We protect the 5 top-level output objects + the result list + names
+    SEXP res_postTess, res_postDim, res_postPred, res_postSigma, res_predMatrix;
+    SEXP result_list, list_names;
+
+    PROTECT(res_postTess  = Rf_allocVector(VECSXP, numPS));
+    PROTECT(res_postDim   = Rf_allocVector(VECSXP, numPS));
+    PROTECT(res_postPred  = Rf_allocVector(VECSXP, numPS));
+    PROTECT(res_postSigma = Rf_allocVector(REALSXP, numPS));
+    PROTECT(res_predMatrix = Rf_allocMatrix(REALSXP, n, numPS));
+
+    // Fill posteriorSigma and predictionMatrix
+    if (numPS > 0) {
+      memcpy(REAL(res_postSigma), post_sigma.data(), numPS * sizeof(double));
+      memcpy(REAL(res_predMatrix), predMatrix.data(), (size_t)n * numPS * sizeof(double));
+    }
+
+    // Fill posteriorTess / posteriorDim / posteriorPred
+    for (int s = 0; s < numPS; s++) {
+      SEXP inner_tess, inner_dim, inner_pred;
+
+      // Protect each inner list so GC can't collect them while we fill them
+      PROTECT(inner_tess = Rf_allocVector(VECSXP, m));
+      PROTECT(inner_dim  = Rf_allocVector(VECSXP, m));
+      PROTECT(inner_pred = Rf_allocVector(VECSXP, m));
+
+      for (int j = 0; j < m; j++) {
+        int nR = post_nrows[s][j];
+        int nD = (int)post_dim[s][j].size();
+
+        // tessellation matrix (nR x nD)
+        SEXP mat_j, dim_j_sexp_r, pred_j_sexp;
+        PROTECT(mat_j = Rf_allocMatrix(REALSXP, nR, nD));
+        memcpy(REAL(mat_j), post_tess[s][j].data(), (size_t)nR * nD * sizeof(double));
+        SET_VECTOR_ELT(inner_tess, j, mat_j);
+        UNPROTECT(1); // mat_j now owned by inner_tess
+
+        // dim vector (1-based for R)
+        PROTECT(dim_j_sexp_r = Rf_allocVector(INTSXP, nD));
+        for (int d = 0; d < nD; d++) {
+          INTEGER(dim_j_sexp_r)[d] = post_dim[s][j][d] + 1; // 0-based → 1-based
+        }
+        SET_VECTOR_ELT(inner_dim, j, dim_j_sexp_r);
+        UNPROTECT(1); // dim_j_sexp_r now owned by inner_dim
+
+        // pred vector
+        PROTECT(pred_j_sexp = Rf_allocVector(REALSXP, nR));
+        memcpy(REAL(pred_j_sexp), post_pred[s][j].data(), nR * sizeof(double));
+        SET_VECTOR_ELT(inner_pred, j, pred_j_sexp);
+        UNPROTECT(1); // pred_j_sexp now owned by inner_pred
+      }
+
+      SET_VECTOR_ELT(res_postTess, s, inner_tess);
+      SET_VECTOR_ELT(res_postDim,  s, inner_dim);
+      SET_VECTOR_ELT(res_postPred, s, inner_pred);
+      UNPROTECT(3); // inner_tess, inner_dim, inner_pred now owned by res_post*
+    }
+
+    // Assemble result list
+    PROTECT(result_list = Rf_allocVector(VECSXP, 5));
+    SET_VECTOR_ELT(result_list, 0, res_postTess);
+    SET_VECTOR_ELT(result_list, 1, res_postDim);
+    SET_VECTOR_ELT(result_list, 2, res_postPred);
+    SET_VECTOR_ELT(result_list, 3, res_postSigma);
+    SET_VECTOR_ELT(result_list, 4, res_predMatrix);
+
+    PROTECT(list_names = Rf_allocVector(STRSXP, 5));
+    SET_STRING_ELT(list_names, 0, Rf_mkChar("posteriorTess"));
+    SET_STRING_ELT(list_names, 1, Rf_mkChar("posteriorDim"));
+    SET_STRING_ELT(list_names, 2, Rf_mkChar("posteriorPred"));
+    SET_STRING_ELT(list_names, 3, Rf_mkChar("posteriorSigma"));
+    SET_STRING_ELT(list_names, 4, Rf_mkChar("predictionMatrix"));
+    Rf_setAttrib(result_list, R_NamesSymbol, list_names);
+
+    UNPROTECT(7); // res_postTess, res_postDim, res_postPred, res_postSigma,
+                  // res_predMatrix, result_list, list_names
+    return result_list;
+  }
+
 } // extern "C"
