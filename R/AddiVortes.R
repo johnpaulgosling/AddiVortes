@@ -263,6 +263,7 @@ AddiVortes <- function(y, x, m = 200,
 
   # Prepare inputs for addi_vortes_mcmc_cpp
   NumCovariates <- ncol(xScaled)
+  # Proposal means: 0 for Euclidean dimensions (centred), xCentres for Spherical
   mus_cpp <- numeric(NumCovariates)
   mus_cpp[metric != 0] <- xCentres[metric != 0]
 

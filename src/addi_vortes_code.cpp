@@ -226,6 +226,9 @@ static double acceptance_prob_internal(
   double acc = logLR;
 
   if (modification == MOD_AD) {
+    // AD uses NumCovariates - 1 as the trial count; RD uses NumCovariates.
+    // This asymmetry is inherited from the original R acceptanceProbability formula
+    // and ensures detailed balance for the reversible-jump step.
     double tessStr = log_dbinom(d - 1, NumCovariates - 1, prob)
                    - log_dbinom(d - 2, NumCovariates - 1, prob)
                    - log((double)(NumCovariates - d + 1));
@@ -326,16 +329,13 @@ static void propose_tess_internal(
     new_dim.erase(new_dim.begin() + rem);
     std::vector<double> tmp;
     tmp.reserve(nCentres * (nDims - 1));
-    int cur_col = 0;
     for (int c = 0; c < nDims; c++) {
       if (c != rem) {
         for (int r = 0; r < nCentres; r++) {
           tmp.push_back(new_tess[r + c * nCentres]);
         }
-        cur_col++;
       }
     }
-    (void)cur_col;
     new_tess = tmp;
 
   // Add Centre (AC)
