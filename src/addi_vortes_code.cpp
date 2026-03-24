@@ -235,261 +235,6 @@ extern "C" {
     return result;
   }
   
-  
-  // ---------------------------------------------------------------------------
-  // 1. calculate_residuals_cpp
-  // ---------------------------------------------------------------------------
-  // This function calculates residuals for new centres based on the 
-  // provided indexes.
-  // The R wrapper function is `calculateResiduals`.
-  SEXP calculate_residuals_cpp(SEXP R_j_sexp, SEXP indexes_sexp,
-                               SEXP indexesStar_sexp, SEXP num_levels_old_sexp,
-                               SEXP num_centres_new_sexp) {
-    
-    // --- Unpack arguments ---
-    double* p_R_j = REAL(R_j_sexp);
-    int* p_indexes = INTEGER(indexes_sexp);
-    int* p_indexesStar = INTEGER(indexesStar_sexp);
-    int num_levels_old = INTEGER(num_levels_old_sexp)[0];
-    int num_centres_new = INTEGER(num_centres_new_sexp)[0];
-    int n_obs = Rf_length(R_j_sexp);
-    
-    // --- Create C++ vectors for processing ---
-    std::vector<double> R_ijOld(num_levels_old, 0.0);
-    std::vector<int> n_ijOld(num_levels_old, 0);
-    std::vector<double> R_ijNew(num_centres_new, 0.0);
-    std::vector<int> n_ijNew(num_centres_new, 0);
-    
-    // --- Main Logic ---
-    for(int i = 0; i < n_obs; ++i) {
-      int idx_old = p_indexes[i] - 1; // R is 1-based
-      if (idx_old >= 0 && idx_old < num_levels_old) {
-        R_ijOld[idx_old] += p_R_j[i];
-        n_ijOld[idx_old]++;
-      }
-      
-      int idx_new = p_indexesStar[i] - 1; // R is 1-based
-      if (idx_new >= 0 && idx_new < num_centres_new) {
-        R_ijNew[idx_new] += p_R_j[i];
-        n_ijNew[idx_new]++;
-      }
-    }
-    
-    // --- Pack results into a named list for R ---
-    SEXP res_R_ijOld, res_n_ijOld, res_R_ijNew, res_n_ijNew, result_list, list_names;
-    
-    PROTECT(res_R_ijOld = Rf_allocVector(REALSXP, num_levels_old));
-    memcpy(REAL(res_R_ijOld), R_ijOld.data(), num_levels_old * sizeof(double));
-    
-    PROTECT(res_n_ijOld = Rf_allocVector(INTSXP, num_levels_old));
-    memcpy(INTEGER(res_n_ijOld), n_ijOld.data(), num_levels_old * sizeof(int));
-    
-    PROTECT(res_R_ijNew = Rf_allocVector(REALSXP, num_centres_new));
-    memcpy(REAL(res_R_ijNew), R_ijNew.data(), num_centres_new * sizeof(double));
-    
-    PROTECT(res_n_ijNew = Rf_allocVector(INTSXP, num_centres_new));
-    memcpy(INTEGER(res_n_ijNew), n_ijNew.data(), num_centres_new * sizeof(int));
-    
-    PROTECT(result_list = Rf_allocVector(VECSXP, 4));
-    SET_VECTOR_ELT(result_list, 0, res_R_ijOld);
-    SET_VECTOR_ELT(result_list, 1, res_n_ijOld);
-    SET_VECTOR_ELT(result_list, 2, res_R_ijNew);
-    SET_VECTOR_ELT(result_list, 3, res_n_ijNew);
-    
-    PROTECT(list_names = Rf_allocVector(STRSXP, 4));
-    SET_STRING_ELT(list_names, 0, Rf_mkChar("R_ijOld"));
-    SET_STRING_ELT(list_names, 1, Rf_mkChar("n_ijOld"));
-    SET_STRING_ELT(list_names, 2, Rf_mkChar("R_ijNew"));
-    SET_STRING_ELT(list_names, 3, Rf_mkChar("n_ijNew"));
-    Rf_setAttrib(result_list, R_NamesSymbol, list_names);
-    
-    UNPROTECT(6); // 4 result vectors + list + names
-    return result_list;
-  }
-  
-  
-  // ---------------------------------------------------------------------------
-  // 2. propose_tessellation_cpp
-  // ---------------------------------------------------------------------------
-  // This function proposes a new tessellation based on the current one,
-  // modifying it according to a set of rules and a random number generator.
-  // The R wrapper function is `proposeTessellation`.
-  SEXP propose_tessellation_cpp(SEXP tess_j_sexp, SEXP dim_j_sexp, SEXP sd_sexp, SEXP mu_sexp, SEXP num_cov_sexp, SEXP metric_sexp) {
-    
-    // --- Unpack arguments ---
-    double* p_tess_j = REAL(tess_j_sexp);
-    int* p_dim_j = INTEGER(dim_j_sexp);
-    double* sd = REAL(sd_sexp);
-    double* mu = REAL(mu_sexp);
-    int numCovariates = INTEGER(num_cov_sexp)[0];
-    int* metric_ptr = INTEGER(metric_sexp);
-
-    std::vector<int> metric(metric_ptr, metric_ptr + Rf_length(metric_sexp));
-    
-    int tess_j_rows = Rf_nrows(tess_j_sexp);
-    int d_j_length = Rf_length(dim_j_sexp);
-    
-    // Get R's random number generator state
-    GetRNGstate();
-    
-    // --- Create C++ copies for manipulation ---
-    std::vector<int> dim_j_star(p_dim_j, p_dim_j + d_j_length);
-    std::vector<double> tess_j_star(p_tess_j, p_tess_j + (tess_j_rows * d_j_length));
-    std::string modification = "Change";
-
-    double new_val = 0.0;
-    
-    double p = unif_rand();
-
-    std::vector<int> sphere_index;
-    if (in_vector(1, metric)) {
-      sphere_index = which_elem(1, metric);
-    }
-    
-    // --- Main Logic ---
-    // Add Dimension (AD): ensure we don't try to add a dimension when all covariates are already selected
-    if ((p < 0.2 && d_j_length != numCovariates) || (d_j_length == 1 && d_j_length != numCovariates && p < 0.4)) {
-      modification = "AD";
-      int new_dim;
-      do {
-        new_dim = floor(unif_rand() * numCovariates) + 1;
-      } while (in_vector(new_dim, dim_j_star));
-      
-      dim_j_star.push_back(new_dim);
-      
-      std::vector<double> new_tess(tess_j_rows * (d_j_length + 1));
-      for (int r = 0; r < tess_j_rows; ++r) {
-        for (int c = 0; c < d_j_length; ++c) {
-          new_tess[r + c * tess_j_rows] = tess_j_star[r + c * tess_j_rows];
-        }
-        new_val = mu[new_dim-1] + norm_rand() * sd[new_dim-1];
-        if (metric[new_dim-1] == 1) {
-          if (new_dim - 1 == sphere_index[sphere_index.size()-1]) {
-            new_val = period_shift(new_val, M_PI);
-          }
-          // else {
-          //   new_val = period_shift(new_val, M_PI_2);
-          // }
-        }
-        new_tess[r + d_j_length * tess_j_rows] = new_val;
-      }
-      tess_j_star = new_tess;
-      
-    } else if (p < 0.4 && d_j_length > 1) {
-      modification = "RD";
-      int removed_dim_idx = floor(unif_rand() * d_j_length);
-      dim_j_star.erase(dim_j_star.begin() + removed_dim_idx);
-      
-      std::vector<double> new_tess(tess_j_rows * (d_j_length - 1));
-      int current_col = 0;
-      for (int c = 0; c < d_j_length; ++c) {
-        if (c != removed_dim_idx) {
-          for (int r = 0; r < tess_j_rows; ++r) {
-            new_tess[r + current_col * tess_j_rows] = tess_j_star[r + c * tess_j_rows];
-          }
-          current_col++;
-        }
-      }
-      tess_j_star = new_tess;
-      
-    } else if (p < 0.6 || (p < 0.8 && tess_j_rows == 1)) {
-      modification = "AC";
-      for (int i = 0; i < d_j_length; ++i) {
-        new_val = mu[i] + norm_rand() * sd[i];
-        if (metric[i] == 1) {
-          if (i == sphere_index[sphere_index.size()-1]) {
-            new_val = period_shift(new_val, M_PI);
-          }
-          // else {
-          //   new_val = period_shift(new_val, M_PI_2);
-          // }
-        }
-        tess_j_star.insert(tess_j_star.begin() + (i * (tess_j_rows + 1)) + tess_j_rows, new_val);
-      }
-      
-    } else if (p < 0.8 && tess_j_rows > 1) {
-      modification = "RC";
-      int removed_row_idx = floor(unif_rand() * tess_j_rows);
-      std::vector<double> new_tess;
-      new_tess.reserve((tess_j_rows - 1) * d_j_length);
-      for(int c = 0; c < d_j_length; ++c){
-        for(int r = 0; r < tess_j_rows; ++r){
-          if(r != removed_row_idx) {
-            new_tess.push_back(tess_j_star[r + c * tess_j_rows]);
-          }
-        }
-      }
-      tess_j_star = new_tess;
-      
-    } else if (p < 0.9 || d_j_length == numCovariates) {
-      int centre_to_change_idx = floor(unif_rand() * tess_j_rows);
-      for (int c = 0; c < d_j_length; ++c) {
-        new_val = mu[c] + norm_rand() * sd[c];
-        if (metric[c] == 1) {
-          if (c == sphere_index[sphere_index.size()-1]) {
-            new_val = period_shift(new_val, M_PI);
-          }
-          // else {
-          //   new_val = period_shift(new_val, M_PI_2);
-          // }
-        }
-        tess_j_star[centre_to_change_idx + c * tess_j_rows] = new_val;
-      }
-      
-    } else {
-      modification = "Swap";
-      int dim_to_change_idx = floor(unif_rand() * d_j_length);
-      int new_dim;
-      do {
-        new_dim = floor(unif_rand() * numCovariates) + 1;
-      } while (in_vector(new_dim, dim_j_star));
-      
-      dim_j_star[dim_to_change_idx] = new_dim;
-      for (int r = 0; r < tess_j_rows; ++r) {
-        new_val = mu[dim_to_change_idx] + norm_rand() * sd[dim_to_change_idx];
-        if (metric[dim_to_change_idx] == 1) {
-          if (dim_to_change_idx == sphere_index[sphere_index.size()-1]) {
-            new_val = period_shift(new_val, M_PI);
-          }
-          // else {
-          //   new_val = period_shift(new_val, M_PI_2);
-          // }
-        }
-        tess_j_star[r + dim_to_change_idx * tess_j_rows] = new_val;
-      }
-    }
-    
-    // Update R's random number generator state
-    PutRNGstate();
-    
-    // --- Pack results into a named list for R ---
-    SEXP res_tess_j_star, res_dim_j_star, res_mod, result_list, list_names;
-    
-    int new_rows = tess_j_star.size() / dim_j_star.size();
-    PROTECT(res_tess_j_star = Rf_allocMatrix(REALSXP, new_rows, dim_j_star.size()));
-    memcpy(REAL(res_tess_j_star), tess_j_star.data(), tess_j_star.size() * sizeof(double));
-    
-    PROTECT(res_dim_j_star = Rf_allocVector(INTSXP, dim_j_star.size()));
-    memcpy(INTEGER(res_dim_j_star), dim_j_star.data(), dim_j_star.size() * sizeof(int));
-    
-    PROTECT(res_mod = Rf_allocVector(STRSXP, 1));
-    SET_STRING_ELT(res_mod, 0, Rf_mkChar(modification.c_str()));
-    
-    PROTECT(result_list = Rf_allocVector(VECSXP, 3));
-    SET_VECTOR_ELT(result_list, 0, res_tess_j_star);
-    SET_VECTOR_ELT(result_list, 1, res_dim_j_star);
-    SET_VECTOR_ELT(result_list, 2, res_mod);
-    
-    PROTECT(list_names = Rf_allocVector(STRSXP, 3));
-    SET_STRING_ELT(list_names, 0, Rf_mkChar("tess_j_star"));
-    SET_STRING_ELT(list_names, 1, Rf_mkChar("dim_j_star"));
-    SET_STRING_ELT(list_names, 2, Rf_mkChar("Modification"));
-    Rf_setAttrib(result_list, R_NamesSymbol, list_names);
-    
-    UNPROTECT(5); // 3 result vectors + list + names
-    return result_list;
-  }
-  
 } // extern "C"
 
 // =============================================================================
@@ -638,8 +383,7 @@ static std::vector<double> sample_mu_internal(
   return result;
 }
 
-// Propose a new tessellation. Mirrors propose_tessellation_cpp exactly,
-// operating on C++ vectors to avoid R↔C++ crossing.
+// Propose a new tessellation, operating on C++ vectors to avoid R↔C++ crossing.
 struct ProposalResult {
   std::vector<double> tess;
   int nC;
@@ -705,7 +449,6 @@ static ProposalResult propose_internal(
     for (int i = 0; i < d_j; i++) {
       // NOTE: mus/sd are indexed by local position i, and metric is checked
       // using i rather than the global covariate index dim_j[i]-1.
-      // This mirrors the original propose_tessellation_cpp behaviour exactly.
       new_val = mus[i] + norm_rand() * sd[i];
       if (metric[i] == 1)
         if (i == (int)sphere_index.back())
@@ -726,7 +469,7 @@ static ProposalResult propose_internal(
     r.tess = new_tess; r.nC = nC - 1;
 
   } else if (prand < 0.9 || d_j == p) {
-    // Change Centre — same local-index convention as propose_tessellation_cpp
+    // Change Centre — uses local column index convention
     int ci = (int)(unif_rand() * nC);
     for (int col = 0; col < d_j; col++) {
       new_val = mus[col] + norm_rand() * sd[col];
@@ -737,7 +480,7 @@ static ProposalResult propose_internal(
     }
 
   } else {
-    // Swap Dimension — same local-index convention as propose_tessellation_cpp
+    // Swap Dimension — uses local column index convention
     r.mod = "Swap";
     int swap_idx = (int)(unif_rand() * d_j);
     int new_dim;
