@@ -245,8 +245,10 @@ extern "C" {
 // obs_data : n x p  column-major double array
 // centres  : nC x d column-major double array (active dims only)
 // dim1     : d active dimension indices, 1-BASED
-// Returns  : n vector of 0-based centre indices
-static std::vector<int> knn1_internal(
+// result   : output vector — must be pre-sized to exactly n elements by the caller.
+//            Filled with 0-based centre indices on return.
+static void knn1_internal(
+    std::vector<int>& result,
     const double* obs_data, int n, int p,
     const double* centres, int nC, int d,
     const std::vector<int>& dim1,
@@ -254,36 +256,63 @@ static std::vector<int> knn1_internal(
     const std::vector<int>& coind,
     int nE, int nS) {
 
-  std::vector<int> result(n, 0);
-  if (nC == 1) return result;
+  if (nC == 1) { std::fill(result.begin(), result.end(), 0); return; }
 
-  const bool hasE = (nE > 0), hasS = (nS > 0);
-  std::vector<double> q_E(nE), q_S(nS), t_E(nE), t_S(nS);
+  // Convert 1-based active dim indices to 0-based once, outside all loops.
+  std::vector<int> adim(d);
+  for (int di = 0; di < d; di++) adim[di] = dim1[di] - 1;
 
-  for (int obs = 0; obs < n; obs++) {
-    for (int g = 0; g < p; g++) {
-      double v = obs_data[obs + g * n];
-      if (metric[g] == 0) q_E[coind[g]] = v;
-      else                 q_S[coind[g]] = v;
-    }
-    double best = 1e300;
-    int best_c = 0;
-    for (int c = 0; c < nC; c++) {
-      if (hasE) t_E = q_E;
-      if (hasS) t_S = q_S;
-      for (int di = 0; di < d; di++) {
-        int g = dim1[di] - 1;  // 0-based global index
-        if (metric[g] == 0) t_E[coind[g]] = centres[c + di * nC];
-        else                 t_S[coind[g]] = centres[c + di * nC];
+  if (nS == 0) {
+    // ── Fast path: pure Euclidean ─────────────────────────────────────────────
+    // Directly compute sum of squared differences over the d active dimensions.
+    // No vector copies, no function-call overhead.  Reduces work from O(p) to
+    // O(d) per (obs, centre) pair — significant when d << p (the common case).
+    for (int obs = 0; obs < n; obs++) {
+      double best = 1e300;
+      int best_c = 0;
+      for (int c = 0; c < nC; c++) {
+        double dist = 0.0;
+        for (int di = 0; di < d; di++) {
+          double diff = obs_data[obs + adim[di] * n] - centres[c + di * nC];
+          dist += diff * diff;
+        }
+        if (dist < best) { best = dist; best_c = c; }
       }
-      double dist = 0.0;
-      if (hasS) dist += spherical_distance(q_S, t_S);
-      if (hasE) dist += euclidean_distance(q_E, t_E);
-      if (dist < best) { best = dist; best_c = c; }
+      result[obs] = best_c;
     }
-    result[obs] = best_c;
+  } else {
+    // ── Spherical (or mixed) path ─────────────────────────────────────────────
+    // spherical_distance requires the full spherical sub-vector, so the
+    // copy-and-replace pattern is retained.  Vectors are allocated once here,
+    // not per call.
+    const bool hasE = (nE > 0);
+    std::vector<double> q_E(nE), q_S(nS), t_S(nS);
+    std::vector<double> t_E;
+    if (hasE) t_E.resize(nE);
+
+    for (int obs = 0; obs < n; obs++) {
+      for (int g = 0; g < p; g++) {
+        double v = obs_data[obs + g * n];
+        if (metric[g] == 0) q_E[coind[g]] = v;
+        else                 q_S[coind[g]] = v;
+      }
+      double best = 1e300;
+      int best_c = 0;
+      for (int c = 0; c < nC; c++) {
+        if (hasE) t_E = q_E;
+        t_S = q_S;
+        for (int di = 0; di < d; di++) {
+          int g = adim[di];
+          if (metric[g] == 0) t_E[coind[g]] = centres[c + di * nC];
+          else                 t_S[coind[g]] = centres[c + di * nC];
+        }
+        double dist = spherical_distance(q_S, t_S);
+        if (hasE) dist += euclidean_distance(q_E, t_E);
+        if (dist < best) { best = dist; best_c = c; }
+      }
+      result[obs] = best_c;
+    }
   }
-  return result;
 }
 
 // Aggregate partial residuals R_j into per-cell sums and counts.
@@ -636,8 +665,13 @@ extern "C" {
     std::vector<double> sumAllTess(n, 0.0);
     // sumOfAllTess starts as the sum of pred[[j]][indices[[j]]] for all j
     std::vector<std::vector<int>> curIdx(m);
+    // Pre-allocate scratch buffers used inside the MCMC loop to avoid
+    // repeated heap allocation (m * totalIter times each).
+    std::vector<int>    idxStar(n);
+    std::vector<double> R_j(n);
     for (int j = 0; j < m; j++) {
-      curIdx[j] = knn1_internal(
+      curIdx[j].resize(n);  // pre-size to n before first call to knn1_internal
+      knn1_internal(curIdx[j],
         xScaled, n, p,
         tess[j].data(), tess_nC[j], tess_d[j], dim_j[j],
         metric, coind, nE, nS);
@@ -700,7 +734,6 @@ extern "C" {
         }
 
         // Partial residuals: R_j = y - sumAllTess (excluding j)
-        std::vector<double> R_j(n);
         for (int obs = 0; obs < n; obs++)
           R_j[obs] = yScaled[obs] - sumAllTess[obs];
 
@@ -725,8 +758,8 @@ extern "C" {
           }
         }
 
-        // Cell assignments for proposed tessellation
-        std::vector<int> idxStar = knn1_internal(
+        // Cell assignments for proposed tessellation (re-use pre-allocated buffer)
+        knn1_internal(idxStar,
           xScaled, n, p,
           prop.tess.data(), prop.nC, (int)prop.dim.size(), prop.dim,
           metric, coind, nE, nS);
