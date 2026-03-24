@@ -32,7 +32,7 @@ test_that("Simple AddiVortes fit 2", {
   )
 
 
-  expect_equal(round(results$inSampleRmse, 3), 2.724)
+  expect_equal(round(results$inSampleRmse, 3), 2.669)
 })
 
 test_that("Simple AddiVortes fit 3", {

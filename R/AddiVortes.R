@@ -81,8 +81,7 @@
 #' test_rmse <- sqrt(mean((y_test - preds)^2))
 #' }
 #'
-#' @importFrom stats var lm optim quantile runif dbinom dpois
-#' @importFrom utils txtProgressBar setTxtProgressBar
+#' @importFrom stats var lm optim quantile runif rnorm
 #' @export
 AddiVortes <- function(y, x, m = 200,
                        totalMCMCIter = 1200,
@@ -99,7 +98,7 @@ AddiVortes <- function(y, x, m = 200,
   # Force evaluation of Omega using the *original* x before categorical encoding
   # replaces x with the encoded matrix. Without this, R's lazy evaluation would
   # use ncol() of the encoded matrix, potentially making Omega = NumCovariates
-  # and causing prob = 1 in acceptanceProbability (which produces 0/0 = NaN).
+  # and causing prob = 1 in log_acceptance_prob (which produces 0/0 = NaN).
   force(Omega)
   #### Encode categorical covariates -------------------------------------------
   if (!is.numeric(catScaling) || length(catScaling) != 1 || catScaling <= 0) {
@@ -222,24 +221,8 @@ AddiVortes <- function(y, x, m = 200,
   }
 
   #### Set-up MCMC -------------------------------------------------------------
-  # Prepare some variables used in the backfitting algorithm.
-  # We start off with the mean of the scaled y values as the prediction for all
-  # tessellations.
-  sumOfAllTess <- rep(
-    mean(yScaled),
-    length(yScaled)
-  )
   # The variance that captures variability around the mean of the scaled y values.
   SigmaSquaredMu <- (0.5 / (k * sqrt(m)))^2
-  lastTessPred <- matrix
-
-  # Matrices that will hold the samples from the posterior distribution
-  # for the training samples and test samples.
-  posteriorSamples <- floor((totalMCMCIter - mcmcBurnIn) / thinning)
-  predictionMatrix <- array(dim = c(
-    length(y),
-    posteriorSamples
-  ))
 
   # Finding lambda
   if (InitialSigma == "Naive") {
@@ -262,40 +245,28 @@ AddiVortes <- function(y, x, m = 200,
     SigmaSquaredHat = SigmaSquaredHat
   )$par
 
-  # Determine number of samples to store
-  numPosteriorSamplesToStore <- 0
-  if (totalMCMCIter > mcmcBurnIn) {
-    numPosteriorSamplesToStore <- floor((totalMCMCIter - mcmcBurnIn) / thinning)
+  # Normalise tess, dim and pred to plain R objects before passing to C++.
+  # sapply may wrap results in lists or simplify to arrays; ensure each
+  # element is a plain double matrix / integer vector / double vector.
+  init_tess <- lapply(seq_len(m), function(j) {
+    t_j <- tess[[j]]
+    if (is.list(t_j)) t_j <- t_j[[1]]
+    m_j <- as.matrix(t_j)
+    storage.mode(m_j) <- "double"
+    m_j
+  })
+  init_dim  <- lapply(dim,  function(d) as.integer(unlist(d)))
+  init_pred <- lapply(pred, function(p_j) as.double(p_j))
+
+  # Binary column indices for categorical clamping (NULL when not applicable)
+  binaryCols_r <- if (!is.null(catEncoding) && length(catEncoding$encodedBinaryCols) > 0) {
+    as.integer(catEncoding$encodedBinaryCols)
+  } else {
+    NULL
   }
-  if (numPosteriorSamplesToStore < 0) numPosteriorSamplesToStore <- 0
+  catScaling_r <- if (!is.null(catEncoding)) catEncoding$catScaling else 0.0
 
-  # Lists to store the states of tess, dim, pred for the model object output
-  outputPosteriorTess <- vector(
-    "list",
-    numPosteriorSamplesToStore
-  )
-  outputPosteriorDim <- vector(
-    "list",
-    numPosteriorSamplesToStore
-  )
-  outputPosteriorPred <- vector(
-    "list",
-    numPosteriorSamplesToStore
-  )
-  outputPosteriorSigma <- numeric(numPosteriorSamplesToStore)
-  SigmaSquared <- NULL
-
-  currentStorageIdx <- 1 # Index for the new output lists
-
-  # Some precalculations
-  NumCovariates <- ncol(xScaled)
-  covariateIndices <- seq_len(NumCovariates)
-  currentIndices <- vector("list", m)
-  for (k in 1:m) {
-    currentIndices[[k]] <- cellIndices(xScaled, tess[[k]], dim[[k]], metric)
-  }
-
-  # Initial message and progress bar setup
+  # Progress message
   if (showProgress) {
     cat("Fitting AddiVortes model to input data...\n")
     if (length(covariateSummary) > 0) {
@@ -312,196 +283,51 @@ AddiVortes <- function(y, x, m = 200,
       " burn-in)\n\n",
       sep = ""
     )
+    cat("Running MCMC...\n")
   }
 
-  #### MCMC Loop ---------------------------------------------------------------
+  #### MCMC (single C++ call) --------------------------------------------------
+  mcmcResult <- .Call(
+    "addi_vortes_mcmc_cpp",
+    matrix(as.double(xScaled), nrow = nrow(xScaled), ncol = ncol(xScaled)),
+    as.double(yScaled),
+    as.integer(metric),
+    as.integer(m),
+    as.integer(totalMCMCIter),
+    as.integer(mcmcBurnIn),
+    as.integer(thinning),
+    as.double(nu),
+    as.double(lambda),
+    as.double(SigmaSquaredMu),
+    as.double(Omega),
+    as.double(LambdaRate),
+    as.double(sd),
+    as.double(mus),
+    init_tess,
+    init_dim,
+    init_pred,
+    binaryCols_r,
+    as.double(catScaling_r),
+    as.logical(showProgress)
+  )
 
-  # Initialize progress tracking variables
-  pbar_burnin <- NULL
-  pbar_sampling <- NULL
+  if (showProgress) cat("MCMC sampling completed.\n\n")
 
-  # Start burn-in phase
-  if (showProgress && mcmcBurnIn > 0) {
-    cat("Phase 1: Burn-in sampling (", mcmcBurnIn, " iterations)\n", sep = "")
-    pbar_burnin <- txtProgressBar(
-      min = 0, max = mcmcBurnIn,
-      style = 3, width = 50, char = "="
-    )
-  }
+  outputPosteriorTess  <- mcmcResult$posteriorTess
+  outputPosteriorDim   <- mcmcResult$posteriorDim
+  outputPosteriorPred  <- mcmcResult$posteriorPred
+  outputPosteriorSigma <- mcmcResult$posteriorSigma
+  predictionMatrix     <- mcmcResult$predictionMatrix
 
-  for (i in 1:totalMCMCIter) {
-    # Progress bar management
-    if (showProgress) {
-      if (i <= mcmcBurnIn && !is.null(pbar_burnin)) {
-        setTxtProgressBar(pbar_burnin, i)
-      } else if (i == mcmcBurnIn + 1 && mcmcBurnIn > 0) {
-        # Close burn-in progress bar and start sampling phase
-        if (!is.null(pbar_burnin)) {
-          close(pbar_burnin)
-          cat("\n")
-        }
-        if (totalMCMCIter > mcmcBurnIn) {
-          cat("Phase 2: Posterior sampling (",
-            totalMCMCIter - mcmcBurnIn,
-            " iterations)\n",
-            sep = ""
-          )
-          pbar_sampling <- txtProgressBar(
-            min = 0, max = totalMCMCIter - mcmcBurnIn,
-            style = 3, width = 50, char = "="
-          )
-        }
-      } else if (i > mcmcBurnIn && !is.null(pbar_sampling)) {
-        setTxtProgressBar(pbar_sampling, i - mcmcBurnIn)
-      } else if (mcmcBurnIn == 0 && i == 1 && totalMCMCIter > 0) {
-        # No burn-in phase, start directly with sampling
-        cat("Posterior sampling (", totalMCMCIter, " iterations)\n")
-        pbar_sampling <- txtProgressBar(
-          min = 0, max = totalMCMCIter,
-          style = 3, width = 50, char = "="
-        )
-        setTxtProgressBar(pbar_sampling, i)
-      }
-    }
-    # Sample sigma squared using all tessellations to predict the outcome variables
-    SigmaSquared[i] <- sampleSigmaSquared(
-      yScaled,
-      nu,
-      lambda,
-      sumOfAllTess
-    )
-
-    for (j in 1:m) {
-      # Propose new Tessellation for component j
-      newTessOutput <- proposeTessellation(
-        tess[[j]],
-        dim[[j]],
-        sd,
-        mus,
-        covariateIndices,
-        NumCovariates,
-        metric
-      )
-      tess_j_star <- newTessOutput[[1]]
-      dim_j_star <- newTessOutput[[2]]
-      modification <- newTessOutput[[3]]
-
-      ## Clamp proposed centres for binary (one-hot) dimensions to [0, catScaling]
-      if (!is.null(catEncoding) && length(catEncoding$encodedBinaryCols) > 0) {
-        local_bin_pos <- which(dim_j_star %in% catEncoding$encodedBinaryCols)
-        if (length(local_bin_pos) > 0) {
-          cs <- catEncoding$catScaling
-          for (lp in local_bin_pos) {
-            tess_j_star[, lp] <- pmin(pmax(tess_j_star[, lp], 0), cs)
-          }
-        }
-      }
-
-      # Retrieve old indices from cache
-      indexes <- currentIndices[[j]]
-      # Calculate new indices for the proposal
-      indexesStar <- cellIndices(xScaled, tess_j_star, dim_j_star, metric)
-
-      residualsOutput <- calculateResiduals(
-        y = yScaled,
-        j = j,
-        SumOfAllTess = sumOfAllTess,
-        Pred = pred,
-        lastTessPred = lastTessPred,
-        indexes = indexes,
-        indexesStar = indexesStar,
-        num_centres_new = nrow(tess_j_star)
-      )
-
-      rIjOld <- residualsOutput[[1]]
-      nIjOld <- residualsOutput[[2]]
-      rIjNew <- residualsOutput[[3]]
-      nIjNew <- residualsOutput[[4]]
-      sumOfAllTess <- residualsOutput[[5]]
-
-      if (!any(nIjNew == 0)) {
-        # Call the acceptanceProbability function
-        logAcceptanceProb <- acceptanceProbability(
-          rIjOld, nIjOld,
-          rIjNew, nIjNew,
-          tess_j_star, dim_j_star,
-          SigmaSquared[i],
-          modification,
-          SigmaSquaredMu,
-          Omega,
-          LambdaRate,
-          NumCovariates
-        )
-
-        if (log(runif(n = 1)) < logAcceptanceProb) {
-          # Accept proposal: update lists IN-PLACE
-          tess[[j]] <- tess_j_star
-          dim[[j]] <- dim_j_star
-          currentIndices[[j]] <- indexesStar
-
-          pred[[j]] <- sampleMuValues(
-            j, tess,
-            rIjNew, nIjNew,
-            SigmaSquaredMu,
-            SigmaSquared[i]
-          )
-          lastTessPred <- pred[[j]][indexesStar]
-        } else {
-          # Reject proposal
-          pred[[j]] <- sampleMuValues(
-            j, tess, rIjOld, nIjOld,
-            SigmaSquaredMu, SigmaSquared[i]
-          )
-          lastTessPred <- pred[[j]][indexes]
-        }
-      } else {
-        # Reject proposal (empty cell)
-        pred[[j]] <- sampleMuValues(
-          j, tess, rIjOld, nIjOld,
-          SigmaSquaredMu, SigmaSquared[i]
-        )
-        lastTessPred <- pred[[j]][indexes]
-      }
-
-      if (j == m) {
-        sumOfAllTess <- sumOfAllTess + lastTessPred
-      }
-    }
-
-    if (i > mcmcBurnIn && (i - mcmcBurnIn) %% thinning == 0) {
-      # vectors that hold the predictions for each iteration after burn in.
-      predictionMatrix[, (i - mcmcBurnIn) / thinning] <- sumOfAllTess
-    }
-
-    # Store the posterior samples
-    if (numPosteriorSamplesToStore > 0 &&
-      i > mcmcBurnIn &&
-      (i - mcmcBurnIn) %% thinning == 0) {
-      # Store the current state of tess, dim, pred, sigma
-      outputPosteriorTess[[currentStorageIdx]] <- tess
-      outputPosteriorDim[[currentStorageIdx]] <- dim
-      outputPosteriorPred[[currentStorageIdx]] <- pred
-      outputPosteriorSigma[currentStorageIdx] <- SigmaSquared[i]
-      currentStorageIdx <- currentStorageIdx + 1
-    }
-  } # End of MCMC Loop
-
-  # Close any remaining progress bar
-  if (showProgress) {
-    if (!is.null(pbar_sampling)) {
-      close(pbar_sampling)
-      cat("\n")
-    } else if (!is.null(pbar_burnin)) {
-      close(pbar_burnin)
-      cat("\n")
-    }
-    cat("MCMC sampling completed.\n\n")
-  }
+  posteriorSamples <- ncol(predictionMatrix)
 
   # Finding the mean of the prediction over the iterations and then unscaling
   # the predictions.
-  meanYhat <- (rowSums(predictionMatrix) / (posteriorSamples)) * yRange +
-    yCentre
+  meanYhat <- if (posteriorSamples > 0) {
+    (rowSums(predictionMatrix) / posteriorSamples) * yRange + yCentre
+  } else {
+    rep(yCentre, length(y))
+  }
 
   # Create and return the AddiVortes object
   new_AddiVortes(

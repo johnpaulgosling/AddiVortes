@@ -1,5 +1,14 @@
 # AddiVortes News
 
+## AddiVortes 0.6.0
+
+* Consolidated model fitting into a single C++ call (`addi_vortes_mcmc_cpp`).
+  The complete MCMC loop — sigma sampling, tessellation proposals, cell-index
+  assignment, residual aggregation, acceptance-probability evaluation, and mu
+  sampling — now runs entirely in C++, eliminating the per-iteration R↔C++
+  overhead that was present in previous versions.
+* The `AddiVortes` class and all associated S3 methods are unchanged.
+
 ## AddiVortes 0.5.4
 
 * Added data to package to help with vignettes and testing.
