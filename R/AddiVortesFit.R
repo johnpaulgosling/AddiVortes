@@ -367,7 +367,6 @@ predict.AddiVortes <- function(object, newdata,
     xNewScaled[, binaryCols] <- newdata[, binaryCols]
   }
 
-  mTessellations <- length(posteriorTessSamples[[1]])
   nObs <- nrow(xNewScaled)
 
   # --- Parallel set-up ---
@@ -405,17 +404,16 @@ predict.AddiVortes <- function(object, newdata,
   prediction_list <- pbapply::pblapply(
     X = 1:numStoredSamples,
     FUN = function(sIdx) {
-      current_tess <- posteriorTessSamples[[sIdx]]
-      current_dim <- posteriorDimSamples[[sIdx]]
-      current_pred <- posteriorPredSamples[[sIdx]]
-
-      # Get predictions for each tessellation in current posterior sample
-      # and accumulate directly to avoid large temporary allocations.
-      model_predictions <- numeric(nObs)
-      for (j in seq_len(mTessellations)) {
-        NewTessIndexes <- cellIndices(xNewScaled, current_tess[[j]], current_dim[[j]], object$metric)
-        model_predictions <- model_predictions + current_pred[[j]][NewTessIndexes]
-      }
+      # Collapse all m tessellations into a single C++ call — eliminates the
+      # R-level inner loop and per-tessellation matrix-padding overhead.
+      model_predictions <- .Call(
+        "predict_sample_cpp",
+        xNewScaled,
+        posteriorTessSamples[[sIdx]],
+        posteriorDimSamples[[sIdx]],
+        posteriorPredSamples[[sIdx]],
+        object$metric
+      )
 
       # Add Gaussian noise for prediction intervals when computing quantiles
       if (interval == "prediction" && type == "quantile") {

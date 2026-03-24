@@ -932,4 +932,87 @@ extern "C" {
     return result;
   }
 
+  // ---------------------------------------------------------------------------
+  // predict_sample_cpp
+  // ---------------------------------------------------------------------------
+  // Compute prediction contributions for ONE posterior sample across all m
+  // tessellations, returning an n-element double vector (sum over j).
+  //
+  // This replaces the R-level inner loop:
+  //   for (j in seq_len(m)) {
+  //     idx <- cellIndices(query, tess[[j]], dim[[j]], metric)
+  //     result <- result + pred[[j]][idx]
+  //   }
+  // avoiding m separate R→C++ transitions and the per-call nC×p matrix padding
+  // done by cellIndices.
+  //
+  // Arguments:
+  //   query_sexp    — n × p double matrix (scaled new-data)
+  //   tess_list     — list[m] of nCj×dj matrices (active dims only, 1-based)
+  //   dim_list      — list[m] of integer vectors  (1-based active dim indices)
+  //   pred_list     — list[m] of double vectors   (mu values, one per centre)
+  //   metric_sexp   — integer vector length p (0=Euclidean, 1=Spherical)
+  //
+  // Returns: REALSXP vector of length n.
+  SEXP predict_sample_cpp(
+      SEXP query_sexp,
+      SEXP tess_list,
+      SEXP dim_list,
+      SEXP pred_list,
+      SEXP metric_sexp) {
+
+    const double* query = REAL(query_sexp);
+    int n = Rf_nrows(query_sexp);
+    int p = Rf_ncols(query_sexp);
+    int m = (int)Rf_length(tess_list);
+
+    int* metric_ptr = INTEGER(metric_sexp);
+    std::vector<int> metric(metric_ptr, metric_ptr + p);
+
+    // Pre-compute Euclidean/Spherical bookkeeping (mirrors knn1_internal).
+    int nE = n_elem(0, metric);
+    int nS = n_elem(1, metric);
+    std::vector<int> coind(p);
+    {
+      int cE = 0, cS = 0;
+      for (int i = 0; i < p; i++) {
+        if (metric[i] == 0) { coind[i] = cE++; }
+        else                 { coind[i] = cS++; }
+      }
+    }
+
+    // Allocate result vector (zero-initialised).
+    SEXP result_sexp = PROTECT(Rf_allocVector(REALSXP, n));
+    double* result = REAL(result_sexp);
+    for (int i = 0; i < n; i++) result[i] = 0.0;
+
+    // Scratch buffer for nearest-centre indices (pre-sized once).
+    std::vector<int> idx(n);
+
+    for (int j = 0; j < m; j++) {
+      SEXP t_j = VECTOR_ELT(tess_list, j);
+      int nCj = Rf_nrows(t_j);
+      int dj  = Rf_ncols(t_j);
+      const double* centres = REAL(t_j);
+
+      SEXP d_j = VECTOR_ELT(dim_list, j);
+      int* dim_ptr = INTEGER(d_j);
+      std::vector<int> dim1(dim_ptr, dim_ptr + dj);  // 1-based
+
+      SEXP p_j = VECTOR_ELT(pred_list, j);
+      const double* pred = REAL(p_j);
+
+      // Find nearest centre for every observation using knn1_internal.
+      knn1_internal(idx, query, n, p, centres, nCj, dj, dim1, metric, coind, nE, nS);
+
+      // Accumulate mu values.
+      for (int obs = 0; obs < n; obs++) {
+        result[obs] += pred[idx[obs]];
+      }
+    }
+
+    UNPROTECT(1);
+    return result_sexp;
+  }
+
 } // extern "C" (second block)
