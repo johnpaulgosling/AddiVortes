@@ -702,6 +702,9 @@ static ProposalResult propose_internal(
     r.mod = "AC";
     r.tess = tess_j;
     for (int i = 0; i < d_j; i++) {
+      // NOTE: mus/sd are indexed by local position i, and metric is checked
+      // using i rather than the global covariate index dim_j[i]-1.
+      // This mirrors the original propose_tessellation_cpp behaviour exactly.
       new_val = mus[i] + norm_rand() * sd[i];
       if (metric[i] == 1)
         if (i == (int)sphere_index.back())
@@ -722,7 +725,7 @@ static ProposalResult propose_internal(
     r.tess = new_tess; r.nC = nC - 1;
 
   } else if (prand < 0.9 || d_j == p) {
-    // Change Centre
+    // Change Centre — same local-index convention as propose_tessellation_cpp
     int ci = (int)(unif_rand() * nC);
     for (int col = 0; col < d_j; col++) {
       new_val = mus[col] + norm_rand() * sd[col];
@@ -733,7 +736,7 @@ static ProposalResult propose_internal(
     }
 
   } else {
-    // Swap Dimension
+    // Swap Dimension — same local-index convention as propose_tessellation_cpp
     r.mod = "Swap";
     int swap_idx = (int)(unif_rand() * d_j);
     int new_dim;
