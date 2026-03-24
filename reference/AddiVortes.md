@@ -131,7 +131,7 @@ fit <- AddiVortes(y, x, m = 5, totalMCMCIter = 50, mcmcBurnIn = 10)
 # Larger example with categorical covariates (d=2 and d=3) and a test set
 set.seed(456)
 n_train <- 200
-n_test  <- 50
+n_test <- 50
 x_train <- data.frame(
   x1   = rnorm(n_train),
   x2   = runif(n_train),
@@ -140,8 +140,10 @@ x_train <- data.frame(
 )
 y_train <- x_train$x1 + ifelse(x_train$grp2 == "B", 1, 0) + rnorm(n_train, sd = 0.5)
 
-fit2 <- AddiVortes(y_train, x_train, m = 10, totalMCMCIter = 200, mcmcBurnIn = 50,
-                   catScaling = 1, showProgress = FALSE)
+fit2 <- AddiVortes(y_train, x_train,
+  m = 10, totalMCMCIter = 200, mcmcBurnIn = 50,
+  catScaling = 1, showProgress = FALSE
+)
 
 x_test <- data.frame(
   x1   = rnorm(n_test),

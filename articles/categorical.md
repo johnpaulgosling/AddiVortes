@@ -290,7 +290,7 @@ preds_cs2 <- predict(fit_cs2, x_test, showProgress = FALSE)
 cat("Test RMSE (catScaling = 1):", round(rmse_test, 3), "\n")
 #> Test RMSE (catScaling = 1): 2.883
 cat("Test RMSE (catScaling = 2):", round(sqrt(mean((y_test - preds_cs2)^2)), 3), "\n")
-#> Test RMSE (catScaling = 2): 2.955
+#> Test RMSE (catScaling = 2): 2.935
 ```
 
 In this example, the true response has substantial category effects (up

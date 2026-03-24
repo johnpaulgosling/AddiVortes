@@ -11,7 +11,7 @@ MCMC traces for sigma, and tessellation complexity over iterations."></head><bod
 
     <a class="navbar-brand me-2" href="../index.html">AddiVortes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -122,8 +122,10 @@ If not provided, the method will attempt to extract it from the model object.</p
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, x_train <span class="op">=</span> <span class="va">x_train_data</span>, y_train <span class="op">=</span> <span class="va">y_train_data</span>, which <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># With custom sigma trace</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, x_train <span class="op">=</span> <span class="va">x_train_data</span>, y_train <span class="op">=</span> <span class="va">y_train_data</span>, </span></span>
-<span class="r-in"><span>     sigma_trace <span class="op">=</span> <span class="va">my_sigma_samples</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>,</span></span>
+<span class="r-in"><span>  x_train <span class="op">=</span> <span class="va">x_train_data</span>, y_train <span class="op">=</span> <span class="va">y_train_data</span>,</span></span>
+<span class="r-in"><span>  sigma_trace <span class="op">=</span> <span class="va">my_sigma_samples</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

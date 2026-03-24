@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">AddiVortes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,7 +62,7 @@
                         <h4 data-toc-skip class="author">Andy Iskauskas
 and John Paul Gosling</h4>
             
-            <h4 data-toc-skip class="date">2026-03-23</h4>
+            <h4 data-toc-skip class="date">2026-03-24</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/johnpaulgosling/AddiVortes/blob/main/vignettes/spherical.Rmd" class="external-link"><code>vignettes/spherical.Rmd</code></a></small>
       <div class="d-none name"><code>spherical.Rmd</code></div>
@@ -192,7 +192,7 @@ cells.</p>
 <span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"In-sample RMSE (spherical metric):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">fit_sph</span><span class="op">$</span><span class="va">inSampleRmse</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; In-sample RMSE (spherical metric): 1.32</span></span></code></pre></div>
+<span><span class="co">#&gt; In-sample RMSE (spherical metric): 1.284</span></span></code></pre></div>
 <p>For comparison, we fit an identical model using the default
 <strong>Euclidean</strong> metric. This model treats latitude and
 longitude as ordinary continuous variables and will not handle the
@@ -209,7 +209,7 @@ wrap-around near ±π correctly.</p>
 <span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"In-sample RMSE (Euclidean metric):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">fit_euc</span><span class="op">$</span><span class="va">inSampleRmse</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; In-sample RMSE (Euclidean metric): 1.333</span></span></code></pre></div>
+<span><span class="co">#&gt; In-sample RMSE (Euclidean metric): 1.377</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="out-of-sample-evaluation">5. Out-of-Sample Evaluation<a class="anchor" aria-label="anchor" href="#out-of-sample-evaluation"></a>
@@ -236,9 +236,9 @@ highlight where the Euclidean metric is most likely to struggle.</p>
 <span><span class="va">rmse_euc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">y_test</span> <span class="op">-</span> <span class="va">preds_euc</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Test RMSE — spherical metric:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">rmse_sph</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Test RMSE — spherical metric: 2.187</span></span>
+<span><span class="co">#&gt; Test RMSE — spherical metric: 5.536</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Test RMSE — Euclidean metric:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">rmse_euc</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Test RMSE — Euclidean metric: 2.232</span></span></code></pre></div>
+<span><span class="co">#&gt; Test RMSE — Euclidean metric: 4.82</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="visualising-predictions">6. Visualising Predictions<a class="anchor" aria-label="anchor" href="#visualising-predictions"></a>
