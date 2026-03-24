@@ -2,6 +2,7 @@
 % Please edit documentation in R/AddiVortes-package.R
 \docType{package}
 \name{AddiVortes-package}
+\alias{AddiVortes}
 \alias{AddiVortes-package}
 \title{AddiVortes: Bayesian Additive Voronoi Tessellations for Machine Learning}
 \description{

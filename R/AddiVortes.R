@@ -150,7 +150,7 @@ AddiVortes <- function (y, x, m = 200, totalMCMCIter = 1200, mcmcBurnIn = 200,
     yRange = yRange, 
     inSampleRmse = sqrt(mean((y - meanYhat)^2))
   )
-  class(final_result) <- "AddiVortes"
+  class(final_result) <- "AddiVortesFit"
   
   return(final_result)
 }

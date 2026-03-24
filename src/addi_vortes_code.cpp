@@ -15,14 +15,15 @@
 #include <R_ext/Utils.h>
 
 namespace {
-bool in_vector(int value, const std::vector<int>& vec) {
-  return std::find(vec.begin(), vec.end(), value) != vec.end();
-}
+  
+  bool in_vector(int value, const std::vector<int>& vec) {
+    return std::find(vec.begin(), vec.end(), value) != vec.end();
+  }
   
   double calc_acceptance_cpp(const std::vector<double>& rIjOld, const std::vector<int>& nIjOld,
                              const std::vector<double>& rIjNew, const std::vector<int>& nIjNew,
                              int old_centres, int new_centres, int d_old, int d_new,
-                             double sigma2, std::string mod, double sigma2mu, double omega, double lambda, int p) {
+                             double sigma2, const std::string& mod, double sigma2mu, double omega, double lambda, int p) {
     
     double prob_eps = 1e-10;
     double prob = fmin(1.0 - prob_eps, fmax(0.0, omega / p));
@@ -102,6 +103,17 @@ bool in_vector(int value, const std::vector<int>& vec) {
     double rate = (nu * lambda + sse) / 2.0;
     return 1.0 / rgamma(shape, 1.0 / rate);
   }
+  
+  std::vector<double> transpose_to_row_major(const double* col_major_data, int rows, int cols) {
+    std::vector<double> row_major(rows * cols);
+    for (int r = 0; r < rows; ++r) {
+      for (int c = 0; c < cols; ++c) {
+        row_major[r * cols + c] = col_major_data[r + c * rows];
+      }
+    }
+    return row_major;
+  }
+  
 }
 
 extern "C" {
@@ -654,5 +666,95 @@ extern "C" {
     
     UNPROTECT(14);
     return return_list;
+  }
+  
+  SEXP knnx_index_predict_cpp(SEXP tess_sexp, SEXP query_sexp, SEXP k_sexp, SEXP dim_sexp) {
+    
+    double* p_tess = REAL(tess_sexp);
+    double* p_query = REAL(query_sexp);
+    int k = INTEGER(k_sexp)[0];
+    int* dim_p = INTEGER(dim_sexp);
+    
+    int tess_rows = Rf_nrows(tess_sexp);
+    int tess_cols = Rf_ncols(tess_sexp);
+    int query_rows = Rf_nrows(query_sexp);
+    int query_cols = Rf_ncols(query_sexp);
+    
+    if (tess_cols != query_cols) {
+      Rf_error("Dimensions of tess and query matrices must match");
+    }
+    if (k <= 0 || k > tess_rows) {
+      Rf_error("k must be positive and not greater than number of reference points");
+    }
+    
+    int n_dims = Rf_length(dim_sexp);
+    std::vector<int> active_dim_idx;
+    active_dim_idx.reserve(n_dims);
+    std::vector<char> active_dim_mask(query_cols, 0);
+    
+    for (int i = 0; i < n_dims; ++i) {
+      int d0 = dim_p[i] - 1;
+      if (d0 < 0 || d0 >= query_cols) {
+        Rf_error("Values in dim must be valid 1-based column indices");
+      }
+      if (!active_dim_mask[d0]) {
+        active_dim_mask[d0] = 1;
+        active_dim_idx.push_back(d0);
+      }
+    }
+    
+    std::vector<double> query_row_major = transpose_to_row_major(p_query, query_rows, query_cols);
+    std::vector<double> tess_row_major = transpose_to_row_major(p_tess, tess_rows, tess_cols);
+    
+    SEXP result;
+    PROTECT(result = Rf_allocMatrix(INTSXP, query_rows, k));
+    int* p_result = INTEGER(result);
+    
+    if (k == 1) {
+      for (int q = 0; q < query_rows; ++q) {
+        double min_dist = R_PosInf;
+        int best_idx = 0;
+        
+        for (int t = 0; t < tess_rows; ++t) {
+          double dval = 0.0;
+          for (size_t i = 0; i < active_dim_idx.size(); ++i) {
+            int d = active_dim_idx[i];
+            double diff = query_row_major[q * query_cols + d] - tess_row_major[t * tess_cols + d];
+            dval += diff * diff;
+            if (dval >= min_dist) {
+              break;
+            }
+          }
+          
+          if (dval < min_dist) {
+            min_dist = dval;
+            best_idx = t;
+          }
+        }
+        p_result[q] = best_idx + 1;
+      }
+    } else {
+      std::vector<std::pair<double, int>> distances(tess_rows);
+      for (int q = 0; q < query_rows; ++q) {
+        for (int t = 0; t < tess_rows; ++t) {
+          double dval = 0.0;
+          for (size_t i = 0; i < active_dim_idx.size(); ++i) {
+            int d = active_dim_idx[i];
+            double diff = query_row_major[q * query_cols + d] - tess_row_major[t * tess_cols + d];
+            dval += diff * diff;
+          }
+          distances[t].first = dval;
+          distances[t].second = t + 1; 
+        }
+        
+        std::partial_sort(distances.begin(), distances.begin() + k, distances.end());
+        for (int i = 0; i < k; ++i) {
+          p_result[q + i * query_rows] = distances[i].second;
+        }
+      }
+    }
+    
+    UNPROTECT(1);
+    return result;
   }
 }
