@@ -12,6 +12,7 @@
 // 3. R headers last
 #include <R.h>
 #include <Rinternals.h>
+#include <Rmath.h>        // For dbinom(), dpois(), rgamma()
 #include <R_ext/Random.h> // For unif_rand() and norm_rand()
 
 // Helper function to check if a value is in a vector
@@ -587,31 +588,31 @@ static double log_acceptance_prob(
   double acc = log_lik;
 
   if (mod == "AD") {
-    double log_ts_tr = Rf_dbinom(d_new - 1, p - 1, prob, 1)
-                     - Rf_dbinom(d_new - 2, p - 1, prob, 1)
+    double log_ts_tr = dbinom(d_new - 1, p - 1, prob, 1)
+                     - dbinom(d_new - 2, p - 1, prob, 1)
                      - log((double)d_new);
     acc += log_ts_tr;
     if (d_new == 1)     acc += log(0.5);
     else if (d_new == p - 1) acc += log(2.0);
 
   } else if (mod == "RD") {
-    double log_ts_tr = Rf_dbinom(d_new - 1, p, prob, 1)
-                     - Rf_dbinom(d_new,     p, prob, 1)
+    double log_ts_tr = dbinom(d_new - 1, p, prob, 1)
+                     - dbinom(d_new,     p, prob, 1)
                      + log((double)(d_new + 1));
     acc += log_ts_tr;
     if (d_new == p) acc += log(0.5);
     else if (d_new == 2) acc += log(2.0);
 
   } else if (mod == "AC") {
-    double log_ts_tr = Rf_dpois(nC_new - 1, lambdaRate, 1)
-                     - Rf_dpois(nC_new - 2, lambdaRate, 1)
+    double log_ts_tr = dpois(nC_new - 1, lambdaRate, 1)
+                     - dpois(nC_new - 2, lambdaRate, 1)
                      - log((double)nC_new);
     acc += log_ts_tr + 0.5 * log(sigmaSquared);
     if (nC_new == 1) acc += log(0.5);
 
   } else if (mod == "RC") {
-    double log_ts_tr = Rf_dpois(nC_new - 1, lambdaRate, 1)
-                     - Rf_dpois(nC_new,     lambdaRate, 1)
+    double log_ts_tr = dpois(nC_new - 1, lambdaRate, 1)
+                     - dpois(nC_new,     lambdaRate, 1)
                      + log((double)(nC_new + 1));
     acc += log_ts_tr - 0.5 * log(sigmaSquared);
     if (nC_new == 2) acc += log(2.0);
@@ -932,7 +933,7 @@ extern "C" {
       }
       double shape = (nu + n) / 2.0;
       double rate  = (nu * lambda + sum_sq) / 2.0;
-      sigmaSquared = 1.0 / Rf_rgamma(shape, 1.0 / rate);
+      sigmaSquared = 1.0 / rgamma(shape, 1.0 / rate);
 
       for (int j = 0; j < m; j++) {
 
