@@ -241,51 +241,6 @@ extern "C" {
 // Internal helpers for the unified MCMC function
 // =============================================================================
 
-// Find the nearest centre (k=1 NN) for every observation.
-// obs_data : n x p  column-major double array
-// centres  : nC x d column-major double array (active dims only)
-// dim1     : d active dimension indices, 1-BASED
-// Returns  : n vector of 0-based centre indices
-static std::vector<int> knn1_internal(
-    const double* obs_data, int n, int p,
-    const double* centres, int nC, int d,
-    const std::vector<int>& dim1,
-    const std::vector<int>& metric,
-    const std::vector<int>& coind,
-    int nE, int nS) {
-
-  std::vector<int> result(n, 0);
-  if (nC == 1) return result;
-
-  const bool hasE = (nE > 0), hasS = (nS > 0);
-  std::vector<double> q_E(nE), q_S(nS), t_E(nE), t_S(nS);
-
-  for (int obs = 0; obs < n; obs++) {
-    for (int g = 0; g < p; g++) {
-      double v = obs_data[obs + g * n];
-      if (metric[g] == 0) q_E[coind[g]] = v;
-      else                 q_S[coind[g]] = v;
-    }
-    double best = 1e300;
-    int best_c = 0;
-    for (int c = 0; c < nC; c++) {
-      if (hasE) t_E = q_E;
-      if (hasS) t_S = q_S;
-      for (int di = 0; di < d; di++) {
-        int g = dim1[di] - 1;  // 0-based global index
-        if (metric[g] == 0) t_E[coind[g]] = centres[c + di * nC];
-        else                 t_S[coind[g]] = centres[c + di * nC];
-      }
-      double dist = 0.0;
-      if (hasS) dist += spherical_distance(q_S, t_S);
-      if (hasE) dist += euclidean_distance(q_E, t_E);
-      if (dist < best) { best = dist; best_c = c; }
-    }
-    result[obs] = best_c;
-  }
-  return result;
-}
-
 // Aggregate partial residuals R_j into per-cell sums and counts.
 static void aggregate_residuals(
     const std::vector<double>& R_j,
@@ -389,6 +344,13 @@ struct ProposalResult {
   int nC;
   std::vector<int> dim;  // 1-based covariate indices
   std::string mod;
+  int mod_idx;  // 0-based index; meaning depends on mod type:
+                //   AD:     last position in new dim array (= old d_j; new dim appended)
+                //   RD:     position of removed dim in old dim array
+                //   AC:     row index of new centre (= old nC, appended last)
+                //   RC:     row index of removed centre
+                //   Change: row index of changed centre
+                //   Swap:   column position of swapped dimension
 };
 
 static ProposalResult propose_internal(
@@ -400,7 +362,7 @@ static ProposalResult propose_internal(
     const std::vector<int>& sphere_index) {  // 0-based spherical dim indices
 
   ProposalResult r;
-  r.tess = tess_j; r.nC = nC; r.dim = dim_j; r.mod = "Change";
+  r.tess = tess_j; r.nC = nC; r.dim = dim_j; r.mod = "Change"; r.mod_idx = 0;
 
   double prand = unif_rand();
   double new_val;
@@ -412,6 +374,7 @@ static ProposalResult propose_internal(
     do { new_dim = (int)(unif_rand() * p) + 1; }
     while (in_vector(new_dim, r.dim));
     r.dim.push_back(new_dim);
+    r.mod_idx = d_j;  // 0-based position of new dim in dim-star (last column)
 
     std::vector<double> new_tess(nC * (d_j + 1));
     for (int row = 0; row < nC; row++) {
@@ -429,6 +392,7 @@ static ProposalResult propose_internal(
     // Remove Dimension
     r.mod = "RD";
     int rm_idx = (int)(unif_rand() * d_j);
+    r.mod_idx = rm_idx;  // 0-based position of removed dim in old dim
     r.dim.erase(r.dim.begin() + rm_idx);
 
     std::vector<double> new_tess(nC * (d_j - 1));
@@ -445,6 +409,7 @@ static ProposalResult propose_internal(
   } else if (prand < 0.6 || (prand < 0.8 && nC == 1)) {
     // Add Centre
     r.mod = "AC";
+    r.mod_idx = nC;  // 0-based row index of new centre (= old nC, appended last)
     r.tess = tess_j;
     for (int i = 0; i < d_j; i++) {
       // NOTE: mus/sd are indexed by local position i, and metric is checked
@@ -461,6 +426,7 @@ static ProposalResult propose_internal(
     // Remove Centre
     r.mod = "RC";
     int rm_row = (int)(unif_rand() * nC);
+    r.mod_idx = rm_row;  // 0-based row index of removed centre
     std::vector<double> new_tess;
     new_tess.reserve((nC - 1) * d_j);
     for (int col = 0; col < d_j; col++)
@@ -471,6 +437,7 @@ static ProposalResult propose_internal(
   } else if (prand < 0.9 || d_j == p) {
     // Change Centre — uses local column index convention
     int ci = (int)(unif_rand() * nC);
+    r.mod_idx = ci;  // 0-based row index of changed centre
     for (int col = 0; col < d_j; col++) {
       new_val = mus[col] + norm_rand() * sd[col];
       if (metric[col] == 1)
@@ -483,6 +450,7 @@ static ProposalResult propose_internal(
     // Swap Dimension — uses local column index convention
     r.mod = "Swap";
     int swap_idx = (int)(unif_rand() * d_j);
+    r.mod_idx = swap_idx;  // 0-based column position of swapped dimension
     int new_dim;
     do { new_dim = (int)(unif_rand() * p) + 1; }
     while (in_vector(new_dim, r.dim));
@@ -497,6 +465,275 @@ static ProposalResult propose_internal(
   }
 
   return r;
+}
+
+// =============================================================================
+// Incremental squared-distance helpers
+// =============================================================================
+
+// Compute distances from all n observations to one tessellation centre.
+// center_vals[di] is the centre value at local dim position di
+// (global covariate index = dim1[di] - 1).
+// out must be pre-allocated to n elements.
+static void dist_all_obs_to_one_center(
+    const double* xScaled, int n, int p,
+    const std::vector<double>& center_vals, int d,
+    const std::vector<int>& dim1,  // 1-based, length d
+    const std::vector<int>& metric,
+    const std::vector<int>& coind, int nE, int nS,
+    double* out) {
+
+  const bool hasE = (nE > 0), hasS = (nS > 0);
+  std::vector<double> q_E(nE), q_S(nS), t_E(nE), t_S(nS);
+
+  for (int obs = 0; obs < n; obs++) {
+    for (int g = 0; g < p; g++) {
+      double v = xScaled[obs + g * n];
+      if (metric[g] == 0) q_E[coind[g]] = v;
+      else                 q_S[coind[g]] = v;
+    }
+    if (hasE) t_E = q_E;
+    if (hasS) t_S = q_S;
+    for (int di = 0; di < d; di++) {
+      int g = dim1[di] - 1;
+      if (metric[g] == 0) t_E[coind[g]] = center_vals[di];
+      else                 t_S[coind[g]] = center_vals[di];
+    }
+    double dist = 0.0;
+    if (hasS) dist += spherical_distance(q_S, t_S);
+    if (hasE) dist += euclidean_distance(q_E, t_E);
+    out[obs] = dist;
+  }
+}
+
+// Compute the full n×nC squared-distance matrix (column-major: obs varies fast).
+static std::vector<double> compute_sqdist_full(
+    const double* xScaled, int n, int p,
+    const std::vector<double>& tess, int nC, int d,
+    const std::vector<int>& dim1,
+    const std::vector<int>& metric,
+    const std::vector<int>& coind, int nE, int nS) {
+
+  std::vector<double> result(n * nC);
+  std::vector<double> cv(d);
+  for (int c = 0; c < nC; c++) {
+    for (int di = 0; di < d; di++) cv[di] = tess[c + di * nC];
+    dist_all_obs_to_one_center(xScaled, n, p, cv, d, dim1,
+                               metric, coind, nE, nS,
+                               &result[c * n]);
+  }
+  return result;
+}
+
+// Compute the updated n×nC_new squared-distance matrix using an incremental
+// strategy based on the modification type.  Falls back to a full recompute
+// when a spherical dimension is added, removed, or swapped.
+static std::vector<double> update_sqdist_incremental(
+    const double* xScaled, int n, int p,
+    const std::vector<double>& old_sqdist, int nC_old,
+    const std::vector<double>& old_tess,
+    const std::vector<int>& old_dim,   // 1-based, length d_old
+    const std::vector<double>& new_tess, int nC_new,
+    const std::vector<int>& new_dim,   // 1-based, length d_new
+    const std::string& mod, int mod_idx,
+    const std::vector<int>& metric,
+    const std::vector<int>& coind, int nE, int nS) {
+
+  int d_new = (int)new_dim.size();
+  std::vector<double> result(n * nC_new);
+
+  if (mod == "RC") {
+    // Drop column mod_idx; copy all other columns unchanged.
+    int cur_col = 0;
+    for (int c = 0; c < nC_old; c++) {
+      if (c != mod_idx) {
+        std::memcpy(&result[cur_col * n], &old_sqdist[c * n],
+                    n * sizeof(double));
+        cur_col++;
+      }
+    }
+
+  } else if (mod == "AC") {
+    // Copy existing columns; compute one new column for the appended centre.
+    std::memcpy(result.data(), old_sqdist.data(),
+                n * nC_old * sizeof(double));
+    std::vector<double> cv(d_new);
+    for (int di = 0; di < d_new; di++)
+      cv[di] = new_tess[mod_idx + di * nC_new];
+    dist_all_obs_to_one_center(xScaled, n, p, cv, d_new, new_dim,
+                               metric, coind, nE, nS,
+                               &result[mod_idx * n]);
+
+  } else if (mod == "Change") {
+    // Copy all columns; recompute only the changed centre's column.
+    std::memcpy(result.data(), old_sqdist.data(),
+                n * nC_new * sizeof(double));
+    std::vector<double> cv(d_new);
+    for (int di = 0; di < d_new; di++)
+      cv[di] = new_tess[mod_idx + di * nC_new];
+    dist_all_obs_to_one_center(xScaled, n, p, cv, d_new, new_dim,
+                               metric, coind, nE, nS,
+                               &result[mod_idx * n]);
+
+  } else if (mod == "AD") {
+    // mod_idx is the 0-based position of the newly added dim in new_dim.
+    int new_g = new_dim[mod_idx] - 1;
+    if (metric[new_g] == 0) {
+      // Euclidean: add the new dimension's squared-diff to every cell.
+      for (int c = 0; c < nC_new; c++) {  // nC_new == nC_old
+        double cv = new_tess[c + mod_idx * nC_new];
+        for (int obs = 0; obs < n; obs++) {
+          double diff = xScaled[obs + new_g * n] - cv;
+          result[obs + c * n] = old_sqdist[obs + c * n] + diff * diff;
+        }
+      }
+    } else {
+      // Spherical dimension added: full recompute.
+      result = compute_sqdist_full(xScaled, n, p,
+                                   new_tess, nC_new, d_new, new_dim,
+                                   metric, coind, nE, nS);
+    }
+
+  } else if (mod == "RD") {
+    // mod_idx is the 0-based position of the removed dim in old_dim.
+    int rm_g = old_dim[mod_idx] - 1;
+    if (metric[rm_g] == 0) {
+      // Euclidean: subtract the removed dimension's squared-diff from every cell.
+      for (int c = 0; c < nC_new; c++) {  // nC_new == nC_old
+        double cv = old_tess[c + mod_idx * nC_old];
+        for (int obs = 0; obs < n; obs++) {
+          double diff = xScaled[obs + rm_g * n] - cv;
+          double v = old_sqdist[obs + c * n] - diff * diff;
+          result[obs + c * n] = (v < 0.0) ? 0.0 : v;
+        }
+      }
+    } else {
+      // Spherical dimension removed: full recompute.
+      result = compute_sqdist_full(xScaled, n, p,
+                                   new_tess, nC_new, d_new, new_dim,
+                                   metric, coind, nE, nS);
+    }
+
+  } else if (mod == "Swap") {
+    // mod_idx is the 0-based column position that was swapped.
+    int old_g = old_dim[mod_idx] - 1;
+    int new_g = new_dim[mod_idx] - 1;
+    if (metric[old_g] == 0 && metric[new_g] == 0) {
+      // Both Euclidean: subtract old contribution, add new contribution.
+      for (int c = 0; c < nC_new; c++) {  // nC_new == nC_old
+        double old_cv = old_tess[c + mod_idx * nC_old];
+        double new_cv = new_tess[c + mod_idx * nC_new];
+        for (int obs = 0; obs < n; obs++) {
+          double od = xScaled[obs + old_g * n] - old_cv;
+          double nd = xScaled[obs + new_g * n] - new_cv;
+          double v = old_sqdist[obs + c * n] - od * od + nd * nd;
+          result[obs + c * n] = (v < 0.0) ? 0.0 : v;
+        }
+      }
+    } else {
+      // Spherical dimension involved: full recompute.
+      result = compute_sqdist_full(xScaled, n, p,
+                                   new_tess, nC_new, d_new, new_dim,
+                                   metric, coind, nE, nS);
+    }
+
+  } else {
+    result = compute_sqdist_full(xScaled, n, p,
+                                 new_tess, nC_new, d_new, new_dim,
+                                 metric, coind, nE, nS);
+  }
+
+  return result;
+}
+
+// Full nearest-neighbour scan over a precomputed distance matrix.
+// Returns 0-based centre indices.
+static std::vector<int> nn_from_sqdist(
+    const std::vector<double>& sqdist, int n, int nC) {
+
+  std::vector<int> result(n, 0);
+  if (nC <= 1) return result;
+  for (int obs = 0; obs < n; obs++) {
+    double best = sqdist[obs];
+    int best_c = 0;
+    for (int c = 1; c < nC; c++) {
+      if (sqdist[obs + c * n] < best) {
+        best = sqdist[obs + c * n];
+        best_c = c;
+      }
+    }
+    result[obs] = best_c;
+  }
+  return result;
+}
+
+// Optimised nearest-neighbour search that exploits the modification type to
+// avoid a full scan where possible.  Returns 0-based centre indices.
+static std::vector<int> nn_incremental(
+    const std::vector<double>& new_sqdist, int n, int nC_new,
+    const std::vector<int>& old_idx, int nC_old,
+    const std::string& mod, int mod_idx) {
+
+  std::vector<int> result(n, 0);
+
+  if (nC_new == 0) return result;
+
+  if (mod == "AC") {
+    // New centre at mod_idx (== nC_old).  Only compare old NN vs new centre.
+    for (int obs = 0; obs < n; obs++) {
+      int ob = old_idx[obs];
+      result[obs] = (new_sqdist[obs + mod_idx * n] < new_sqdist[obs + ob * n])
+                    ? mod_idx : ob;
+    }
+
+  } else if (mod == "RC") {
+    // Centre mod_idx removed; centres above it shift down by one.
+    for (int obs = 0; obs < n; obs++) {
+      int ob = old_idx[obs];
+      if (ob == mod_idx) {
+        // Old NN was the removed centre: full scan.
+        double best = new_sqdist[obs];
+        int best_c = 0;
+        for (int c = 1; c < nC_new; c++) {
+          if (new_sqdist[obs + c * n] < best) {
+            best = new_sqdist[obs + c * n];
+            best_c = c;
+          }
+        }
+        result[obs] = best_c;
+      } else {
+        result[obs] = (ob > mod_idx) ? ob - 1 : ob;
+      }
+    }
+
+  } else if (mod == "Change") {
+    // Only centre mod_idx changed its values.
+    for (int obs = 0; obs < n; obs++) {
+      int ob = old_idx[obs];
+      if (ob == mod_idx) {
+        // Old NN was the changed centre; must rescan.
+        double best = new_sqdist[obs];
+        int best_c = 0;
+        for (int c = 1; c < nC_new; c++) {
+          if (new_sqdist[obs + c * n] < best) {
+            best = new_sqdist[obs + c * n];
+            best_c = c;
+          }
+        }
+        result[obs] = best_c;
+      } else {
+        // Old NN distance unchanged; only check if changed centre is now closer.
+        result[obs] = (new_sqdist[obs + mod_idx * n]
+                       < new_sqdist[obs + ob * n]) ? mod_idx : ob;
+      }
+    }
+
+  } else {
+    // AD, RD, Swap (and any fallback): all distances may have changed.
+    result = nn_from_sqdist(new_sqdist, n, nC_new);
+  }
+
+  return result;
 }
 
 extern "C" {
@@ -631,16 +868,17 @@ extern "C" {
     }
 
     // -------------------------------------------------------------------------
-    // 3. Initial sumOfAllTess and cell indices
+    // 3. Initial sumOfAllTess, cell indices, and squared-distance matrices
     // -------------------------------------------------------------------------
     std::vector<double> sumAllTess(n, 0.0);
-    // sumOfAllTess starts as the sum of pred[[j]][indices[[j]]] for all j
-    std::vector<std::vector<int>> curIdx(m);
+    std::vector<std::vector<int>>    curIdx(m);
+    std::vector<std::vector<double>> sqdist_j(m);
     for (int j = 0; j < m; j++) {
-      curIdx[j] = knn1_internal(
+      sqdist_j[j] = compute_sqdist_full(
         xScaled, n, p,
-        tess[j].data(), tess_nC[j], tess_d[j], dim_j[j],
+        tess[j], tess_nC[j], tess_d[j], dim_j[j],
         metric, coind, nE, nS);
+      curIdx[j] = nn_from_sqdist(sqdist_j[j], n, tess_nC[j]);
       for (int obs = 0; obs < n; obs++)
         sumAllTess[obs] += pred[j][curIdx[j][obs]];
     }
@@ -725,11 +963,19 @@ extern "C" {
           }
         }
 
-        // Cell assignments for proposed tessellation
-        std::vector<int> idxStar = knn1_internal(
+        // Cell assignments for proposed tessellation — incremental distance update
+        std::vector<double> newSqdist = update_sqdist_incremental(
           xScaled, n, p,
-          prop.tess.data(), prop.nC, (int)prop.dim.size(), prop.dim,
+          sqdist_j[j], tess_nC[j],
+          tess[j], dim_j[j],
+          prop.tess, prop.nC, prop.dim,
+          prop.mod, prop.mod_idx,
           metric, coind, nE, nS);
+
+        std::vector<int> idxStar = nn_incremental(
+          newSqdist, n, prop.nC,
+          curIdx[j], tess_nC[j],
+          prop.mod, prop.mod_idx);
 
         // Aggregate residuals for old and new tessellations
         std::vector<double> R_old, R_new;
@@ -761,6 +1007,7 @@ extern "C" {
           tess_d[j]  = (int)prop.dim.size();
           dim_j[j]   = prop.dim;
           curIdx[j]  = idxStar;
+          sqdist_j[j] = std::move(newSqdist);
           pred[j]    = sample_mu_internal(R_new, n_new, sigSqMu, sigmaSquared);
           for (int obs = 0; obs < n; obs++)
             lastTessPred[obs] = pred[j][idxStar[obs]];

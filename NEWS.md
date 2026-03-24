@@ -1,5 +1,24 @@
 # AddiVortes News
 
+## AddiVortes 0.6.1
+
+* Integrated the incremental squared-distance update strategy from the
+  `Local_distance_update_cpp_version` branch into `addi_vortes_mcmc_cpp`.
+  The MCMC loop now maintains a per-tessellation squared-distance matrix and
+  updates it incrementally on each proposal rather than recomputing all
+  distances from scratch.  For the most common moves (Add/Remove Centre,
+  Change Centre) this reduces the per-iteration cost from O(n × nC × d) to
+  O(n × d) or O(n × nC), yielding significant speed gains at modest centre
+  counts.
+* Spherical covariates (`metric = "S"`) are fully supported throughout the
+  incremental path: Add/Remove/Swap a spherical dimension falls back to a
+  full recompute (necessary because great-circle distance is not separable),
+  while all other moves use the fast incremental update with proper spherical
+  distance evaluation.
+* The R interface (`AddiVortes()`, `predict.AddiVortes()`, and all S3
+  methods), the registered C entry-point (`addi_vortes_mcmc_cpp`), and all
+  existing behaviour are unchanged.
+
 ## AddiVortes 0.6.0
 
 * Consolidated model fitting into a single C++ call (`addi_vortes_mcmc_cpp`).
