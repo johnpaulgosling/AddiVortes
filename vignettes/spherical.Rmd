@@ -29,20 +29,32 @@ Spherical data are observations whose locations lie on the surface of a sphere. 
 
 ### 2. Coordinate Convention
 
-`AddiVortes` expects spherical coordinates in **radians**, following this convention:
+`AddiVortes` expects spherical coordinates in **radians**. Degree values must be converted before fitting (multiply by `pi / 180`, e.g. `x_rad <- x_deg * pi / 180`). The convention is:
 
-- **Latitude-type dimensions** (all spherical dimensions except the last): values in [−π/2, π/2].
-- **Longitude / azimuthal dimension** (the *last* spherical column): values in [−π, π].
+- **Polar (latitude-type) dimensions** — all spherical columns except the last: values in [−π/2, π/2].
+- **Azimuthal (longitude) dimension** — the *last* spherical column: values in [−π, π].
 
-For a single-surface model (a globe), you need exactly two columns:
+For a standard globe model you need exactly two spherical columns, latitude first and longitude last:
 
 ```
 x <- cbind(latitude_rad, longitude_rad)
 ```
 
-with `metric = "S"`. The model will use the spherical (great-circle) distance between all pairs of tessellation centres and observations.
+with `metric = "S"`. The model uses the great-circle distance between all pairs of tessellation centres and observations.
 
-If your data combine spherical and non-spherical covariates, you can pass a vector of metric indicators, e.g. `metric = c(1, 1, 0)` for two spherical dimensions followed by one Euclidean dimension.
+#### Mixed metrics
+
+If your data contain both spherical and non-spherical covariates, pass a per-column vector of metric indicators. Use `"S"` (or `1`) for spherical columns and `"E"` (or `0`) for Euclidean columns. The length of the vector must equal the number of covariate columns. For example, a dataset with a Euclidean covariate in column 1, followed by latitude in column 2 and longitude in column 3:
+
+```r
+metric <- c("E", "S", "S")   # or equivalently c(0, 1, 1)
+```
+
+The model identifies the **last** `"S"` column (column 3 above) as the azimuthal dimension and all other `"S"` columns as polar dimensions, regardless of their position in the covariate matrix.
+
+#### Higher-dimensional spherical coordinates
+
+The great-circle distance formula generalises to n-dimensional spheres. If you have more than two spherical dimensions — for instance, a 3-sphere parameterised by two polar angles and one azimuthal angle — simply mark all relevant columns as `"S"`. The last spherical column is always treated as the azimuthal dimension (range [−π, π]); all preceding spherical columns are treated as polar (range [−π/2, π/2]).
 
 ### 3. Generating Synthetic Spherical Data
 
@@ -189,7 +201,8 @@ legend("topleft",
 ### 7. Summary of Key Points
 
 - Set `metric = "S"` (or `metric = "Spherical"`) to use the great-circle distance for **all** covariate columns.
-- For datasets that mix spherical and non-spherical covariates, pass a vector of 0s and 1s, e.g. `metric = c(1, 1, 0)` for two spherical dimensions and one Euclidean dimension.
-- Spherical coordinates must be in **radians**: latitude in [−π/2, π/2] and longitude in [−π, π].
-- The **last** spherical column is treated as the azimuthal (longitude) dimension; all other spherical columns are treated as polar (latitude) dimensions.
+- For datasets that mix spherical and non-spherical covariates, pass a per-column character or integer vector, e.g. `metric = c("S", "E", "S")` or `metric = c(1, 0, 1)`. The vector must have exactly one entry per covariate column.
+- Spherical coordinates must be in **radians**: polar (latitude-type) dimensions in [−π/2, π/2] and the azimuthal (longitude) dimension in [−π, π]. Convert from degrees with `x_rad <- x_deg * pi / 180`.
+- The **last** spherical column is treated as the azimuthal (longitude) dimension; all other spherical columns are treated as polar (latitude) dimensions. This convention applies regardless of how many spherical dimensions are present.
+- The great-circle distance formula generalises to n-dimensional spheres, so more than two spherical columns are supported.
 - The great-circle distance correctly handles wrap-around, so points near longitude ±π are recognised as neighbours.
