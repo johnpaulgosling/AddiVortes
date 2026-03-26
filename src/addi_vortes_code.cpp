@@ -511,6 +511,26 @@ static std::vector<int> knn1_internal(
   std::vector<int> result(n, 0);
   if (nC == 1) return result;
 
+  // Fast path: pure Euclidean — O(d) per (obs, centre), no vector allocation
+  if (nS == 0) {
+    for (int obs = 0; obs < n; obs++) {
+      double best = 1e300;
+      int best_c = 0;
+      for (int c = 0; c < nC; c++) {
+        double dist = 0.0;
+        for (int di = 0; di < d; di++) {
+          int g = dim1[di] - 1;
+          double diff = obs_data[obs + g * n] - centres[c + di * nC];
+          dist += diff * diff;
+        }
+        if (dist < best) { best = dist; best_c = c; }
+      }
+      result[obs] = best_c;
+    }
+    return result;
+  }
+
+  // General path: mixed or pure spherical
   const bool hasE = (nE > 0), hasS = (nS > 0);
   std::vector<double> q_E(nE), q_S(nS), t_E(nE), t_S(nS);
 
