@@ -15,13 +15,13 @@
 #include <R_ext/Utils.h>
 
 namespace {
+
+bool in_vector(int value, const std::vector<int>& vec) {
+  return std::find(vec.begin(), vec.end(), value) != vec.end();
+}
   
-  bool in_vector(int value, const std::vector<int>& vec) {
-    return std::find(vec.begin(), vec.end(), value) != vec.end();
-  }
-  
-  double calc_acceptance_cpp(const std::vector<double>& rIjOld, const std::vector<int>& nIjOld,
-                             const std::vector<double>& rIjNew, const std::vector<int>& nIjNew,
+  double calc_acceptance_cpp(const std::vector<double>& rIjOld, const std::vector<double>& denomOld,
+                             const std::vector<double>& rIjNew, const std::vector<double>& denomNew,
                              int old_centres, int new_centres, int d_old, int d_new,
                              double sigma2, const std::string& mod, double sigma2mu, double omega, double lambda, int p) {
     
@@ -31,16 +31,20 @@ namespace {
     double sum_log_old = 0.0, sum_log_new = 0.0;
     double sum_R2_old = 0.0, sum_R2_new = 0.0;
     
-    for(size_t i = 0; i < nIjOld.size(); ++i) {
-      double denom = nIjOld[i] * sigma2mu + sigma2;
-      sum_log_old += log(denom);
-      sum_R2_old += (rIjOld[i] * rIjOld[i]) / denom;
+    const double* __restrict__ p_rIjOld = rIjOld.data();
+    const double* __restrict__ p_dOld = denomOld.data();
+    
+    for(size_t i = 0; i < denomOld.size(); ++i) {
+      sum_log_old += log(p_dOld[i]);
+      sum_R2_old += (p_rIjOld[i] * p_rIjOld[i]) / p_dOld[i];
     }
     
-    for(size_t i = 0; i < nIjNew.size(); ++i) {
-      double denom = nIjNew[i] * sigma2mu + sigma2;
-      sum_log_new += log(denom);
-      sum_R2_new += (rIjNew[i] * rIjNew[i]) / denom;
+    const double* __restrict__ p_rIjNew = rIjNew.data();
+    const double* __restrict__ p_dNew = denomNew.data();
+    
+    for(size_t i = 0; i < denomNew.size(); ++i) {
+      sum_log_new += log(p_dNew[i]);
+      sum_R2_new += (p_rIjNew[i] * p_rIjNew[i]) / p_dNew[i];
     }
     
     double LogLikelihoodRatio = 0.5 * (sum_log_old - sum_log_new) +
@@ -80,20 +84,23 @@ namespace {
   }
   
   std::vector<double> sample_mu_cpp(int new_centres, const std::vector<double>& rIjNew, 
-                                    const std::vector<int>& nIjNew, double sigma2mu, double sigma2) {
+                                    const std::vector<double>& denomNew, double sigma2mu, double sigma2) {
     
     std::vector<double> new_mu(new_centres, 0.0);
+    const double* __restrict__ p_rIjNew = rIjNew.data();
+    const double* __restrict__ p_dNew = denomNew.data();
+    double* __restrict__ p_new_mu = new_mu.data();
+    
     for(int i = 0; i < new_centres; ++i) {
-      double denom = sigma2mu * nIjNew[i] + sigma2;
-      double mean = (sigma2mu * rIjNew[i]) / denom;
-      double var = (sigma2 * sigma2mu) / denom;
+      double mean = (sigma2mu * p_rIjNew[i]) / p_dNew[i];
+      double var = (sigma2 * sigma2mu) / p_dNew[i];
       double sd = sqrt(var);
-      new_mu[i] = norm_rand() * sd + mean;
+      p_new_mu[i] = norm_rand() * sd + mean;
     }
     return new_mu;
   }
   
-  double sample_sigma_squared_cpp(int n, double nu, double lambda, double* p_y, double* p_sum) {
+  double sample_sigma_squared_cpp(int n, double nu, double lambda, const double* __restrict__ p_y, const double* __restrict__ p_sum) {
     double sse = 0.0;
     for (int i = 0; i < n; ++i) {
       double diff = p_y[i] - p_sum[i];
@@ -104,30 +111,20 @@ namespace {
     return 1.0 / rgamma(shape, 1.0 / rate);
   }
   
-  std::vector<double> transpose_to_row_major(const double* col_major_data, int rows, int cols) {
-    std::vector<double> row_major(rows * cols);
-    for (int r = 0; r < rows; ++r) {
-      for (int c = 0; c < cols; ++c) {
-        row_major[r * cols + c] = col_major_data[r + c * rows];
-      }
-    }
-    return row_major;
-  }
-  
 }
 
 extern "C" {
   
   SEXP knnx_index_cpp(SEXP data_sexp, SEXP tess_sexp, SEXP dim_sexp, SEXP tessstar_sexp, SEXP k_sexp, SEXP dimstar_sexp, SEXP dist_sexp, SEXP modification_sexp, SEXP row_column_modified_sexp, SEXP old_idx_sexp) {
     
-    double* p_data = REAL(data_sexp);
-    double* p_tess = REAL(tess_sexp);
-    double* p_tessstar = REAL(tessstar_sexp);
-    double* p_dist = REAL(dist_sexp);
-    int* p_old_idx = INTEGER(old_idx_sexp);
+    const double* __restrict__ p_data = REAL(data_sexp);
+    const double* __restrict__ p_tess = REAL(tess_sexp);
+    const double* __restrict__ p_tessstar = REAL(tessstar_sexp);
+    const double* __restrict__ p_dist = REAL(dist_sexp);
+    const int* __restrict__ p_old_idx = INTEGER(old_idx_sexp);
     
-    int* p_dim = INTEGER(dim_sexp);
-    int* p_dimstar = INTEGER(dimstar_sexp);
+    const int* __restrict__ p_dim = INTEGER(dim_sexp);
+    const int* __restrict__ p_dimstar = INTEGER(dimstar_sexp);
     int k = INTEGER(k_sexp)[0];
     
     const char* mod_str = CHAR(STRING_ELT(modification_sexp, 0));
@@ -145,80 +142,89 @@ extern "C" {
     
     SEXP res_dist, res_nn, result_list, list_names;
     PROTECT(res_dist = Rf_allocMatrix(REALSXP, n_obs, n_centres_new));
-    double* p_new_dist = REAL(res_dist);
-    
-    size_t col_bytes = n_obs * sizeof(double);
+    double* __restrict__ p_new_dist = REAL(res_dist);
     
     if (modification == "RC") {
-      int current_col = 0;
-      for (int c = 0; c < n_centres_old; ++c) {
-        if (c != mod_idx) {
-          std::memcpy(p_new_dist + (current_col * n_obs), p_dist + (c * n_obs), col_bytes);
-          current_col++;
-        }
+      if (mod_idx > 0) {
+        size_t bytes_before = mod_idx * n_obs * sizeof(double);
+        std::memcpy(p_new_dist, p_dist, bytes_before);
+      }
+      if (mod_idx < n_centres_old - 1) {
+        size_t cols_after = (n_centres_old - 1) - mod_idx;
+        size_t bytes_after = cols_after * n_obs * sizeof(double);
+        std::memcpy(p_new_dist + (mod_idx * n_obs), 
+                    p_dist + ((mod_idx + 1) * n_obs), 
+                    bytes_after);
       }
     } else if (modification == "AC") {
-      int old_c = 0;
-      for (int c = 0; c < n_centres_new; ++c) {
-        if (c == mod_idx) {
-          for (int i = 0; i < n_obs; ++i) {
-            double dval = 0.0;
-            for (int d = 0; d < n_dims_new; ++d) {
-              int cov_idx = p_dimstar[d] - 1;
-              double diff = p_data[i + cov_idx * n_obs] - p_tessstar[c + d * n_centres_new];
-              dval += diff * diff;
-            }
-            p_new_dist[i + c * n_obs] = dval;
-          }
-        } else {
-          std::memcpy(p_new_dist + (c * n_obs), p_dist + (old_c * n_obs), col_bytes);
-          old_c++;
+      size_t total_old_bytes = n_centres_old * n_obs * sizeof(double);
+      std::memcpy(p_new_dist, p_dist, total_old_bytes);
+      int c = n_centres_new - 1; 
+      for (int i = 0; i < n_obs; ++i) {
+        p_new_dist[i + c * n_obs] = 0.0;
+      }
+      for (int d = 0; d < n_dims_new; ++d) {
+        int cov_idx = p_dimstar[d] - 1;
+        int cov_offset = cov_idx * n_obs;
+        double tess_val = p_tessstar[c + d * n_centres_new];
+        for (int i = 0; i < n_obs; ++i) {
+          double diff = p_data[i + cov_offset] - tess_val;
+          p_new_dist[i + c * n_obs] += diff * diff;
         }
       }
     } else if (modification == "Change") {
-      for (int c = 0; c < n_centres_new; ++c) {
-        if (c == mod_idx) {
-          for (int i = 0; i < n_obs; ++i) {
-            double dval = 0.0;
-            for (int d = 0; d < n_dims_new; ++d) {
-              int cov_idx = p_dimstar[d] - 1;
-              double diff = p_data[i + cov_idx * n_obs] - p_tessstar[c + d * n_centres_new];
-              dval += diff * diff;
-            }
-            p_new_dist[i + c * n_obs] = dval;
-          }
-        } else {
-          std::memcpy(p_new_dist + (c * n_obs), p_dist + (c * n_obs), col_bytes);
+      size_t total_bytes = n_centres_new * n_obs * sizeof(double);
+      std::memcpy(p_new_dist, p_dist, total_bytes);
+      int c = mod_idx;
+      for (int i = 0; i < n_obs; ++i) {
+        p_new_dist[i + c * n_obs] = 0.0;
+      }
+      for (int d = 0; d < n_dims_new; ++d) {
+        int cov_idx = p_dimstar[d] - 1;
+        int cov_offset = cov_idx * n_obs;
+        double tess_val = p_tessstar[c + d * n_centres_new];
+        for (int i = 0; i < n_obs; ++i) {
+          double diff = p_data[i + cov_offset] - tess_val;
+          p_new_dist[i + c * n_obs] += diff * diff;
         }
       }
     } else if (modification == "AD") {
       int new_dim_cov_idx = p_dimstar[mod_idx] - 1;
+      int cov_offset = new_dim_cov_idx * n_obs;
       for (int c = 0; c < n_centres_new; ++c) {
+        double tess_val = p_tessstar[c + mod_idx * n_centres_new];
+        int c_offset = c * n_obs;
         for (int i = 0; i < n_obs; ++i) {
-          double diff = p_data[i + new_dim_cov_idx * n_obs] - p_tessstar[c + mod_idx * n_centres_new];
-          p_new_dist[i + c * n_obs] = p_dist[i + c * n_obs] + (diff * diff);
+          double diff = p_data[i + cov_offset] - tess_val;
+          p_new_dist[i + c_offset] = p_dist[i + c_offset] + (diff * diff);
         }
       }
     } else if (modification == "RD") {
       int old_dim_cov_idx = p_dim[mod_idx] - 1;
+      int cov_offset = old_dim_cov_idx * n_obs;
       for (int c = 0; c < n_centres_new; ++c) {
+        double tess_val = p_tess[c + mod_idx * n_centres_old];
+        int c_offset = c * n_obs;
         for (int i = 0; i < n_obs; ++i) {
-          double diff = p_data[i + old_dim_cov_idx * n_obs] - p_tess[c + mod_idx * n_centres_old];
-          double new_val = p_dist[i + c * n_obs] - (diff * diff);
-          if (new_val < 0) new_val = 0.0; 
-          p_new_dist[i + c * n_obs] = new_val;
+          double diff = p_data[i + cov_offset] - tess_val;
+          double new_val = p_dist[i + c_offset] - (diff * diff);
+          p_new_dist[i + c_offset] = (new_val < 0.0) ? 0.0 : new_val;
         }
       }
     } else if (modification == "Swap") {
       int old_dim_cov_idx = p_dim[mod_idx] - 1;
       int new_dim_cov_idx = p_dimstar[mod_idx] - 1;
+      int old_cov_offset = old_dim_cov_idx * n_obs;
+      int new_cov_offset = new_dim_cov_idx * n_obs;
       for (int c = 0; c < n_centres_new; ++c) {
+        double old_tess_val = p_tess[c + mod_idx * n_centres_old];
+        double new_tess_val = p_tessstar[c + mod_idx * n_centres_new];
+        int c_offset = c * n_obs;
         for (int i = 0; i < n_obs; ++i) {
-          double old_diff = p_data[i + old_dim_cov_idx * n_obs] - p_tess[c + mod_idx * n_centres_old];
-          double new_diff = p_data[i + new_dim_cov_idx * n_obs] - p_tessstar[c + mod_idx * n_centres_new];
-          double new_val = p_dist[i + c * n_obs] - (old_diff * old_diff) + (new_diff * new_diff);
-          if (new_val < 0) new_val = 0.0;
-          p_new_dist[i + c * n_obs] = new_val;
+          double old_diff = p_data[i + old_cov_offset] - old_tess_val;
+          double new_diff = p_data[i + new_cov_offset] - new_tess_val;
+          double new_val = p_dist[i + c_offset] - (old_diff * old_diff) + (new_diff * new_diff);
+          p_new_dist[i + c_offset] = (new_val < 0.0) ? 0.0 : new_val;
         }
       }
     } else {
@@ -236,42 +242,37 @@ extern "C" {
     }
     
     PROTECT(res_nn = Rf_allocMatrix(INTSXP, n_obs, k));
-    int* p_result = INTEGER(res_nn);
+    int* __restrict__ p_result = INTEGER(res_nn);
     
     if (k == 1) {
       if (modification == "Change") {
+        int mod_offset = mod_idx * n_obs;
         for (int q = 0; q < n_obs; ++q) {
           int old_best = p_old_idx[q] - 1;
           if (old_best == mod_idx) {
             double min_dist = p_new_dist[q]; 
             int best_idx = 0;
             for (int t = 1; t < n_centres_new; ++t) {
-              if (p_new_dist[q + t * n_obs] < min_dist) {
-                min_dist = p_new_dist[q + t * n_obs];
+              double dist = p_new_dist[q + t * n_obs];
+              if (dist < min_dist) {
+                min_dist = dist;
                 best_idx = t;
               }
             }
             p_result[q] = best_idx + 1;
           } else {
             double old_min_dist = p_dist[q + old_best * n_obs];
-            double new_dist = p_new_dist[q + mod_idx * n_obs];
-            if (new_dist < old_min_dist) {
-              p_result[q] = mod_idx + 1;
-            } else {
-              p_result[q] = old_best + 1;
-            }
+            double new_dist = p_new_dist[q + mod_offset];
+            p_result[q] = (new_dist < old_min_dist) ? (mod_idx + 1) : (old_best + 1);
           }
         }
       } else if (modification == "AC") {
+        int mod_offset = mod_idx * n_obs;
         for (int q = 0; q < n_obs; ++q) {
           int old_best = p_old_idx[q] - 1;
           double old_min_dist = p_dist[q + old_best * n_obs];
-          double new_dist = p_new_dist[q + mod_idx * n_obs];
-          if (new_dist < old_min_dist) {
-            p_result[q] = mod_idx + 1;
-          } else {
-            p_result[q] = old_best + 1;
-          }
+          double new_dist = p_new_dist[q + mod_offset];
+          p_result[q] = (new_dist < old_min_dist) ? (mod_idx + 1) : (old_best + 1);
         }
       } else if (modification == "RC") {
         for (int q = 0; q < n_obs; ++q) {
@@ -280,18 +281,15 @@ extern "C" {
             double min_dist = p_new_dist[q]; 
             int best_idx = 0;
             for (int t = 1; t < n_centres_new; ++t) {
-              if (p_new_dist[q + t * n_obs] < min_dist) {
-                min_dist = p_new_dist[q + t * n_obs];
+              double dist = p_new_dist[q + t * n_obs];
+              if (dist < min_dist) {
+                min_dist = dist;
                 best_idx = t;
               }
             }
             p_result[q] = best_idx + 1;
           } else {
-            if (old_best > mod_idx) {
-              p_result[q] = old_best; 
-            } else {
-              p_result[q] = old_best + 1;
-            }
+            p_result[q] = (old_best > mod_idx) ? old_best : (old_best + 1);
           }
         }
       } else {
@@ -299,8 +297,9 @@ extern "C" {
           double min_dist = p_new_dist[q]; 
           int best_idx = 0;
           for (int t = 1; t < n_centres_new; ++t) {
-            if (p_new_dist[q + t * n_obs] < min_dist) {
-              min_dist = p_new_dist[q + t * n_obs];
+            double current_dist = p_new_dist[q + t * n_obs];
+            if (current_dist < min_dist) {
+              min_dist = current_dist;
               best_idx = t;
             }
           }
@@ -336,10 +335,10 @@ extern "C" {
   
   SEXP propose_tessellation_cpp(SEXP tess_j_sexp, SEXP dim_j_sexp, SEXP sd_sexp, SEXP mu_sexp, SEXP num_cov_sexp) {
     
-    double* p_tess_j = REAL(tess_j_sexp);
-    int* p_dim_j = INTEGER(dim_j_sexp);
-    double* sd = REAL(sd_sexp);
-    double* mu = REAL(mu_sexp);
+    const double* __restrict__ p_tess_j = REAL(tess_j_sexp);
+    const int* __restrict__ p_dim_j = INTEGER(dim_j_sexp);
+    const double* __restrict__ sd = REAL(sd_sexp);
+    const double* __restrict__ mu = REAL(mu_sexp);
     int numCovariates = INTEGER(num_cov_sexp)[0];
     
     int tess_j_rows = Rf_nrows(tess_j_sexp);
@@ -504,14 +503,15 @@ extern "C" {
     
     SEXP return_sum;
     PROTECT(return_sum = Rf_duplicate(sum_sexp));
-    double* p_sum = REAL(return_sum);
-    double* p_y = REAL(y_sexp);
+    double* __restrict__ p_sum = REAL(return_sum);
+    const double* __restrict__ p_y = REAL(y_sexp);
     
     SEXP out_tess = PROTECT(Rf_allocVector(VECSXP, num_stored));
     SEXP out_dim = PROTECT(Rf_allocVector(VECSXP, num_stored));
     SEXP out_pred = PROTECT(Rf_allocVector(VECSXP, num_stored));
     SEXP out_sigma = PROTECT(Rf_allocVector(REALSXP, num_stored));
     SEXP out_pred_mat = PROTECT(Rf_allocMatrix(REALSXP, n_obs, num_stored));
+    double* __restrict__ p_out_mat = REAL(out_pred_mat);
     
     SEXP k_sexp = PROTECT(Rf_allocVector(INTSXP, 1));
     INTEGER(k_sexp)[0] = 1;
@@ -521,8 +521,10 @@ extern "C" {
     std::vector<double> R_j(n_obs);
     std::vector<double> rIjOld;
     std::vector<int> nIjOld;
+    std::vector<double> denomOld;
     std::vector<double> rIjNew;
     std::vector<int> nIjNew;
+    std::vector<double> denomNew;
     
     int store_idx = 0;
     
@@ -539,13 +541,14 @@ extern "C" {
       for (int j = 0; j < m; ++j) {
         
         SEXP old_pred_sexp = VECTOR_ELT(return_pred, j);
-        double* p_old_pred = REAL(old_pred_sexp);
+        const double* __restrict__ p_old_pred = REAL(old_pred_sexp);
         SEXP old_idx_sexp = VECTOR_ELT(return_indices, j);
-        int* p_old_idx = INTEGER(old_idx_sexp);
+        const int* __restrict__ p_old_idx = INTEGER(old_idx_sexp);
+        double* __restrict__ p_R_j = R_j.data();
         
         for(int i = 0; i < n_obs; ++i) {
           p_sum[i] -= p_old_pred[p_old_idx[i] - 1];
-          R_j[i] = p_y[i] - p_sum[i];
+          p_R_j[i] = p_y[i] - p_sum[i];
         }
         
         SEXP newTessOutput = propose_tessellation_cpp(VECTOR_ELT(return_tess, j), VECTOR_ELT(return_dim, j), sd_sexp, mu_sexp, p_sexp);
@@ -568,14 +571,14 @@ extern "C" {
         rIjNew.assign(num_centres_new, 0.0);
         nIjNew.assign(num_centres_new, 0);
         
-        int* p_new_idx = INTEGER(indexesStar_sexp);
+        const int* __restrict__ p_new_idx = INTEGER(indexesStar_sexp);
         for(int i = 0; i < n_obs; ++i) {
           int idx_old = p_old_idx[i] - 1;
-          rIjOld[idx_old] += R_j[i];
+          rIjOld[idx_old] += p_R_j[i];
           nIjOld[idx_old]++;
           
           int idx_new = p_new_idx[i] - 1;
-          rIjNew[idx_new] += R_j[i];
+          rIjNew[idx_new] += p_R_j[i];
           nIjNew[idx_new]++;
         }
         
@@ -584,12 +587,27 @@ extern "C" {
           if(n == 0) any_zero = true;
         }
         
+        denomOld.assign(num_levels_old, 0.0);
+        denomNew.assign(num_centres_new, 0.0);
+        
+        double* __restrict__ p_denomOld = denomOld.data();
+        const int* __restrict__ p_nIjOld_calc = nIjOld.data();
+        for(int c = 0; c < num_levels_old; ++c) {
+          p_denomOld[c] = sigma2mu * p_nIjOld_calc[c] + current_sigma2;
+        }
+        
+        double* __restrict__ p_denomNew = denomNew.data();
+        const int* __restrict__ p_nIjNew_calc = nIjNew.data();
+        for(int c = 0; c < num_centres_new; ++c) {
+          p_denomNew[c] = sigma2mu * p_nIjNew_calc[c] + current_sigma2;
+        }
+        
         if(!any_zero) {
           int old_dims = Rf_length(VECTOR_ELT(return_dim, j));
           int new_dims = Rf_length(dim_j_star_sexp);
           std::string mod = CHAR(STRING_ELT(mod_sexp, 0));
           
-          double log_prob = calc_acceptance_cpp(rIjOld, nIjOld, rIjNew, nIjNew, num_levels_old, num_centres_new, old_dims, new_dims, current_sigma2, mod, sigma2mu, omega, lambda_poisson, p);
+          double log_prob = calc_acceptance_cpp(rIjOld, denomOld, rIjNew, denomNew, num_levels_old, num_centres_new, old_dims, new_dims, current_sigma2, mod, sigma2mu, omega, lambda_poisson, p);
           
           if(log(unif_rand()) < log_prob) {
             SET_VECTOR_ELT(return_tess, j, tess_j_star_sexp);
@@ -597,20 +615,20 @@ extern "C" {
             SET_VECTOR_ELT(return_indices, j, indexesStar_sexp);
             SET_VECTOR_ELT(return_sqdist, j, sqdist_j_star_sexp);
             
-            std::vector<double> new_mu = sample_mu_cpp(num_centres_new, rIjNew, nIjNew, sigma2mu, current_sigma2);
+            std::vector<double> new_mu = sample_mu_cpp(num_centres_new, rIjNew, denomNew, sigma2mu, current_sigma2);
             SEXP new_pred_sexp = PROTECT(Rf_allocMatrix(REALSXP, num_centres_new, 1));
             memcpy(REAL(new_pred_sexp), new_mu.data(), num_centres_new * sizeof(double));
             SET_VECTOR_ELT(return_pred, j, new_pred_sexp);
             UNPROTECT(1);
           } else {
-            std::vector<double> old_mu = sample_mu_cpp(num_levels_old, rIjOld, nIjOld, sigma2mu, current_sigma2);
+            std::vector<double> old_mu = sample_mu_cpp(num_levels_old, rIjOld, denomOld, sigma2mu, current_sigma2);
             SEXP new_pred_sexp = PROTECT(Rf_allocMatrix(REALSXP, num_levels_old, 1));
             memcpy(REAL(new_pred_sexp), old_mu.data(), num_levels_old * sizeof(double));
             SET_VECTOR_ELT(return_pred, j, new_pred_sexp);
             UNPROTECT(1);
           }
         } else {
-          std::vector<double> old_mu = sample_mu_cpp(num_levels_old, rIjOld, nIjOld, sigma2mu, current_sigma2);
+          std::vector<double> old_mu = sample_mu_cpp(num_levels_old, rIjOld, denomOld, sigma2mu, current_sigma2);
           SEXP new_pred_sexp = PROTECT(Rf_allocMatrix(REALSXP, num_levels_old, 1));
           memcpy(REAL(new_pred_sexp), old_mu.data(), num_levels_old * sizeof(double));
           SET_VECTOR_ELT(return_pred, j, new_pred_sexp);
@@ -618,9 +636,9 @@ extern "C" {
         }
         
         SEXP active_pred_sexp = VECTOR_ELT(return_pred, j);
-        double* p_active_pred = REAL(active_pred_sexp);
+        const double* __restrict__ p_active_pred = REAL(active_pred_sexp);
         SEXP active_idx_sexp = VECTOR_ELT(return_indices, j);
-        int* p_active_idx = INTEGER(active_idx_sexp);
+        const int* __restrict__ p_active_idx = INTEGER(active_idx_sexp);
         
         for(int i = 0; i < n_obs; ++i) {
           p_sum[i] += p_active_pred[p_active_idx[i] - 1];
@@ -635,7 +653,6 @@ extern "C" {
         SET_VECTOR_ELT(out_pred, store_idx, Rf_duplicate(return_pred));
         REAL(out_sigma)[store_idx] = current_sigma2;
         
-        double* p_out_mat = REAL(out_pred_mat);
         std::memcpy(p_out_mat + store_idx * n_obs, p_sum, n_obs * sizeof(double));
         store_idx++;
       }
@@ -670,10 +687,10 @@ extern "C" {
   
   SEXP knnx_index_predict_cpp(SEXP tess_sexp, SEXP query_sexp, SEXP k_sexp, SEXP dim_sexp) {
     
-    double* p_tess = REAL(tess_sexp);
-    double* p_query = REAL(query_sexp);
+    const double* __restrict__ p_tess = REAL(tess_sexp);
+    const double* __restrict__ p_query = REAL(query_sexp);
     int k = INTEGER(k_sexp)[0];
-    int* dim_p = INTEGER(dim_sexp);
+    const int* __restrict__ dim_p = INTEGER(dim_sexp);
     
     int tess_rows = Rf_nrows(tess_sexp);
     int tess_cols = Rf_ncols(tess_sexp);
@@ -703,12 +720,9 @@ extern "C" {
       }
     }
     
-    std::vector<double> query_row_major = transpose_to_row_major(p_query, query_rows, query_cols);
-    std::vector<double> tess_row_major = transpose_to_row_major(p_tess, tess_rows, tess_cols);
-    
     SEXP result;
     PROTECT(result = Rf_allocMatrix(INTSXP, query_rows, k));
-    int* p_result = INTEGER(result);
+    int* __restrict__ p_result = INTEGER(result);
     
     if (k == 1) {
       for (int q = 0; q < query_rows; ++q) {
@@ -719,7 +733,7 @@ extern "C" {
           double dval = 0.0;
           for (size_t i = 0; i < active_dim_idx.size(); ++i) {
             int d = active_dim_idx[i];
-            double diff = query_row_major[q * query_cols + d] - tess_row_major[t * tess_cols + d];
+            double diff = p_query[q + d * query_rows] - p_tess[t + d * tess_rows];
             dval += diff * diff;
             if (dval >= min_dist) {
               break;
@@ -740,7 +754,7 @@ extern "C" {
           double dval = 0.0;
           for (size_t i = 0; i < active_dim_idx.size(); ++i) {
             int d = active_dim_idx[i];
-            double diff = query_row_major[q * query_cols + d] - tess_row_major[t * tess_cols + d];
+            double diff = p_query[q + d * query_rows] - p_tess[t + d * tess_rows];
             dval += diff * diff;
           }
           distances[t].first = dval;
