@@ -2,20 +2,9 @@
 #'
 #' @description A constructor for the AddiVortesFit class.
 #'
-#' @param posteriorTess A list of the posterior samples of the tessellations.
-#' @param posteriorDim A list of the posterior samples of the dimensions.
-#' @param posteriorSigma A list of the posterior samples of the error variance.
-#' @param posteriorPred A list of the posterior samples of the predictions.
-#' @param xCentres The centres of the covariates.
-#' @param xRanges The ranges of the covariates.
-#' @param yCentre The centre of the output values.
-#' @param yRange The range of the output values.
-#' @param inSampleRmse The in-sample RMSE.
-#'
-#' @return An object of class AddiVortesFit.
 #' @export
 new_AddiVortesFit <- function(posteriorTess, posteriorDim, 
-                              posteriorSigma, posteriorPred,
+                              posteriorSigma, posteriorPower, posteriorMu, posteriorPred,
                               xCentres, xRanges, yCentre, yRange,
                               inSampleRmse) {
   structure(
@@ -23,6 +12,8 @@ new_AddiVortesFit <- function(posteriorTess, posteriorDim,
       posteriorTess = posteriorTess,
       posteriorDim = posteriorDim,
       posteriorSigma = posteriorSigma,
+      posteriorPower = posteriorPower,
+      posteriorMu = posteriorMu,
       posteriorPred = posteriorPred,
       xCentres = xCentres,
       xRanges = xRanges,
@@ -36,32 +27,9 @@ new_AddiVortesFit <- function(posteriorTess, posteriorDim,
 
 #' @title Print Method for AddiVortesFit
 #'
-#' @description
-#' Prints a summary of a fitted `AddiVortesFit` object, providing information
-#' about the model structure, dimensions, and fit quality similar to the
-#' output of a linear model summary.
-#'
-#' @param x An object of class `AddiVortesFit`, typically the result of a
-#'   call to `AddiVortes()`.
-#' @param ... Further arguments passed to or from other methods (currently 
-#' unused).
-#'
-#' @return
-#' The function is called for its side effect of printing model information
-#' and returns the input object `x` invisibly.
-#'
-#' @details
-#' The print method displays:
-#' - The model formula representation
-#' - Number of covariates and posterior samples
-#' - Number of tessellations used
-#' - In-sample RMSE
-#' - Covariate scaling information
-#'
 #' @export
 #' @method print AddiVortesFit
 print.AddiVortesFit <- function(x, ...) {
-  # --- Input Validation ---
   if (!inherits(x, "AddiVortesFit")) {
     stop("`x` must be an object of class 'AddiVortesFit'.")
   }
@@ -69,7 +37,6 @@ print.AddiVortesFit <- function(x, ...) {
   cat("AddiVortes Model\n")
   cat("================\n\n")
   
-  # Model equation representation
   num_covariates <- length(x$xCentres)
   covariate_names <- if (is.null(names(x$xCentres))) {
     paste0("X", 1:num_covariates)
@@ -83,10 +50,9 @@ print.AddiVortesFit <- function(x, ...) {
   } else {
     formula_str <- paste0("Y ~ f(", paste(covariate_names, collapse = ", "), ")")
     cat(formula_str, "\n")
-    cat("where f(.) is represented by additive Voronoi tessellations\n\n")
+    cat("where f(.) is represented by additive soft Voronoi tessellations\n\n")
   }
   
-  # Model dimensions
   num_samples <- length(x$posteriorTess)
   num_tessellations <- if (num_samples > 0) {
     length(x$posteriorTess[[1]])
@@ -95,12 +61,11 @@ print.AddiVortesFit <- function(x, ...) {
   }
   
   cat("Model Information:\n")
-  cat("Number of covariates:     ", num_covariates, "\n")
-  cat("Number of tessellations:  ", num_tessellations, "\n")
-  cat("Posterior samples:        ", num_samples, "\n")
-  cat("In-sample RMSE:           ", round(x$inSampleRmse, 4), "\n\n")
+  cat("Number of covariates:      ", num_covariates, "\n")
+  cat("Number of tessellations:   ", num_tessellations, "\n")
+  cat("Posterior samples:         ", num_samples, "\n")
+  cat("In-sample RMSE:            ", round(x$inSampleRmse, 4), "\n\n")
   
-  # Scaling information
   cat("Covariate Scaling:\n")
   scaling_df <- data.frame(
     Covariate = covariate_names,
@@ -113,9 +78,7 @@ print.AddiVortesFit <- function(x, ...) {
   cat("Centre: ", round(x$yCentre, 4), "\n")
   cat("Range:  ", round(x$yRange, 4), "\n\n")
   
-  # Additional model information
   if (num_samples > 0) {
-    # Get some statistics about the tessellations
     tess_sizes <- sapply(1:min(5, num_samples), function(i) {
       sapply(x$posteriorTess[[i]], function(tess) nrow(tess))
     })
@@ -136,38 +99,21 @@ print.AddiVortesFit <- function(x, ...) {
     cat("No posterior samples available.\n")
   }
   
-  # Return the object invisibly
   invisible(x)
 }
 
 #' @title Summary Method for AddiVortesFit
 #'
-#' @description
-#' Provides a detailed summary of a fitted `AddiVortesFit` object, including
-#' more comprehensive information than the print method.
-#'
-#' @param object An object of class `AddiVortesFit`, typically the result of a
-#'   call to `AddiVortes()`.
-#' @param ... Further arguments passed to or from other methods (currently 
-#' unused).
-#'
-#' @return
-#' The function is called for its side effect of printing detailed model 
-#' information and returns the input object `object` invisibly.
-#'
 #' @importFrom stats sd
 #' @export
 #' @method summary AddiVortesFit
 summary.AddiVortesFit <- function(object, ...) {
-  # Call the print method first
   print(object)
   
-  # Add additional summary information
   if (length(object$posteriorTess) > 0) {
     cat("\nDetailed Posterior Information:\n")
     cat("===============================\n")
     
-    # Analyze tessellation complexity across samples
     all_tess_sizes <- sapply(object$posteriorTess, function(sample) {
       sapply(sample, function(tess) nrow(tess))
     })
@@ -180,7 +126,6 @@ summary.AddiVortesFit <- function(object, ...) {
       }
     }
     
-    # Dimension information if available
     if (length(object$posteriorDim) > 0) {
       dim_info <- sapply(object$posteriorDim, function(sample) {
         sapply(sample, length)
@@ -194,38 +139,39 @@ summary.AddiVortesFit <- function(object, ...) {
         }
       }
     }
+    
+    if (!is.null(object$posteriorPower)) {
+      cat("\nLearned Distance Power:\n")
+      cat("  Mean Power: ", round(mean(object$posteriorPower), 3), "\n")
+      cat("  Range: [", round(min(object$posteriorPower), 3), ", ", round(max(object$posteriorPower), 3), "]\n")
+    }
   }
   
   invisible(object)
 }
 
+#' @keywords internal
+#' @noRd
+applyScaling_internal <- function(mat, centres, ranges) {
+  scale(mat, center = centres, scale = ranges)
+}
+
+#' @keywords internal
+#' @noRd
+soft_predict <- function(tess, query, dim, mu, power) {
+  if (!is.matrix(tess)) tess <- as.matrix(tess)
+  if (!is.matrix(query)) query <- as.matrix(query)
+  if (!is.matrix(mu)) mu <- as.matrix(mu)
+  
+  storage.mode(tess) <- "double"
+  storage.mode(query) <- "double"
+  storage.mode(mu) <- "double"
+  
+  result <- .Call("soft_predict_cpp", tess, query, as.integer(dim), mu, as.numeric(power))
+  return(result)
+}
+
 #' @title Predict Method for AddiVortesFit
-#'
-#' @description
-#' Predicts outcomes for new data using a fitted AddiVortesFit model object.
-#' It can return mean predictions, quantiles and optionally calculate the
-#' Root Mean Squared Error if true outcomes are provided.
-#'
-#' @param object An object of class AddiVortesFit.
-#' @param newdata A matrix of covariates for the new test set. 
-#' @param type The type of prediction required. 
-#' @param quantiles A numeric vector of probabilities to compute.
-#' @param interval The type of interval calculation. 
-#' @param showProgress Logical indicator for a progress bar.
-#' @param parallel Logical indicator for parallel processing.
-#' @param cores The number of CPU cores to use.
-#' @param ... Further arguments passed to or from other methods.
-#'
-#' @return
-#' Returns either a numeric vector of mean predictions or a matrix of quantiles
-#' depending on the selected type argument.
-#'
-#' @details
-#' This function relies on the internal helper function being available in the 
-#' environment. When prediction intervals are requested, the function samples
-#' additional Gaussian noise with variance equal to the sampled sigma squared
-#' from the posterior. This accounts for the inherent variability in individual
-#' predictions.
 #'
 #' @importFrom parallel makeCluster stopCluster parLapply detectCores
 #' @importFrom pbapply pblapply
@@ -249,8 +195,10 @@ predict.AddiVortesFit <- function(object, newdata,
   
   posteriorTessSamples <- object$posteriorTess
   posteriorDimSamples  <- object$posteriorDim
-  posteriorPredSamples <- object$posteriorPred
+  posteriorMuSamples   <- object$posteriorMu
+  posteriorPower       <- object$posteriorPower
   posteriorSigmaSamples <- object$posteriorSigma
+  
   numStoredSamples     <- length(posteriorTessSamples)
   
   if (interval == "prediction" && type == "quantile") {
@@ -294,7 +242,7 @@ predict.AddiVortesFit <- function(object, newdata,
   }
   
   if (showProgress) {
-    cat("Generating predictions for ", nrow(newdata),
+    cat("Generating true out-of-sample predictions for ", nrow(newdata),
         " observations using ", numStoredSamples,
         " posterior samples...\n", sep = "")
   }
@@ -302,13 +250,19 @@ predict.AddiVortesFit <- function(object, newdata,
   prediction_list <- pbapply::pblapply(
     X = 1:numStoredSamples,
     FUN = function(sIdx) {
-      current_tess <- posteriorTessSamples[[sIdx]]
-      current_dim  <- posteriorDimSamples[[sIdx]]
-      current_pred <- posteriorPredSamples[[sIdx]]
+      current_tess  <- posteriorTessSamples[[sIdx]]
+      current_dim   <- posteriorDimSamples[[sIdx]]
+      current_mu    <- posteriorMuSamples[[sIdx]]
+      current_power <- posteriorPower[, sIdx]
       
       pred_list <- lapply(seq_len(mTessellations), function(j) {
-        NewTessIndexes <- cellIndices(xNewScaled, current_tess[[j]], current_dim[[j]])
-        current_pred[[j]][NewTessIndexes]
+        soft_predict(
+          tess = current_tess[[j]], 
+          query = xNewScaled, 
+          dim = current_dim[[j]], 
+          mu = current_mu[[j]], 
+          power = current_power[j]
+        )
       })
       
       model_predictions <- rowSums(do.call(cbind, pred_list))
@@ -318,7 +272,7 @@ predict.AddiVortesFit <- function(object, newdata,
         model_predictions <- model_predictions + stats::rnorm(nObs, mean = 0, sd = sqrt(current_sigma))
       }
       
-      model_predictions
+      return(model_predictions)
     },
     cl = if (useParallel) (if (.Platform$OS.type == "windows") cl else cores) else NULL
   )
@@ -338,126 +292,28 @@ predict.AddiVortesFit <- function(object, newdata,
   return(predictions)
 }
 
-#' @title Assign Observations to Tessellation Cells
-#' @export
-cellIndices <- function(x, tess, dim) {
-  n_tess <- nrow(tess)
-  n_x <- nrow(x)
-  
-  if (n_tess == 1L) { 
-    CellsForGivenTess <- rep.int(1L, n_x)
-  } else { 
-    if (ncol(tess) != ncol(x)) {
-      new_tess <- matrix(0, nrow = n_tess, ncol = ncol(x))
-      new_tess[, dim] <- tess
-      tess <- new_tess
-    }
-    CellsForGivenTess <- knnx_index_predict(tess, x, 1, dim)
-  }
-  return(CellsForGivenTess)
-}
-
-#' @keywords internal
-#' @noRd
-knnx_index_predict <- function(data, query, k = 1, dim) {
-  if (!is.matrix(data)) data <- as.matrix(data)
-  if (!is.matrix(query)) query <- as.matrix(query)
-  
-  storage.mode(data) <- "double"
-  storage.mode(query) <- "double"
-  
-  if (ncol(data) != ncol(query)) stop("Number of columns must match")
-  if (k <= 0 || k > nrow(data)) stop("k must be positive")
-  
-  result <- .Call("knnx_index_predict_cpp", data, query, as.integer(k), as.integer(dim))
-  
-  if (k == 1) result <- as.vector(result)
-  return(result)
-}
-
 #' @title Plot Method for AddiVortesFit
-#'
-#' @description
-#' Generates comprehensive diagnostic plots for a fitted `AddiVortesFit` object.
-#' This function creates multiple diagnostic plots including residuals,
-#' MCMC traces for sigma, and tessellation complexity over iterations.
-#'
-#' @param x An object of class `AddiVortesFit`, typically the result of a
-#'   call to `AddiVortes()`.
-#' @param x_train A matrix of the original training covariates.
-#' @param y_train A numeric vector of the original training true outcomes.
-#' @param sigma_trace An optional numeric vector of sigma values from MCMC samples.
-#'   If not provided, the method will attempt to extract it from the model object.
-#' @param which A numeric vector specifying which plots to generate:
-#'   1 = Residuals plot, 2 = Sigma trace, 3 = Tessellation complexity trace,
-#'   4 = Predicted vs Observed. Default is c(1, 2, 3).
-#' @param ask Logical; if TRUE, the user is asked to press Enter before each plot.
-#' @param ... Additional arguments passed to plotting functions.
-#'
-#' @return
-#' This function is called for its side effect of creating plots and returns
-#' `NULL` invisibly.
-#'
-#' @details
-#' The function generates up to four diagnostic plots:
-#' \enumerate{
-#'   \item \strong{Residuals Plot}: Residuals vs fitted values with smoothed trend line
-#'   \item \strong{Sigma Trace}: MCMC trace plot for the error variance parameter
-#'   \item \strong{Tessellation Complexity}: Trace of average tessellation size over iterations
-#'   \item \strong{Predicted vs Observed}: Scatter plot with credible intervals
-#' }
 #'
 #' @importFrom graphics plot abline title par layout lines points segments legend
 #' @importFrom stats lowess residuals fitted predict sd
 #' @export
 #' @method plot AddiVortesFit
-#'
-#' @examples
-#' \dontrun{
-#' # Assuming 'fit' is a trained AddiVortesFit object
-#' plot(fit, x_train = x_train_data, y_train = y_train_data)
-#' 
-#' # Show only specific plots
-#' plot(fit, x_train = x_train_data, y_train = y_train_data, which = c(1, 3))
-#' 
-#' # With custom sigma trace
-#' plot(fit, x_train = x_train_data, y_train = y_train_data, 
-#'      sigma_trace = my_sigma_samples)
-#' }
 plot.AddiVortesFit <- function(x, x_train, y_train, sigma_trace = NULL,
-                               which = c(1, 2, 3), ask = FALSE, ...) {
+                               which = c(1, 2, 3, 4), ask = FALSE, ...) {
   
-  # --- Input Validation ---
-  if (!inherits(x, "AddiVortesFit")) {
-    stop("`x` must be an object of class 'AddiVortesFit'.")
-  }
-  if (missing(x_train) || missing(y_train)) {
-    stop("`x_train` and `y_train` must be provided for diagnostic plots.")
-  }
-  if (!is.matrix(x_train)) {
-    stop("`x_train` must be a matrix.")
-  }
-  if (!is.numeric(y_train)) {
-    stop("`y_train` must be a numeric vector.")
-  }
-  if (nrow(x_train) != length(y_train)) {
-    stop("The number of rows in `x_train` must match the length of `y_train`.")
-  }
-  if (length(x$posteriorTess) == 0) {
-    stop("No posterior samples available for plotting.")
-  }
+  if (!inherits(x, "AddiVortesFit")) stop("`x` must be an object of class 'AddiVortesFit'.")
+  if (missing(x_train) || missing(y_train)) stop("`x_train` and `y_train` must be provided.")
+  if (!is.matrix(x_train)) stop("`x_train` must be a matrix.")
+  if (!is.numeric(y_train)) stop("`y_train` must be a numeric vector.")
+  if (nrow(x_train) != length(y_train)) stop("Row dimensions must match.")
+  if (length(x$posteriorTess) == 0) stop("No posterior samples available.")
   
-  # Validate which parameter
-  which <- intersect(which, 1:4)
-  if (length(which) == 0) {
-    stop("`which` must contain values between 1 and 4.")
-  }
+  which <- intersect(which, 1:5)
+  if (length(which) == 0) stop("`which` must contain values between 1 and 5.")
   
-  # Store original par settings
   old_par <- par(no.readonly = TRUE)
   on.exit(par(old_par))
   
-  # Set up plotting layout
   n_plots <- length(which)
   if (n_plots == 1) {
     par(mfrow = c(1, 1))
@@ -465,169 +321,67 @@ plot.AddiVortesFit <- function(x, x_train, y_train, sigma_trace = NULL,
     par(mfrow = c(1, 2))
   } else if (n_plots <= 4) {
     par(mfrow = c(2, 2))
+  } else {
+    par(mfrow = c(2, 3))
   }
   
-  # Generate predictions for residuals analysis
-  if (any(which %in% c(1, 4))) {
-    y_pred_mean <- predict(x, newdata = x_train, type = "response")
+  if (any(which %in% c(1, 5))) {
+    y_pred_mean <- predict(x, newdata = x_train, type = "response", showProgress = FALSE)
     residuals <- y_train - y_pred_mean
   }
   
-  # Calculate tessellation statistics across samples
   if (3 %in% which) {
     tess_complexity <- sapply(x$posteriorTess, function(sample) {
       mean(sapply(sample, nrow))
     })
   }
   
-  # --- Plot 1: Residuals ---
   if (1 %in% which) {
-    if (ask && n_plots > 1) {
-      cat("Press [Enter] to see residuals plot: ")
-      readline()
-    }
-    
-    plot(y_pred_mean, residuals,
-         xlab = "Fitted Values",
-         ylab = "Residuals",
-         main = "Residuals vs Fitted",
-         pch = 19, col = "darkblue", cex = 0.8,
-         ...)
-    
-    # Add horizontal line at y = 0
+    if (ask && n_plots > 1) { cat("Press [Enter]: "); readline() }
+    plot(y_pred_mean, residuals, xlab = "Fitted Values", ylab = "Residuals", main = "Residuals vs Fitted", pch = 19, col = "darkblue", cex = 0.8, ...)
     abline(h = 0, col = "red", lty = 2, lwd = 2)
-    
-    # Add smoothed trend line
-    if (length(y_pred_mean) > 3) {
-      smooth_line <- lowess(y_pred_mean, residuals)
-      lines(smooth_line, col = "orange", lwd = 2)
-    }
-    
-    # Add RMSE annotation
+    if (length(y_pred_mean) > 3) { smooth_line <- lowess(y_pred_mean, residuals); lines(smooth_line, col = "orange", lwd = 2) }
     rmse_text <- paste("RMSE =", round(x$inSampleRmse, 4))
     legend("topright", legend = rmse_text, bty = "n")
   }
   
-  # --- Plot 2: Sigma Trace ---
   if (2 %in% which) {
-    if (ask && n_plots > 1) {
-      cat("Press [Enter] to see sigma trace plot: ")
-      readline()
-    }
-    
-    # Try to extract sigma from the model object or use provided trace
+    if (ask && n_plots > 1) { cat("Press [Enter]: "); readline() }
     if (is.null(sigma_trace)) {
-      # Attempt to extract sigma from model object
-      if ("posteriorSigma" %in% names(x)) {
-        sigma_values <- x$posteriorSigma
-      } else {
-        # If no sigma trace available, create a placeholder
-        warning("No sigma trace found. Creating synthetic trace for demonstration.")
-        sigma_values <- x$inSampleRmse + rnorm(length(x$posteriorTess), 0, x$inSampleRmse * 0.1)
-      }
-    } else {
-      sigma_values <- sigma_trace
-    }
-    
-    # Ensure sigma_values has same length as posterior samples
-    if (length(sigma_values) != length(x$posteriorTess)) {
-      warning("Length of sigma trace doesn't match number of posterior samples.")
-      sigma_values <- rep(sigma_values[1], length(x$posteriorTess))
-    }
-    
-    plot(1:length(sigma_values), sigma_values,
-         type = "l",
-         xlab = "MCMC Iteration",
-         ylab = expression(sigma),
-         main = "MCMC Trace: Error Standard Deviation",
-         col = "darkgreen", lwd = 1.5,
-         ...)
-    
-    # Add horizontal line at mean
+      if ("posteriorSigma" %in% names(x)) sigma_values <- x$posteriorSigma
+      else sigma_values <- x$inSampleRmse + rnorm(length(x$posteriorTess), 0, x$inSampleRmse * 0.1)
+    } else sigma_values <- sigma_trace
+    plot(1:length(sigma_values), sigma_values, type = "l", xlab = "MCMC Iteration", ylab = expression(sigma), main = "MCMC Trace: Error SD", col = "darkgreen", lwd = 1.5, ...)
     abline(h = mean(sigma_values), col = "red", lty = 2)
-    
-    # Add convergence statistics
-    sigma_mean <- round(mean(sigma_values), 4)
-    sigma_sd <- round(sd(sigma_values), 4)
-    legend("topright", 
-           legend = c(paste("Mean:", sigma_mean),
-                      paste("SD:", sigma_sd)),
-           bty = "n")
+    legend("topright", legend = c(paste("Mean:", round(mean(sigma_values), 4)), paste("SD:", round(sd(sigma_values), 4))), bty = "n")
   }
   
-  # --- Plot 3: Tessellation Complexity Trace ---
   if (3 %in% which) {
-    if (ask && n_plots > 1) {
-      cat("Press [Enter] to see tessellation complexity trace: ")
-      readline()
-    }
-    
-    plot(1:length(tess_complexity), tess_complexity,
-         type = "l",
-         xlab = "MCMC Iteration",
-         ylab = "Average Number of Tessellation Centers",
-         main = "MCMC Trace: Tessellation Complexity",
-         col = "purple", lwd = 1.5,
-         ...)
-    
-    # Add horizontal line at mean
+    if (ask && n_plots > 1) { cat("Press [Enter]: "); readline() }
+    plot(1:length(tess_complexity), tess_complexity, type = "l", xlab = "MCMC Iteration", ylab = "Avg Centers", main = "Trace: Tessellation Complexity", col = "purple", lwd = 1.5, ...)
     abline(h = mean(tess_complexity), col = "red", lty = 2)
-    
-    # Add summary statistics
-    complexity_mean <- round(mean(tess_complexity), 1)
-    complexity_range <- round(range(tess_complexity), 1)
-    legend("topright", 
-           legend = c(paste("Mean:", complexity_mean),
-                      paste("Range: [", complexity_range[1], ",", complexity_range[2], "]")),
-           bty = "n")
+    legend("topright", legend = c(paste("Mean:", round(mean(tess_complexity), 1))), bty = "n")
   }
   
-  # --- Plot 4: Predicted vs Observed ---
   if (4 %in% which) {
-    if (ask && n_plots > 1) {
-      cat("Press [Enter] to see predicted vs observed plot: ")
-      readline()
-    }
-    
-    # Get quantile predictions for uncertainty
-    y_pred_quantiles <- predict(x, newdata = x_train, type = "quantile",
-                                quantiles = c(0.025, 0.975))
-    
-    # Create the scatter plot
-    plot(y_train, y_pred_mean,
-         xlab = "Observed Values",
-         ylab = "Predicted Values",
-         main = "Predicted vs Observed",
-         pch = 19, col = "darkblue", cex = 0.8,
-         xlim = range(c(y_train, y_pred_mean)),
-         ylim = range(c(y_train, y_pred_mean)),
-         ...)
-    
-    # Add the line of equality (perfect prediction)
-    abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
-    
-    # Add uncertainty intervals
-    for (i in 1:length(y_train)) {
-      segments(y_train[i], y_pred_quantiles[i, 1],
-               y_train[i], y_pred_quantiles[i, 2],
-               col = "lightblue", lwd = 1)
-    }
-    
-    # Calculate and display R-squared
-    ss_res <- sum(residuals^2)
-    ss_tot <- sum((y_train - mean(y_train))^2)
-    r_squared <- 1 - (ss_res / ss_tot)
-    
-    legend("bottomright",
-           legend = c("Perfect Prediction",
-                      "95% Prediction Intervals",
-                      paste("R^2 =", round(r_squared, 3))),
-           col = c("red", "lightblue", "black"),
-           lty = c(2, 1, NA),
-           lwd = c(2, 1, NA),
-           pch = c(NA, NA, NA))
+    if (ask && n_plots > 1) { cat("Press [Enter]: "); readline() }
+    if (!is.null(x$posteriorPower)) {
+      power_means <- colMeans(x$posteriorPower)
+      plot(1:length(power_means), power_means, type = "l", xlab = "MCMC Iteration", ylab = "Average Power (p)", main = "Trace: Distance Power", col = "darkred", lwd = 1.5, ...)
+      abline(h = mean(power_means), col = "blue", lty = 2)
+      legend("topright", legend = paste("Mean:", round(mean(power_means), 2)), bty = "n")
+    } else { plot.new(); text(0.5, 0.5, "No Power Trace", cex = 1.5) }
   }
   
-  # Return invisibly
+  if (5 %in% which) {
+    if (ask && n_plots > 1) { cat("Press [Enter]: "); readline() }
+    y_pred_quantiles <- predict(x, newdata = x_train, type = "quantile", quantiles = c(0.025, 0.975), showProgress = FALSE)
+    plot(y_train, y_pred_mean, xlab = "Observed", ylab = "Predicted", main = "Predicted vs Observed", pch = 19, col = "darkblue", cex = 0.8, xlim = range(c(y_train, y_pred_mean)), ylim = range(c(y_train, y_pred_mean)), ...)
+    abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
+    for (i in 1:length(y_train)) segments(y_train[i], y_pred_quantiles[i, 1], y_train[i], y_pred_quantiles[i, 2], col = "lightblue", lwd = 1)
+    r_squared <- 1 - (sum(residuals^2) / sum((y_train - mean(y_train))^2))
+    legend("bottomright", legend = c("Perfect Prediction", "95% Prediction Intervals", paste("R^2 =", round(r_squared, 3))), col = c("red", "lightblue", "black"), lty = c(2, 1, NA), lwd = c(2, 1, NA), pch = c(NA, NA, NA))
+  }
+  
   invisible(NULL)
 }

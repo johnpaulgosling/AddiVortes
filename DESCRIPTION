@@ -27,7 +27,12 @@ Depends:
     R (>= 3.5.0)
 Imports:
     parallel (>= 4.0.0),
-    pbapply (>= 1.6)
+    pbapply (>= 1.6),
+    Rcpp, 
+    RcppEigen
+LinkingTo: 
+    Rcpp, 
+    RcppEigen
 Suggests: 
     knitr,
     rmarkdown,

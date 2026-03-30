@@ -1,29 +1,8 @@
-#' @title AddiVortes_Local
+#' @title AddiVortes
 #'
 #' @description
 #' The AddiVortes function is a Bayesian nonparametric regression model that uses a
-#' tessellation to model the relationship between the covariates and the output values.
-#' The model uses a backfitting algorithm to sample from the posterior distribution of
-#' the output values for each tessellation. The function returns the RMSE value for
-#' the test samples.
-#'
-#' @param y A vector of the output values.
-#' @param x A matrix or data frame of the covariates.
-#' @param m The number of tessellations.
-#' @param totalMCMCIter The number of iterations.
-#' @param mcmcBurnIn The number of burn in iterations.
-#' @param nu The degrees of freedom.
-#' @param q The quantile.
-#' @param k The number of centres.
-#' @param sd The standard deviation used in centre proposals.
-#' @param Omega Omega/(number of covariates) is the prior probability of adding a dimension.
-#' @param LambdaRate The rate of the Poisson distribution for the number of centres.
-#' @param IntialSigma The method used to calculate the initial variance.
-#' @param thinning The thinning rate.
-#' @param showProgress Logical; if TRUE, progress bars and messages are shown during fitting.
-#'
-#' @return An AddiVortes object containing the posterior samples of the
-#' tessellations, dimensions and predictions.
+#' soft tessellation to model the relationship between the covariates and the output values.
 #'
 #' @importFrom stats var lm optim quantile runif dbinom dpois
 #' @export
@@ -45,12 +24,12 @@ fittingFunction <- function(lambda, q, nu, SigmaSquaredHat) {
 #' @noRd
 scaleData_internal <- function(data) {
   if (is.matrix(data) || is.data.frame(data)) {
-    centres <- apply(data, 2, mean)
+    centres <- apply(data, 2, function(x) (max(x) + min(x)) / 2)
     ranges <- apply(data, 2, function(x) diff(range(x)))
     ranges[ranges == 0] <- 1
     scaledData <- scale(data, center = centres, scale = ranges)
   } else {
-    centres <- mean(data)
+    centres <- (max(data) + min(data)) / 2
     ranges <- diff(range(data))
     if (ranges == 0) ranges <- 1
     scaledData <- scale(data, center = centres, scale = ranges)
@@ -60,7 +39,8 @@ scaleData_internal <- function(data) {
 
 AddiVortes <- function (y, x, m = 200, totalMCMCIter = 1200, mcmcBurnIn = 200, 
                         nu = 6, q = 0.85, k = 3, sd = 0.8, Omega = min(3, ncol(x)), 
-                        LambdaRate = 25, IntialSigma = "Linear", thinning = 1, showProgress = TRUE) 
+                        LambdaRate = 25, IntialSigma = "Linear", thinning = 1, showProgress = TRUE, 
+                        distancePower = 2.0, p_shape = 2.0, p_rate = 1.0, p_sd = 0.1) 
 {
   yScalingResult <- scaleData_internal(y)
   yScaled <- yScalingResult$scaledData
@@ -79,13 +59,9 @@ AddiVortes <- function (y, x, m = 200, totalMCMCIter = 1200, mcmcBurnIn = 200,
   sd_dbl <- as.numeric(sd)
   mus_dbl <- rep(0.0, p)
   
-  pred <- rep(list(matrix(mean(yScaled)/m)), m)
+  pred <- lapply(1:m, function(ignoredIndex) matrix(mean(yScaled)/m, nrow = n, ncol = 1))
   dim <- lapply(1:m, function(ignoredIndex) as.integer(sample(1:p, 1)))
   tess <- lapply(1:m, function(ignoredIndex) matrix(rnorm(1, 0, sd)))
-  
-  sqdist <- lapply(1:m, function(i) {
-    matrix((xScaled[, dim[[i]]] - as.numeric(tess[[i]]))^2, ncol = 1)
-  })
   
   sumOfAllTess <- rep(mean(yScaled), length(yScaled))
   storage.mode(sumOfAllTess) <- "double"
@@ -101,7 +77,7 @@ AddiVortes <- function (y, x, m = 200, totalMCMCIter = 1200, mcmcBurnIn = 200,
   lambda_invgamma <- optim(par = 1, fittingFunction, method = "Brent", 
                            lower = 0.001, upper = 100, q = q, nu = nu, SigmaSquaredHat = SigmaSquaredHat)$par
   
-  current_indices <- lapply(1:m, function(idx) rep.int(1L, nrow(xScaled)))
+  p_vec <- rep(as.numeric(distancePower), m)
   
   if (showProgress) {
     cat("Fitting AddiVortes model to input data...\n")
@@ -115,8 +91,6 @@ AddiVortes <- function (y, x, m = 200, totalMCMCIter = 1200, mcmcBurnIn = 200,
                              sumOfAllTess,
                              tess,
                              dim,
-                             current_indices,
-                             sqdist,
                              pred,
                              as.integer(m),
                              p_int,
@@ -130,7 +104,11 @@ AddiVortes <- function (y, x, m = 200, totalMCMCIter = 1200, mcmcBurnIn = 200,
                              as.integer(thinning),
                              as.numeric(nu),
                              as.numeric(lambda_invgamma),
-                             as.integer(if(showProgress) 1L else 0L))
+                             as.integer(if(showProgress) 1L else 0L),
+                             p_vec,
+                             as.numeric(p_shape),
+                             as.numeric(p_rate),
+                             as.numeric(p_sd))
   
   if (showProgress) {
     cat("MCMC sampling completed.\n\n")
@@ -143,6 +121,8 @@ AddiVortes <- function (y, x, m = 200, totalMCMCIter = 1200, mcmcBurnIn = 200,
     posteriorTess = super_call_result$posteriorTess, 
     posteriorDim = super_call_result$posteriorDim, 
     posteriorSigma = super_call_result$posteriorSigma, 
+    posteriorPower = super_call_result$posteriorPower,
+    posteriorMu = super_call_result$posteriorMu,
     posteriorPred = super_call_result$posteriorPred, 
     xCentres = xCentres, 
     xRanges = xRanges, 
