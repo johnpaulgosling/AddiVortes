@@ -11,25 +11,16 @@ approach.
 ### 1. Loading the Package and Data
 
 First, we load the `AddiVortes` package. For this example, we will use
-the well-known Boston Housing dataset.
+the well-known Boston Housing dataset, included within this package as
+`Boston`.
 
 ``` r
 # Load the package
 require(AddiVortes)
 
-# Load the Boston Housing dataset from a URL
-Boston <- read.csv(paste0(
-  "https://raw.githubusercontent.com/anonymous2738/",
-  "AddiVortesAlgorithm/DataSets/BostonHousing_Data.csv"
-))
-
-
 # Separate predictors (X) and the response variable (Y)
-X_Boston <- as.matrix(Boston[, 2:14])
-Y_Boston <- as.numeric(as.matrix(Boston[, 15]))
-
-# Clean up the environment
-rm(Boston)
+X_Boston <- as.matrix(Boston[, 1:13])
+Y_Boston <- as.numeric(as.matrix(Boston[, 14]))
 ```
 
 ### 2. Preparing the Data
