@@ -7,7 +7,7 @@ sim_fried <- function(N,P,sigma) {
   Y <- mu + sigma * rnorm(N)
   return(data.frame(X = X, Y = Y, mu = mu))
 }
-training_data <- sim_fried(400, 5, 1)
+training_data <- sim_fried(200, 5, 1)
 test_data <- sim_fried(400,5, 1)
 X_train <- model.matrix(Y ~ . - 1 - mu, data = training_data)
 X_test <- model.matrix(Y ~ . - 1 - mu, data = test_data)
@@ -15,7 +15,7 @@ X_test <- model.matrix(Y ~ . - 1 - mu, data = test_data)
 cat("Fitting local update algorithm...\n")
 time_local <- system.time({
   set.seed(123)
-  Model_AddiVortes_local <- AddiVortes(training_data$Y, X_train,distancePower=2, p_rate=0.5, p_sd=0.05)
+  Model_AddiVortes_local <- AddiVortes(training_data$Y, X_train) #,totalMCMCIter = 200, mcmcBurnIn = 100,distancePower=2, p_rate=0.5, p_sd=0.05)
 })
 
 cat("Time taken for local:\n")
@@ -31,6 +31,8 @@ time_soft <- system.time({
   Model_softBART<-softbart(X_train,training_data$Y,X_test,opts = Opts(num_burn = 200, num_save = 1000))
 })
 print(time_soft)
+
+print(paste("RMSE for SoftBART:", sqrt(mean((Model_softBART$y_hat_test_mean - test_data$mu)^2))))
 
 ### Graph of times ###
 

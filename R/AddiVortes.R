@@ -1,35 +1,31 @@
-#' @title AddiVortes
+#' @title AddiVortes_Local
 #'
 #' @description
 #' The AddiVortes function is a Bayesian nonparametric regression model that uses a
-#' soft tessellation to model the relationship between the covariates and the output values.
+#' tessellation to model the relationship between the covariates and the output values.
+#' The model uses a backfitting algorithm to sample from the posterior distribution of
+#' the output values for each tessellation. The function returns the RMSE value for
+#' the test samples.
 #'
 #' @importFrom stats var lm optim quantile runif dbinom dpois
 #' @export
-#' 
 
-#' @keywords internal
-#' @noRd
 qinvgamma_internal <- function(p, shape, rate) {
   1 / stats::qgamma(1 - p, shape = shape, rate = rate)
 }
 
-#' @keywords internal
-#' @noRd
 fittingFunction <- function(lambda, q, nu, SigmaSquaredHat) {
   (qinvgamma_internal(q, shape = nu / 2, rate = nu * lambda / 2) - SigmaSquaredHat)^2
 }
 
-#' @keywords internal
-#' @noRd
 scaleData_internal <- function(data) {
   if (is.matrix(data) || is.data.frame(data)) {
-    centres <- apply(data, 2, function(x) (max(x) + min(x)) / 2)
+    centres <- apply(data, 2, mean)
     ranges <- apply(data, 2, function(x) diff(range(x)))
     ranges[ranges == 0] <- 1
     scaledData <- scale(data, center = centres, scale = ranges)
   } else {
-    centres <- (max(data) + min(data)) / 2
+    centres <- mean(data)
     ranges <- diff(range(data))
     if (ranges == 0) ranges <- 1
     scaledData <- scale(data, center = centres, scale = ranges)
@@ -37,11 +33,16 @@ scaleData_internal <- function(data) {
   list(scaledData = as.matrix(scaledData), centres = centres, ranges = ranges)
 }
 
-AddiVortes <- function (y, x, m = 200, totalMCMCIter = 1200, mcmcBurnIn = 200, 
-                        nu = 6, q = 0.85, k = 3, sd = 0.8, Omega = min(3, ncol(x)), 
-                        LambdaRate = 25, IntialSigma = "Linear", thinning = 1, showProgress = TRUE, 
-                        distancePower = 2.0, p_shape = 2.0, p_rate = 1.0, p_sd = 0.1) 
+AddiVortes <- function (y, x, m = 50, totalMCMCIter = 2500, mcmcBurnIn = 1000, 
+                        nu = 6, q = 0.85, k = 3, sd = 0.8, Omega = 1, 
+                        LambdaRate = 25, IntialSigma = "Linear", thinning = 1, showProgress = TRUE,
+                        alpha = 1, a_alpha = 0.5, b_alpha = 1, rho_alpha = ncol(x), dirichletWarmup = NULL,
+                        adaptBoost = 1, adaptPenalty = 1, momentumDecay = 0.90) 
 {
+  if (is.null(dirichletWarmup)) {
+    dirichletWarmup <- floor(mcmcBurnIn / 2)
+  }
+  
   yScalingResult <- scaleData_internal(y)
   yScaled <- yScalingResult$scaledData
   yCentre <- yScalingResult$centres
@@ -59,9 +60,13 @@ AddiVortes <- function (y, x, m = 200, totalMCMCIter = 1200, mcmcBurnIn = 200,
   sd_dbl <- as.numeric(sd)
   mus_dbl <- rep(0.0, p)
   
-  pred <- lapply(1:m, function(ignoredIndex) matrix(mean(yScaled)/m, nrow = n, ncol = 1))
+  pred <- rep(list(matrix(mean(yScaled)/m)), m)
   dim <- lapply(1:m, function(ignoredIndex) as.integer(sample(1:p, 1)))
   tess <- lapply(1:m, function(ignoredIndex) matrix(rnorm(1, 0, sd)))
+  
+  sqdist <- lapply(1:m, function(i) {
+    matrix((xScaled[, dim[[i]]] - as.numeric(tess[[i]]))^2, ncol = 1)
+  })
   
   sumOfAllTess <- rep(mean(yScaled), length(yScaled))
   storage.mode(sumOfAllTess) <- "double"
@@ -77,58 +82,50 @@ AddiVortes <- function (y, x, m = 200, totalMCMCIter = 1200, mcmcBurnIn = 200,
   lambda_invgamma <- optim(par = 1, fittingFunction, method = "Brent", 
                            lower = 0.001, upper = 100, q = q, nu = nu, SigmaSquaredHat = SigmaSquaredHat)$par
   
-  p_vec <- rep(as.numeric(distancePower), m)
+  current_indices <- lapply(1:m, function(idx) rep.int(1L, nrow(xScaled)))
   
   if (showProgress) {
     cat("Fitting AddiVortes model to input data...\n")
-    cat(sprintf("Input dimensions: %d observations, %d covariates\n", nrow(xScaled), ncol(xScaled)))
-    cat(sprintf("Model configuration: %d tessellations, %d total iterations (%d burn-in)\n\n", m, totalMCMCIter, mcmcBurnIn))
   }
   
   super_call_result <- .Call("super_mcmc_loop_cpp",
-                             xScaled,
-                             yScaled,
-                             sumOfAllTess,
-                             tess,
-                             dim,
-                             pred,
-                             as.integer(m),
-                             p_int,
-                             sd_dbl,
-                             mus_dbl,
-                             as.numeric(SigmaSquaredMu),
-                             as.numeric(Omega),
-                             as.numeric(LambdaRate),
-                             as.integer(totalMCMCIter),
-                             as.integer(mcmcBurnIn),
-                             as.integer(thinning),
-                             as.numeric(nu),
+                             xScaled, yScaled, sumOfAllTess, tess, dim,
+                             current_indices, sqdist, pred, as.integer(m),
+                             p_int, sd_dbl, mus_dbl, as.numeric(SigmaSquaredMu),
+                             as.numeric(Omega), as.numeric(LambdaRate),
+                             as.integer(totalMCMCIter), as.integer(mcmcBurnIn),
+                             as.integer(thinning), as.numeric(nu),
                              as.numeric(lambda_invgamma),
                              as.integer(if(showProgress) 1L else 0L),
-                             p_vec,
-                             as.numeric(p_shape),
-                             as.numeric(p_rate),
-                             as.numeric(p_sd))
-  
-  if (showProgress) {
-    cat("MCMC sampling completed.\n\n")
-  }
+                             as.numeric(alpha), as.numeric(a_alpha),
+                             as.numeric(b_alpha), as.numeric(rho_alpha),
+                             as.integer(dirichletWarmup),
+                             as.numeric(adaptBoost),
+                             as.numeric(adaptPenalty),
+                             as.numeric(momentumDecay))
   
   posteriorSamples <- floor((totalMCMCIter - mcmcBurnIn)/thinning)
   meanYhat <- (rowSums(super_call_result$predictionMatrix)/(posteriorSamples)) * yRange + yCentre
+  
+  inclusion_indicator_matrix <- super_call_result$posteriorVariableSelection > 0
+  ensemble_inclusion_probabilities <- rowMeans(inclusion_indicator_matrix)
+  
+  dirichlet_weights_mean <- rowMeans(super_call_result$posteriorDirichletWeights)
+  dirichlet_weights_lower <- apply(super_call_result$posteriorDirichletWeights, 1, quantile, probs = 0.025)
+  dirichlet_weights_upper <- apply(super_call_result$posteriorDirichletWeights, 1, quantile, probs = 0.975)
   
   final_result <- list(
     posteriorTess = super_call_result$posteriorTess, 
     posteriorDim = super_call_result$posteriorDim, 
     posteriorSigma = super_call_result$posteriorSigma, 
-    posteriorPower = super_call_result$posteriorPower,
-    posteriorMu = super_call_result$posteriorMu,
     posteriorPred = super_call_result$posteriorPred, 
-    xCentres = xCentres, 
-    xRanges = xRanges, 
-    yCentre = yCentre, 
-    yRange = yRange, 
-    inSampleRmse = sqrt(mean((y - meanYhat)^2))
+    xCentres = xCentres, xRanges = xRanges, yCentre = yCentre, yRange = yRange, 
+    inSampleRmse = sqrt(mean((y - meanYhat)^2)),
+    posteriorDirichletWeightsMean = dirichlet_weights_mean,
+    posteriorDirichletWeightsLower = dirichlet_weights_lower,
+    posteriorDirichletWeightsUpper = dirichlet_weights_upper,
+    ensembleInclusionProbabilities = ensemble_inclusion_probabilities,
+    posteriorAlphaTrace = super_call_result$posteriorAlpha
   )
   class(final_result) <- "AddiVortesFit"
   

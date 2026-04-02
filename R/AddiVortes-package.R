@@ -29,6 +29,7 @@
 "_PACKAGE"
 
 ## usethis namespace: start
+#' @importFrom Rcpp sourceCpp
 #' @useDynLib AddiVortes, .registration = TRUE
 ## usethis namespace: end
 NULL

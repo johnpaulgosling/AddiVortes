@@ -32,7 +32,7 @@ Imports:
     RcppEigen
 LinkingTo: 
     Rcpp, 
-    RcppEigen
+    RcppArmadillo
 Suggests: 
     knitr,
     rmarkdown,
