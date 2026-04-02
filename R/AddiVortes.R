@@ -7,8 +7,10 @@
 #' the posterior distribution of the output values for each tessellation.
 #' The function returns the RMSE value for the test samples.
 #'
-#' For spherical data, it is assumed that the final spherical dimension is the
-#' polar angle: i.e. that with range 0 to 2*pi.
+#' For spherical data, coordinates must be supplied in radians. The last
+#' spherical column is treated as the azimuthal (longitude) dimension with
+#' range \eqn{[-\pi, \pi]}; all preceding spherical columns are treated as
+#' polar (latitude) dimensions with range \eqn{[-\pi/2, \pi/2]}.
 #'
 #' @param y A vector of the output values.
 #' @param x A matrix or data frame of the covariates. Character and factor columns
@@ -26,7 +28,15 @@
 #' @param LambdaRate The rate of the Poisson distribution for the number of centres.
 #' @param InitialSigma The method used to calculate the initial variance.
 #' @param thinning The thinning rate.
-#' @param metric Either "E" (Euclidean, default) or "S" (Spherical).
+#' @param metric The distance metric to use for each covariate column. Either a
+#'   single string (\code{"E"} / \code{"Euclidean"} for all columns Euclidean,
+#'   \code{"S"} / \code{"Spherical"} for all columns spherical) or a vector of
+#'   the same length as the number of covariate columns containing \code{"E"},
+#'   \code{"S"}, or the integers \code{0} (Euclidean) / \code{1} (Spherical),
+#'   e.g. \code{metric = c("S", "E", "S")} for a dataset where columns 1 and 3
+#'   are spherical and column 2 is Euclidean. Spherical coordinates must be in
+#'   radians: polar (latitude-type) dimensions in \eqn{[-\pi/2, \pi/2]} and the
+#'   last spherical (azimuthal / longitude) dimension in \eqn{[-\pi, \pi]}.
 #' @param catScaling Numeric scalar controlling the scale of binary indicator
 #'   variables created from categorical covariates. Each binary indicator takes
 #'   values 0 (reference level) or \code{catScaling} (non-reference level).
@@ -120,6 +130,30 @@ AddiVortes <- function(y, x, m = 200,
   metric[metric == "E" | metric == "Euc" | metric == "Euclidean"] <- 0
   metric[metric == "S" | metric == "Sphere" | metric == "Spherical"] <- 1
   metric <- as.integer(metric)
+  # When the user supplies a per-column metric for the original (pre-encoding)
+  # columns and categorical expansion has added extra binary columns, extend the
+  # metric automatically: binary indicator columns are always Euclidean (0).
+  if (!is.null(catEncoding) && length(metric) == catEncoding$origNCols) {
+    enc_metric <- integer(0)
+    for (j in seq_len(catEncoding$origNCols)) {
+      if (j %in% catEncoding$catColIndices) {
+        n_bin <- length(catEncoding$colEncodings[[j]]$levels) - 1L
+        enc_metric <- c(enc_metric, rep(0L, n_bin))
+      } else {
+        enc_metric <- c(enc_metric, metric[j])
+      }
+    }
+    metric <- enc_metric
+  }
+  if (length(metric) != ncol(x)) {
+    stop(
+      "'metric' must have one element per covariate column (", ncol(x),
+      " required, ", length(metric), " supplied)."
+    )
+  }
+  if (!all(metric %in% 0:1)) {
+    stop("'metric' must contain only 0 (Euclidean) or 1 (Spherical) values.")
+  }
   if (1 %in% metric) {
     sphere_ranges <- list()
     for (i in seq_len(sum(metric == 1) - 1)) {
@@ -149,7 +183,7 @@ AddiVortes <- function(y, x, m = 200,
     binaryCols <- catEncoding$encodedBinaryCols
     xScaled[, binaryCols] <- x[, binaryCols]
   }
-  mus <- rep(0, nrow(x))
+  mus <- rep(0, ncol(x))
   mus[metric != 0] <- xCentres[metric != 0]
 
   #### Handling NULL sigma choice and ensuring it's vectorised
@@ -193,12 +227,11 @@ AddiVortes <- function(y, x, m = 200,
     for (i in seq_along(tess)) {
       if (metric[dim[[i]]] == 1) {
         sph_ind <- sum(metric[1:dim[[i]]] == 1)
-        while (tess[[i]][1, 1] > sphere_ranges[[sph_ind]][2]) {
-          tess[[i]][1, 1] <- tess[[i]][1, 1] - sphere_ranges[[sph_ind]][2]
-        }
-        while (tess[[i]][1, 1] < sphere_ranges[[sph_ind]][1]) {
-          tess[[i]][1, 1] <- tess[[i]][1, 1] + sphere_ranges[[sph_ind]][2]
-        }
+        lim <- sphere_ranges[[sph_ind]][2]  # half-period: pi/2 or pi
+        val <- tess[[i]][1, 1]
+        while (val >= lim) val <- val - 2 * lim
+        while (val < -lim) val <- val + 2 * lim
+        tess[[i]][1, 1] <- val
       }
     }
   }

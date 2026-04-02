@@ -366,10 +366,9 @@ extern "C" {
         if (metric[new_dim-1] == 1) {
           if (new_dim - 1 == sphere_index[sphere_index.size()-1]) {
             new_val = period_shift(new_val, M_PI);
+          } else {
+            new_val = period_shift(new_val, M_PI_2);
           }
-          // else {
-          //   new_val = period_shift(new_val, M_PI_2);
-          // }
         }
         new_tess[r + d_j_length * tess_j_rows] = new_val;
       }
@@ -395,14 +394,14 @@ extern "C" {
     } else if (p < 0.6 || (p < 0.8 && tess_j_rows == 1)) {
       modification = "AC";
       for (int i = 0; i < d_j_length; ++i) {
-        new_val = mu[i] + norm_rand() * sd[i];
-        if (metric[i] == 1) {
-          if (i == sphere_index[sphere_index.size()-1]) {
+        int g = dim_j_star[i] - 1;  // 0-based global covariate index
+        new_val = mu[g] + norm_rand() * sd[g];
+        if (metric[g] == 1) {
+          if (g == sphere_index[sphere_index.size()-1]) {
             new_val = period_shift(new_val, M_PI);
+          } else {
+            new_val = period_shift(new_val, M_PI_2);
           }
-          // else {
-          //   new_val = period_shift(new_val, M_PI_2);
-          // }
         }
         tess_j_star.insert(tess_j_star.begin() + (i * (tess_j_rows + 1)) + tess_j_rows, new_val);
       }
@@ -424,14 +423,14 @@ extern "C" {
     } else if (p < 0.9 || d_j_length == numCovariates) {
       int centre_to_change_idx = floor(unif_rand() * tess_j_rows);
       for (int c = 0; c < d_j_length; ++c) {
-        new_val = mu[c] + norm_rand() * sd[c];
-        if (metric[c] == 1) {
-          if (c == sphere_index[sphere_index.size()-1]) {
+        int g = dim_j_star[c] - 1;  // 0-based global covariate index
+        new_val = mu[g] + norm_rand() * sd[g];
+        if (metric[g] == 1) {
+          if (g == sphere_index[sphere_index.size()-1]) {
             new_val = period_shift(new_val, M_PI);
+          } else {
+            new_val = period_shift(new_val, M_PI_2);
           }
-          // else {
-          //   new_val = period_shift(new_val, M_PI_2);
-          // }
         }
         tess_j_star[centre_to_change_idx + c * tess_j_rows] = new_val;
       }
@@ -445,15 +444,15 @@ extern "C" {
       } while (in_vector(new_dim, dim_j_star));
       
       dim_j_star[dim_to_change_idx] = new_dim;
+      int g_new = new_dim - 1;  // 0-based global index of the new covariate
       for (int r = 0; r < tess_j_rows; ++r) {
-        new_val = mu[dim_to_change_idx] + norm_rand() * sd[dim_to_change_idx];
-        if (metric[dim_to_change_idx] == 1) {
-          if (dim_to_change_idx == sphere_index[sphere_index.size()-1]) {
+        new_val = mu[g_new] + norm_rand() * sd[g_new];
+        if (metric[g_new] == 1) {
+          if (g_new == sphere_index[sphere_index.size()-1]) {
             new_val = period_shift(new_val, M_PI);
+          } else {
+            new_val = period_shift(new_val, M_PI_2);
           }
-          // else {
-          //   new_val = period_shift(new_val, M_PI_2);
-          // }
         }
         tess_j_star[r + dim_to_change_idx * tess_j_rows] = new_val;
       }
@@ -512,6 +511,26 @@ static std::vector<int> knn1_internal(
   std::vector<int> result(n, 0);
   if (nC == 1) return result;
 
+  // Fast path: pure Euclidean — O(d) per (obs, centre), no vector allocation
+  if (nS == 0) {
+    for (int obs = 0; obs < n; obs++) {
+      double best = 1e300;
+      int best_c = 0;
+      for (int c = 0; c < nC; c++) {
+        double dist = 0.0;
+        for (int di = 0; di < d; di++) {
+          int g = dim1[di] - 1;
+          double diff = obs_data[obs + g * n] - centres[c + di * nC];
+          dist += diff * diff;
+        }
+        if (dist < best) { best = dist; best_c = c; }
+      }
+      result[obs] = best_c;
+    }
+    return result;
+  }
+
+  // General path: mixed or pure spherical
   const bool hasE = (nE > 0), hasS = (nS > 0);
   std::vector<double> q_E(nE), q_S(nS), t_E(nE), t_S(nS);
 
@@ -674,9 +693,12 @@ static ProposalResult propose_internal(
       for (int col = 0; col < d_j; col++)
         new_tess[row + col * nC] = tess_j[row + col * nC];
       new_val = mus[new_dim - 1] + norm_rand() * sd[new_dim - 1];
-      if (metric[new_dim - 1] == 1)
+      if (metric[new_dim - 1] == 1) {
         if ((new_dim - 1) == sphere_index.back())
           new_val = period_shift(new_val, M_PI);
+        else
+          new_val = period_shift(new_val, M_PI_2);
+      }
       new_tess[row + d_j * nC] = new_val;
     }
     r.tess = new_tess; r.nC = nC;
@@ -703,13 +725,14 @@ static ProposalResult propose_internal(
     r.mod = "AC";
     r.tess = tess_j;
     for (int i = 0; i < d_j; i++) {
-      // NOTE: mus/sd are indexed by local position i, and metric is checked
-      // using i rather than the global covariate index dim_j[i]-1.
-      // This mirrors the original propose_tessellation_cpp behaviour exactly.
-      new_val = mus[i] + norm_rand() * sd[i];
-      if (metric[i] == 1)
-        if (i == (int)sphere_index.back())
+      int g = dim_j[i] - 1;  // 0-based global covariate index
+      new_val = mus[g] + norm_rand() * sd[g];
+      if (metric[g] == 1) {
+        if (g == (int)sphere_index.back())
           new_val = period_shift(new_val, M_PI);
+        else
+          new_val = period_shift(new_val, M_PI_2);
+      }
       r.tess.insert(r.tess.begin() + (i * (nC + 1)) + nC, new_val);
     }
     r.nC = nC + 1;
@@ -726,29 +749,37 @@ static ProposalResult propose_internal(
     r.tess = new_tess; r.nC = nC - 1;
 
   } else if (prand < 0.9 || d_j == p) {
-    // Change Centre — same local-index convention as propose_tessellation_cpp
+    // Change Centre
     int ci = (int)(unif_rand() * nC);
     for (int col = 0; col < d_j; col++) {
-      new_val = mus[col] + norm_rand() * sd[col];
-      if (metric[col] == 1)
-        if (col == (int)sphere_index.back())
+      int g = dim_j[col] - 1;  // 0-based global covariate index
+      new_val = mus[g] + norm_rand() * sd[g];
+      if (metric[g] == 1) {
+        if (g == (int)sphere_index.back())
           new_val = period_shift(new_val, M_PI);
+        else
+          new_val = period_shift(new_val, M_PI_2);
+      }
       r.tess[ci + col * nC] = new_val;
     }
 
   } else {
-    // Swap Dimension — same local-index convention as propose_tessellation_cpp
+    // Swap Dimension
     r.mod = "Swap";
     int swap_idx = (int)(unif_rand() * d_j);
     int new_dim;
     do { new_dim = (int)(unif_rand() * p) + 1; }
     while (in_vector(new_dim, r.dim));
     r.dim[swap_idx] = new_dim;
+    int g_new = new_dim - 1;  // 0-based global index of the new covariate
     for (int row = 0; row < nC; row++) {
-      new_val = mus[swap_idx] + norm_rand() * sd[swap_idx];
-      if (metric[swap_idx] == 1)
-        if (swap_idx == (int)sphere_index.back())
+      new_val = mus[g_new] + norm_rand() * sd[g_new];
+      if (metric[g_new] == 1) {
+        if (g_new == (int)sphere_index.back())
           new_val = period_shift(new_val, M_PI);
+        else
+          new_val = period_shift(new_val, M_PI_2);
+      }
       r.tess[row + swap_idx * nC] = new_val;
     }
   }
