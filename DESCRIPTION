@@ -1,0 +1,44 @@
+Package: AddiVortes
+Title: (Bayesian) Additive Voronoi Tessellations
+Version: 0.5.3
+Date: 2026-03-11
+Authors@R: 
+    c(person("Adam", "Stone", , "adam.stone2@durham.ac.uk",
+             role = c("aut"),
+             comment = c(ORCID = "0009-0004-0058-6117")),
+      person("John Paul", "Gosling", , "john-paul.gosling@durham.ac.uk",
+             role = c("aut", "cre"),
+             comment = c(ORCID = "0000-0002-4072-3022")))
+Description: Implements the Bayesian Additive Voronoi Tessellation 
+    model for non-parametric regression and machine learning as introduced
+    in Stone and Gosling (2025) <doi:10.1080/10618600.2024.2414104>.
+    This package provides a flexible alternative to BART (Bayesian Additive 
+    Regression Trees) using Voronoi tessellations instead of trees. Users can 
+    fit Bayesian regression models (estimating the associated posterior 
+    distributions and make predictions. It is particularly useful for spatial
+    data analysis, machine learning regression, complex function approximation 
+    and Bayesian modeling where the underlying structure is unknown. The method 
+    is well-suited to capturing spatial patterns and non-linear relationships.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends: 
+    R (>= 3.5.0)
+Imports:
+    parallel (>= 4.0.0),
+    pbapply (>= 1.6),
+    Rcpp, 
+    RcppEigen
+LinkingTo: 
+    Rcpp,
+    RcppEigen
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    xml2
+Config/testthat/edition: 3
+URL: https://johnpaulgosling.github.io/AddiVortes/
+VignetteBuilder: knitr
+BugReports: https://github.com/johnpaulgosling/AddiVortes/issues
