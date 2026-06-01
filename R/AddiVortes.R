@@ -26,7 +26,9 @@
 #' @param LambdaRate The rate of the Poisson distribution for the number of centres.
 #' @param InitialSigma The method used to calculate the initial variance.
 #' @param thinning The thinning rate.
-#' @param metric Either "E" (Euclidean, default) or "S" (Spherical).
+#' @param metric Either "E" (Euclidean, default), "S" (Spherical), or "C" (Categorical).
+#' @param members If needed, indicates membership of covariates into different
+#'   subspaces (needed if using multiple spheres in covariate space). Default `NULL`.
 #' @param catScaling Numeric scalar controlling the scale of binary indicator
 #'   variables created from categorical covariates. Each binary indicator takes
 #'   values 0 (reference level) or \code{catScaling} (non-reference level).
@@ -93,6 +95,7 @@ AddiVortes <- function(y, x, m = 200,
                        InitialSigma = "Linear",
                        thinning = 1,
                        metric = "E",
+                       members = NULL,
                        catScaling = 1,
                        showProgress = interactive()) {
   # Force evaluation of Omega using the *original* x before categorical encoding
@@ -100,23 +103,33 @@ AddiVortes <- function(y, x, m = 200,
   # use ncol() of the encoded matrix, potentially making Omega = NumCovariates
   # and causing prob = 1 in acceptanceProbability (which produces 0/0 = NaN).
   force(Omega)
+  ### Pre-processing data
+  
   #### Encode categorical covariates -------------------------------------------
   if (!is.numeric(catScaling) || length(catScaling) != 1 || catScaling <= 0) {
     stop("'catScaling' must be a single positive number.")
   }
+  #### Dealing with choice of metric -------------------------------------------
+  if (length(metric) == 1) {
+    if (metric == "E" || metric == "Euc" || metric == "Euclidean") {
+      metric <- rep("E", ncol(x))
+    } else if (metric == "S" || metric == "Sphere" || metric == "Spherical") {
+      metric <- rep("S", ncol(x))
+    } else if (metric == "C" || metric == "Cat" || metric == "Categorical") {
+      metric <- rep("C", ncol(x))
+    }
+  }
+  
+  san_data <- covariateStructure_internal(x, metric, members)
+  x <- san_data$data
+  members <- san_data$membership
+  
   encResult <- encodeCategories_internal(x, catScaling = catScaling)
   catEncoding <- encResult$encoding
   covariateSummary <- formatCovariateSummary_internal(x, metric, catEncoding)
   x <- encResult$encoded
-
-  #### Dealing with choice of metric -------------------------------------------
-  if (length(metric) == 1) {
-    if (metric == "E" || metric == "Euc" || metric == "Euclidean") {
-      metric <- rep(0, ncol(x))
-    } else if (metric == "S" || metric == "Sphere" || metric == "Spherical") {
-      metric <- rep(1, ncol(x))
-    }
-  }
+  
+  metric <- san_data$structure
   metric[metric == "E" | metric == "Euc" | metric == "Euclidean"] <- 0
   metric[metric == "S" | metric == "Sphere" | metric == "Spherical"] <- 1
   metric <- as.integer(metric)
