@@ -12,6 +12,7 @@
 #' @param yRange The range of the output values.
 #' @param inSampleRmse The in-sample RMSE.
 #' @param metric The metric used for scaling covariates (default "E" for Euclidean).
+#' @param members The membership vector for the covariates
 #' @param catEncoding Optional list of categorical encoding metadata returned by
 #'   \code{encodeCategories_internal}, or \code{NULL} if no categorical covariates
 #'   were present.
@@ -22,6 +23,7 @@ new_AddiVortes <- function(posteriorTess, posteriorDim,
                            posteriorSigma, posteriorPred,
                            xCentres, xRanges, yCentre, yRange,
                            inSampleRmse, metric = "E",
+                           members = rep(1, length(xCentres)),
                            catEncoding = NULL) {
   structure(
     list(
@@ -35,6 +37,7 @@ new_AddiVortes <- function(posteriorTess, posteriorDim,
       yRange = yRange,
       inSampleRmse = inSampleRmse,
       metric = metric,
+      members = members,
       catEncoding = catEncoding
     ),
     class = "AddiVortes"
@@ -413,7 +416,8 @@ predict.AddiVortes <- function(object, newdata,
       # and accumulate directly to avoid large temporary allocations.
       model_predictions <- numeric(nObs)
       for (j in seq_len(mTessellations)) {
-        NewTessIndexes <- cellIndices(xNewScaled, current_tess[[j]], current_dim[[j]], object$metric)
+        NewTessIndexes <- cellIndices(xNewScaled, current_tess[[j]], current_dim[[j]],
+                                      object$metric, object$members)
         model_predictions <- model_predictions + current_pred[[j]][NewTessIndexes]
       }
 

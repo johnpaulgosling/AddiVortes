@@ -105,16 +105,18 @@ extern "C" {
   // ---------------------------------------------------------------------------
   // This function implements k-nearest neighbors index search to replace FNN::knnx.index
   // The R wrapper function is `knnx.index`.
-  SEXP knnx_index_cpp(SEXP tess_sexp, SEXP query_sexp, SEXP k_sexp, SEXP dim_sexp, SEXP dist_sexp) {
+  SEXP knnx_index_cpp(SEXP tess_sexp, SEXP query_sexp, SEXP k_sexp, SEXP dim_sexp, SEXP dist_sexp, SEXP member_sexp) {
     // --- Unpack arguments ---
     double* p_tess = REAL(tess_sexp);
     double* p_query = REAL(query_sexp);
     int k = INTEGER(k_sexp)[0];
     int* dim_p = INTEGER(dim_sexp);
+    int* member_ptr = INTEGER(member_sexp);
     int* metric_ptr = INTEGER(dist_sexp);
 
     std::vector<int> dim_p_temp(dim_p, dim_p + Rf_length(dim_sexp));
     std::vector<int> metric(metric_ptr, metric_ptr + Rf_length(dist_sexp));
+    std::vector<int> members(member_ptr, member_ptr + Rf_length(member_sexp));
     
     int tess_rows = Rf_nrows(tess_sexp);
     int tess_cols = Rf_ncols(tess_sexp);
@@ -768,6 +770,7 @@ extern "C" {
   //   xScaled_sexp        n x p double matrix (column-major)
   //   yScaled_sexp        n double vector
   //   metric_sexp         p integer vector  (0=Euclidean, 1=Spherical)
+  //   member_sexp         p integer vector of membership
   //   m_sexp              integer — number of tessellations
   //   totalMCMCIter_sexp  integer
   //   mcmcBurnIn_sexp     integer
@@ -797,6 +800,7 @@ extern "C" {
       SEXP xScaled_sexp,
       SEXP yScaled_sexp,
       SEXP metric_sexp,
+      SEXP member_sexp,
       SEXP m_sexp,
       SEXP totalMCMCIter_sexp,
       SEXP mcmcBurnIn_sexp,
@@ -838,6 +842,8 @@ extern "C" {
 
     int* metric_ptr = INTEGER(metric_sexp);
     std::vector<int> metric(metric_ptr, metric_ptr + p);
+    int* member_ptr = INTEGER(member_sexp);
+    std::vector<int> members(member_ptr, member_ptr + p);
 
     // Binary column indices (0-based internally)
     std::vector<int> binaryCols;

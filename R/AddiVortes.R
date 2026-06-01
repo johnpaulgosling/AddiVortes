@@ -122,7 +122,7 @@ AddiVortes <- function(y, x, m = 200,
   
   san_data <- covariateStructure_internal(x, metric, members)
   x <- san_data$data
-  members <- san_data$membership
+  members <- as.integer(san_data$membership)
   
   encResult <- encodeCategories_internal(x, catScaling = catScaling)
   catEncoding <- encResult$encoding
@@ -305,6 +305,7 @@ AddiVortes <- function(y, x, m = 200,
     matrix(as.double(xScaled), nrow = nrow(xScaled), ncol = ncol(xScaled)),
     as.double(yScaled),
     as.integer(metric),
+    as.integer(members),
     as.integer(m),
     as.integer(totalMCMCIter),
     as.integer(mcmcBurnIn),
@@ -354,6 +355,7 @@ AddiVortes <- function(y, x, m = 200,
     yRange = yRange,
     inSampleRmse = sqrt(mean((y - meanYhat)^2)),
     metric = metric,
+    members = members,
     catEncoding = catEncoding
   )
 }
