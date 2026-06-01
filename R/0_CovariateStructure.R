@@ -68,7 +68,7 @@ covariateStructure_internal <- function(data, structure, membership = NULL, one.
     membership <- new_member
     structure <- new_structure
   }
-  reduced_data <- data[,seq_along(membership)]
+  reduced_data <- data[,seq_along(membership),drop=FALSE]
   for (i in seq_along(structure)) {
     struct <- structure[i]
     if (struct == "E") {
