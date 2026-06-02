@@ -120,6 +120,13 @@ AddiVortes <- function(y, x, m = 200,
     }
   }
   
+  old_metric <- metric
+  old_metric[old_metric == "E" | old_metric == "Euc" | old_metric == "Euclidean"] <- 0
+  old_metric[old_metric == "S" | old_metric == "Sphere" | old_metric == "Spherical"] <- 1
+  old_metric[old_metric == "C" | old_metric == "Cat" | old_metric == "Categorical"] <- 2
+  old_metric <- as.integer(old_metric)
+  old_members <- if(is.null(members)) NULL else as.integer(members)
+  
   san_data <- covariateStructure_internal(x, metric, members)
   x <- san_data$data
   members <- as.integer(san_data$membership)
@@ -130,8 +137,8 @@ AddiVortes <- function(y, x, m = 200,
   x <- encResult$encoded
   
   metric <- san_data$structure
-  metric[metric == "E" | metric == "Euc" | metric == "Euclidean"] <- 0
-  metric[metric == "S" | metric == "Sphere" | metric == "Spherical"] <- 1
+  metric[metric == "E"] <- 0
+  metric[metric == "S"] <- 1
   metric <- as.integer(metric)
   if (1 %in% metric) {
     sphere_ranges <- list()
@@ -354,8 +361,10 @@ AddiVortes <- function(y, x, m = 200,
     yCentre = yCentre,
     yRange = yRange,
     inSampleRmse = sqrt(mean((y - meanYhat)^2)),
-    metric = metric,
-    members = members,
+    metric = old_metric,
+    members = old_members,
+    metric_aug = metric,
+    member_aug = members,
     catEncoding = catEncoding
   )
 }

@@ -37,10 +37,14 @@ covariateStructure_internal <- function(data, structure, membership = NULL, one.
   ## If membership is not provided, it's inferred from the structure
   if (is.null(membership)) {
     membership <- numeric(length(structure))
-    membership[structure == "E"] <- 1
-    membership[structure == "S"] <- 2
-    membership[structure == "C"] <- 3
+    membership[structure == "E" | structure == 0] <- 1
+    membership[structure == "S" | structure == 1] <- 2
+    membership[structure == "C" | structure == 2] <- 3
     structure <- c("E", "S", "C")[membership]
+  }
+  if (length(structure) != length(membership)) {
+    if (length(structure) == 1) structure <- rep(structure, length(membership))
+    else structure <- c(structure, rep(structure[1], length(membership)-length(structure)))
   }
   ## A fiddle to ensure that categorical variables live at the end of the list.
   if (any(structure == "C")) {

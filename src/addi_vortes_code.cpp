@@ -1,8 +1,11 @@
+// [[Rcpp::plugins(cpp20)]
+
 // 1. C++ Standard Library headers first
 #include <vector>    // For std::vector
 #include <string>    // For std::string
 #include <numeric>   // For std::accumulate
 #include <algorithm> // For std::find
+#include <span>      // For std::span
 #include <cmath>     // For sqrt
 #include <cstring>   // For memcpy
 
@@ -65,6 +68,18 @@ double euclidean_distance(const std::vector<double>& p1, const std::vector<doubl
   return dist;
 }
 
+double euclidean_distance(std::span<const double> p1, std::span<const double> p2) {
+  if (p1.size() != p2.size()) {
+    Rf_error("Points have incompatible dimensions.");
+  }
+  double dist = 0.0;
+  for (int i = 0; i < static_cast<int>(p1.size()); ++i) {
+    const double diff = p1[i] - p2[i];
+    dist += diff * diff;
+  }
+  return dist;
+}
+
 // Computes great circle distance on an n-sphere.
 // It assumes that the last dimension is the 'azimuthal' distance; i.e. the one with range [-pi, pi].
 // Optimisation not great: needs some work with the trigonometric functions.
@@ -98,6 +113,62 @@ double spherical_distance(const std::vector<double>& p1, const std::vector<doubl
   return(angle_diff * angle_diff);
 }
 
+double spherical_distance(std::span<const double> p1, std::span<const double> p2) {
+  if (p1.size() != p2.size()) {
+    Rf_error("Points have incompatible dimensions.");
+  }
+  if (p1.size() == 1) {
+    double a1 = abs(p1[0]-p2[0]);
+    double a2 = 2*M_PI-a1;
+    if (a1 < a2) return(a1*a1);
+    return(a2*a2);
+  }
+  double angle_diff = cos(p1[p1.size()-1]-p2[p2.size()-1]);
+  for (int i = p1.size()-2; i >= 0; --i) {
+    double internal = sin(p1[i]) * sin(p2[i]) + cos(p1[i]) * cos(p2[i]) * angle_diff;
+    if (internal > 1) {
+      internal = 1;
+    }
+    if (internal < -1) {
+      internal = -1.0;
+    }
+    if (i == 0) {
+      angle_diff = acos(internal);
+    }
+    else {
+      angle_diff = internal;
+    }
+  }
+  return(angle_diff * angle_diff);
+}
+
+double calc_distance(std::vector<double>& vec1, std::vector<double>& vec2,
+    const std::vector<int>& nvals, const std::vector<int>& type) {
+    int idx = 0;
+    double tot = 0;
+    for (int i = 0; i < nvals.size(); i++) {
+        int these_vals = nvals[i];
+        // std::vector<double>::const_iterator first1 = vec1.begin()+idx;
+        // std::vector<double>::const_iterator last1 = vec1.begin()+idx+these_vals;
+        // std::vector<double> subvec1(first1, last1);
+        std::span<const double> subvec1(vec1.data() + idx, these_vals);
+        // std::vector<double>::const_iterator first2 = vec2.begin()+idx;
+        // std::vector<double>::const_iterator last2 = vec2.begin()+idx+these_vals;
+        // std::vector<double> subvec2(first2, last2); 
+        std::span<const double> subvec2(vec2.data() + idx, these_vals);
+        if (type[i] == 0) {
+            double val = euclidean_distance(subvec1, subvec2);
+            tot += val;
+        }
+        if (type[i] == 1) {
+            double val = spherical_distance(subvec1, subvec2);
+            tot += val;
+        }
+        idx += these_vals;
+    }
+    return(tot);
+}
+
 extern "C" {
   
   // ---------------------------------------------------------------------------
@@ -115,15 +186,20 @@ extern "C" {
     int* metric_ptr = INTEGER(dist_sexp);
 
     std::vector<int> dim_p_temp(dim_p, dim_p + Rf_length(dim_sexp));
-    std::vector<int> metric(metric_ptr, metric_ptr + Rf_length(dist_sexp));
-    std::vector<int> members(member_ptr, member_ptr + Rf_length(member_sexp));
+    const std::vector<int> metric(metric_ptr, metric_ptr + Rf_length(dist_sexp));
+    const std::vector<int> members(member_ptr, member_ptr + Rf_length(member_sexp));
     
     int tess_rows = Rf_nrows(tess_sexp);
     int tess_cols = Rf_ncols(tess_sexp);
     int query_rows = Rf_nrows(query_sexp);
     int query_cols = Rf_ncols(query_sexp);
 
-    if (static_cast<int>(metric.size()) != query_cols) {
+    int mem_sum = 0;
+    for (int i = 0; i < members.size(); i++) {
+      mem_sum += members[i];
+    }
+
+    if (mem_sum != query_cols) {
       Rf_error("Length of metric must match number of columns in query/data matrices");
     }
     
@@ -142,29 +218,6 @@ extern "C" {
     PROTECT(result = Rf_allocMatrix(INTSXP, query_rows, k));
     int* p_result = INTEGER(result);
 
-    // Define variables to be used in the loop
-    int how_many_E = n_elem(0, metric);
-    const bool has_euclidean = how_many_E > 0;
-    std::vector<double> t_pt_E(how_many_E);
-    std::vector<double> q_pt_E(how_many_E);
-    int how_many_S = n_elem(1, metric);
-    const bool has_spherical = how_many_S > 0;
-    std::vector<double> t_pt_S(how_many_S);
-    std::vector<double> q_pt_S(how_many_S);
-    std::vector<int> coind(metric.size());
-    int count_S = 0;
-    int count_E = 0;
-    for (int i = 0; i < metric.size(); i++) {
-      if (metric[i] == 0) {
-        coind[i] = count_E;
-        count_E++;
-      }
-      if (metric[i] == 1) {
-        coind[i] = count_S;
-        count_S++;
-      }
-    }
-
     std::vector<char> active_dim_mask(query_cols, 0);
     std::vector<int> active_dim_idx;
     active_dim_idx.reserve(dim_p_temp.size());
@@ -180,47 +233,25 @@ extern "C" {
     }
 
     double dval;
-    
-    // --- Main Logic: For each query point, find k nearest neighbors ---
-    for (int q = 0; q < query_rows; ++q) {
-      for (int d = 0; d < query_cols; ++d) {
-        if (metric[d] == 0) {
-          q_pt_E[coind[d]] = p_query[q + d * query_rows];
-        }
-        if (metric[d] == 1) {
-          q_pt_S[coind[d]] = p_query[q + d * query_rows];
-        }
+
+    std::vector<double> q_pt(query_cols);
+    std::vector<double> t_pt(query_cols);
+    for (int q = 0; q < query_rows; q++) {
+      for (int d = 0; d < query_cols; d++) {
+        q_pt[d] = p_query[q + d * query_rows];
+        t_pt[d] = p_query[q + d * query_rows];
       }
 
+    // --- Main Logic: For each query point, find k nearest neighbors ---
       // Calculate distances to all tessellation points
       std::vector<std::pair<double, int>> distances(tess_rows);
 
       for (int t = 0; t < tess_rows; ++t) {
-        dval = 0.0;
-
-        if (has_euclidean) {
-          t_pt_E = q_pt_E;
-        }
-        if (has_spherical) {
-          t_pt_S = q_pt_S;
-        }
-
         for (int i = 0; i < static_cast<int>(active_dim_idx.size()); ++i) {
-          const int d = active_dim_idx[i];
-          if (metric[d] == 0) {
-            t_pt_E[coind[d]] = p_tess[t + d * tess_rows];
-          }
-          if (metric[d] == 1) {
-            t_pt_S[coind[d]] = p_tess[t + d * tess_rows];
-          }
+          const int dind = active_dim_idx[i];
+          t_pt[dind] = p_tess[t + dind * tess_rows];
         }
-
-        if (has_spherical) {
-          dval += spherical_distance(q_pt_S, t_pt_S);
-        }
-        if (has_euclidean) {
-          dval += euclidean_distance(q_pt_E, t_pt_E);
-        }
+        dval = calc_distance(q_pt, t_pt, members, metric);
         distances[t] = std::make_pair(dval, t + 1); // +1 for R 1-based indexing
       }
       
@@ -508,34 +539,25 @@ static std::vector<int> knn1_internal(
     const double* centres, int nC, int d,
     const std::vector<int>& dim1,
     const std::vector<int>& metric,
-    const std::vector<int>& coind,
-    int nE, int nS) {
+    const std::vector<int>& members) {
 
   std::vector<int> result(n, 0);
   if (nC == 1) return result;
-
-  const bool hasE = (nE > 0), hasS = (nS > 0);
-  std::vector<double> q_E(nE), q_S(nS), t_E(nE), t_S(nS);
+  std::vector<double> q_pt(p), t_pt(p);
 
   for (int obs = 0; obs < n; obs++) {
     for (int g = 0; g < p; g++) {
-      double v = obs_data[obs + g * n];
-      if (metric[g] == 0) q_E[coind[g]] = v;
-      else                 q_S[coind[g]] = v;
+      q_pt[g] = obs_data[obs + g * n];
+      t_pt[g] = obs_data[obs + g * n];
     }
     double best = 1e300;
     int best_c = 0;
     for (int c = 0; c < nC; c++) {
-      if (hasE) t_E = q_E;
-      if (hasS) t_S = q_S;
       for (int di = 0; di < d; di++) {
-        int g = dim1[di] - 1;  // 0-based global index
-        if (metric[g] == 0) t_E[coind[g]] = centres[c + di * nC];
-        else                 t_S[coind[g]] = centres[c + di * nC];
+        int g = dim1[di]-1;
+        t_pt[g] = centres[c + di * nC];
       }
-      double dist = 0.0;
-      if (hasS) dist += spherical_distance(q_S, t_S);
-      if (hasE) dist += euclidean_distance(q_E, t_E);
+      double dist = calc_distance(q_pt, t_pt, members, metric);
       if (dist < best) { best = dist; best_c = c; }
     }
     result[obs] = best_c;
@@ -854,13 +876,13 @@ extern "C" {
     }
 
     // Precompute coind: global dim index -> position in E or S sub-vector
-    std::vector<int> coind(p, 0);
-    int cntE = 0, cntS = 0;
-    for (int g = 0; g < p; g++) {
-      if (metric[g] == 0) coind[g] = cntE++;
-      else                 coind[g] = cntS++;
-    }
-    int nE = cntE, nS = cntS;
+    // std::vector<int> coind(p, 0);
+    // int cntE = 0, cntS = 0;
+    // for (int g = 0; g < p; g++) {
+    //   if (metric[g] == 0) coind[g] = cntE++;
+    //   else                 coind[g] = cntS++;
+    // }
+    // int nE = cntE, nS = cntS;
 
     // Precompute 0-based spherical dimension indices (mirrors which_elem in C++)
     std::vector<int> sphere_index;
@@ -903,7 +925,7 @@ extern "C" {
       curIdx[j] = knn1_internal(
         xScaled, n, p,
         tess[j].data(), tess_nC[j], tess_d[j], dim_j[j],
-        metric, coind, nE, nS);
+        metric, members);
       for (int obs = 0; obs < n; obs++)
         sumAllTess[obs] += pred[j][curIdx[j][obs]];
     }
@@ -992,7 +1014,7 @@ extern "C" {
         std::vector<int> idxStar = knn1_internal(
           xScaled, n, p,
           prop.tess.data(), prop.nC, (int)prop.dim.size(), prop.dim,
-          metric, coind, nE, nS);
+          metric, members);
 
         // Aggregate residuals for old and new tessellations
         std::vector<double> R_old, R_new;

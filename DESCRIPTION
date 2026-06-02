@@ -33,6 +33,7 @@ Suggests:
     testthat (>= 3.0.0),
     withr,
     xml2
+SystemRequirements: C++20
 Config/testthat/edition: 3
 URL: https://johnpaulgosling.github.io/AddiVortes/
 VignetteBuilder: knitr

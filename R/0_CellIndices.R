@@ -18,7 +18,7 @@
 #'   in `x` and its value is the row index of the nearest centre in `tess`.
 #'
 #' @export
-cellIndices <- function(x, tess, dim, metric = "Euclidean", members) {
+cellIndices <- function(x, tess, dim, metric = "E", members) {
   n_tess <- nrow(tess)
   n_x <- nrow(x)
 

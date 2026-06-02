@@ -24,7 +24,11 @@ new_AddiVortes <- function(posteriorTess, posteriorDim,
                            xCentres, xRanges, yCentre, yRange,
                            inSampleRmse, metric = "E",
                            members = rep(1, length(xCentres)),
+                           metric_aug = "E",
+                           member_aug = rep(1, length(xCentres)),
                            catEncoding = NULL) {
+  member_length <- sapply(unique(member_aug), function(x) sum(member_aug == x))
+  metric_type <- sapply(unique(member_aug), function(x) metric_aug[which(member_aug == x)[1]])
   structure(
     list(
       posteriorTess = posteriorTess,
@@ -38,6 +42,8 @@ new_AddiVortes <- function(posteriorTess, posteriorDim,
       inSampleRmse = inSampleRmse,
       metric = metric,
       members = members,
+      metric_red = metric_type,
+      member_red = member_length,
       catEncoding = catEncoding
     ),
     class = "AddiVortes"
@@ -324,6 +330,8 @@ predict.AddiVortes <- function(object, newdata,
     if (ncol(newdata) != object$catEncoding$origNCols) {
       stop("Number of columns in `newdata` does not match the original training data.")
     }
+    san_data <- covariateStructure_internal(newdata, object$metric, object$members)
+    newdata <- san_data$data
     encResult <- encodeCategories_internal(newdata, encoding = object$catEncoding)
     newdata <- encResult$encoded
   } else {
@@ -333,6 +341,8 @@ predict.AddiVortes <- function(object, newdata,
     if (ncol(newdata) != length(object$xCentres)) {
       stop("Number of columns in `newdata` does not match the original training data.")
     }
+    san_data <- covariateStructure_internal(newdata, object$metric, object$members)
+    newdata <- san_data$data
   }
 
   posteriorTessSamples <- object$posteriorTess
@@ -417,7 +427,7 @@ predict.AddiVortes <- function(object, newdata,
       model_predictions <- numeric(nObs)
       for (j in seq_len(mTessellations)) {
         NewTessIndexes <- cellIndices(xNewScaled, current_tess[[j]], current_dim[[j]],
-                                      object$metric, object$members)
+                                      object$metric_red, object$member_red)
         model_predictions <- model_predictions + current_pred[[j]][NewTessIndexes]
       }
 
