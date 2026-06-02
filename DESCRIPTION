@@ -21,7 +21,6 @@ Description: Implements the Bayesian Additive Voronoi Tessellation
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 Depends: 
     R (>= 3.5.0)
 Imports:
@@ -39,3 +38,4 @@ URL: https://johnpaulgosling.github.io/AddiVortes/
 VignetteBuilder: knitr
 BugReports: https://github.com/johnpaulgosling/AddiVortes/issues
 LazyData: true
+Config/roxygen2/version: 8.0.0

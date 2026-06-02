@@ -16,6 +16,8 @@ new_AddiVortes(
   inSampleRmse,
   metric = "E",
   members = rep(1, length(xCentres)),
+  metric_aug = "E",
+  member_aug = rep(1, length(xCentres)),
   catEncoding = NULL
 )
 }

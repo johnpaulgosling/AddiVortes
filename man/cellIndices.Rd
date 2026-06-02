@@ -4,7 +4,7 @@
 \alias{cellIndices}
 \title{Assign Observations to Tessellation Cells}
 \usage{
-cellIndices(x, tess, dim, metric = "Euclidean", members)
+cellIndices(x, tess, dim, metric = "E", members)
 }
 \arguments{
 \item{x}{A numeric matrix of covariates where each row is an observation.}
