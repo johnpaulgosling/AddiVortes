@@ -13,6 +13,9 @@
 #' @param inSampleRmse The in-sample RMSE.
 #' @param metric The metric used for scaling covariates (default "E" for Euclidean).
 #' @param members The membership vector for the covariates
+#' @param metric_aug The augmented metric after categorical variables are converted
+#' to one-hot
+#' @param member_aug The membership vector corresponding to metric_aug
 #' @param catEncoding Optional list of categorical encoding metadata returned by
 #'   \code{encodeCategories_internal}, or \code{NULL} if no categorical covariates
 #'   were present.

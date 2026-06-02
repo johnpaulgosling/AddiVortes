@@ -39,3 +39,4 @@ VignetteBuilder: knitr
 BugReports: https://github.com/johnpaulgosling/AddiVortes/issues
 LazyData: true
 Config/roxygen2/version: 8.0.0
+RoxygenNote: 7.3.3

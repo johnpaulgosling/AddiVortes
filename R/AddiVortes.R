@@ -83,7 +83,7 @@
 #' test_rmse <- sqrt(mean((y_test - preds)^2))
 #' }
 #'
-#' @importFrom stats var lm optim quantile runif rnorm dbinom dpois
+#' @importFrom stats var lm optim quantile runif rnorm dbinom dpois qnorm uniroot
 #' @export
 AddiVortes <- function(y, x, m = 200,
                        totalMCMCIter = 1200,
