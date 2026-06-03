@@ -33,7 +33,7 @@
 #'
 #' @useDynLib AddiVortes, .registration = TRUE
 proposeTessellation <- function(tess_j, dim_j, sd, mu, covariateIndices,
-                                NumCovariates, metric) {
+                                NumCovariates, metric, members) {
   # Call the C++ implementation via the .Call interface
   results <- .Call(
     "propose_tessellation_cpp",
@@ -42,7 +42,8 @@ proposeTessellation <- function(tess_j, dim_j, sd, mu, covariateIndices,
     as.double(sd),
     as.double(mu),
     as.integer(NumCovariates),
-    as.integer(metric)
+    as.integer(metric),
+    as.integer(members)
   )
 
   return(results)

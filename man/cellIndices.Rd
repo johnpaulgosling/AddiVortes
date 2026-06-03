@@ -4,7 +4,7 @@
 \alias{cellIndices}
 \title{Assign Observations to Tessellation Cells}
 \usage{
-cellIndices(x, tess, dim, metric = "Euclidean")
+cellIndices(x, tess, dim, metric = "E", members)
 }
 \arguments{
 \item{x}{A numeric matrix of covariates where each row is an observation.}
@@ -16,6 +16,8 @@ row is a unique centre.}
 for calculating distance.}
 
 \item{metric}{Either "Euclidean" or "Spherical".}
+
+\item{members}{A vector indicating covariate membership.}
 }
 \value{
 A numeric vector of integers where each element corresponds to a row

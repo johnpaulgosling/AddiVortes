@@ -12,12 +12,13 @@
 #' @param dim An integer vector specifying the column indices of `x` to be used
 #'   for calculating distance.
 #' @param metric Either "Euclidean" or "Spherical".
+#' @param members A vector indicating covariate membership.
 #'
 #' @return A numeric vector of integers where each element corresponds to a row
 #'   in `x` and its value is the row index of the nearest centre in `tess`.
 #'
 #' @export
-cellIndices <- function(x, tess, dim, metric = "Euclidean") {
+cellIndices <- function(x, tess, dim, metric = "E", members) {
   n_tess <- nrow(tess)
   n_x <- nrow(x)
 
@@ -32,7 +33,7 @@ cellIndices <- function(x, tess, dim, metric = "Euclidean") {
     CellsForGivenTess <- knnx_index(
       tess,
       x, 1,
-      dim, metric
+      dim, metric, members
     )
   }
   return(CellsForGivenTess)

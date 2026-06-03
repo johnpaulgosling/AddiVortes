@@ -15,6 +15,9 @@ new_AddiVortes(
   yRange,
   inSampleRmse,
   metric = "E",
+  members = rep(1, length(xCentres)),
+  metric_aug = "E",
+  member_aug = rep(1, length(xCentres)),
   catEncoding = NULL
 )
 }
@@ -38,6 +41,13 @@ new_AddiVortes(
 \item{inSampleRmse}{The in-sample RMSE.}
 
 \item{metric}{The metric used for scaling covariates (default "E" for Euclidean).}
+
+\item{members}{The membership vector for the covariates}
+
+\item{metric_aug}{The augmented metric after categorical variables are converted
+to one-hot}
+
+\item{member_aug}{The membership vector corresponding to metric_aug}
 
 \item{catEncoding}{Optional list of categorical encoding metadata returned by
 \code{encodeCategories_internal}, or \code{NULL} if no categorical covariates

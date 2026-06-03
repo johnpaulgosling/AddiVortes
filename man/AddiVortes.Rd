@@ -19,6 +19,7 @@ AddiVortes(
   InitialSigma = "Linear",
   thinning = 1,
   metric = "E",
+  members = NULL,
   catScaling = 1,
   showProgress = interactive()
 )
@@ -53,7 +54,10 @@ adding a dimension.}
 
 \item{thinning}{The thinning rate.}
 
-\item{metric}{Either "E" (Euclidean, default) or "S" (Spherical).}
+\item{metric}{Either "E" (Euclidean, default), "S" (Spherical), or "C" (Categorical).}
+
+\item{members}{If needed, indicates membership of covariates into different
+subspaces (needed if using multiple spheres in covariate space). Default \code{NULL}.}
 
 \item{catScaling}{Numeric scalar controlling the scale of binary indicator
 variables created from categorical covariates. Each binary indicator takes
