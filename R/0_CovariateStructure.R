@@ -117,7 +117,10 @@ covariateStructure_internal <- function(data, structure, membership = NULL, one.
   if (one.hot && any(structure == "C")) {
     n_onehot <- sum(sapply(seq_along(reduced_data)[structure == "C"], function(i) length(levels(reduced_data[,i]))-1))
     membership <- membership[structure != "C"]
-    membership <- c(membership, rep(max(membership)+1, n_onehot))
+    if (length(membership) == 0)
+      membership <- rep(1, n_onehot)
+    else
+      membership <- c(membership, rep(max(membership)+1, n_onehot))
     structure <- c(structure[structure != "C"], rep("C", n_onehot))
     structure[structure == "C"] <- "E"
   }

@@ -884,6 +884,18 @@ extern "C" {
     // }
     // int nE = cntE, nS = cntS;
 
+    // Precompute reduced metric and membership, for distance calculation
+    std::vector<int> metric_red, member_red;
+    int i = 0;
+    while(i < metric.size()) {
+      int this_elem = members[i];
+      int this_metric = metric[i];
+      int how_many = n_elem(this_elem, members);
+      member_red.push_back(how_many);
+      metric_red.push_back(this_metric);
+      i += how_many;
+    }
+
     // Precompute 0-based spherical dimension indices (mirrors which_elem in C++)
     std::vector<int> sphere_index;
     for (int g = 0; g < p; g++)
@@ -925,7 +937,7 @@ extern "C" {
       curIdx[j] = knn1_internal(
         xScaled, n, p,
         tess[j].data(), tess_nC[j], tess_d[j], dim_j[j],
-        metric, members);
+        metric_red, member_red);
       for (int obs = 0; obs < n; obs++)
         sumAllTess[obs] += pred[j][curIdx[j][obs]];
     }
@@ -1014,7 +1026,7 @@ extern "C" {
         std::vector<int> idxStar = knn1_internal(
           xScaled, n, p,
           prop.tess.data(), prop.nC, (int)prop.dim.size(), prop.dim,
-          metric, members);
+          metric_red, member_red);
 
         // Aggregate residuals for old and new tessellations
         std::vector<double> R_old, R_new;
