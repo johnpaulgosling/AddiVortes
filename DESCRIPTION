@@ -22,9 +22,9 @@ License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Depends: 
-    R (>= 3.5.0)
+    R (>= 4.0.0)
 Imports:
-    parallel (>= 4.0.0),
+    parallel,
     pbapply (>= 1.6)
 Suggests: 
     knitr,

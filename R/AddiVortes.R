@@ -1,14 +1,24 @@
-#' @title AddiVortes
+#' @title Fit AddiVortes regression model 
 #'
 #' @description
-#' The AddiVortes function is a Bayesian nonparametric regression model that
+#' The AddiVortes model is a Bayesian nonparametric regression model that
 #' uses a tessellation to model the relationship between the covariates and
 #' the output values. The model uses a backfitting algorithm to sample from
 #' the posterior distribution of the output values for each tessellation.
-#' The function returns the RMSE value for the test samples.
+#' Alongside fitting details and the posterior sample, the function returns 
+#' the RMSE value for the test samples.
 #'
-#' For spherical data, it is assumed that the final spherical dimension is the
-#' polar angle: i.e. that with range 0 to 2*pi.
+#' The function can handle multiple types of covariates, including continuous, 
+#' spherical and categorical. Categorical covariates are automatically detected 
+#' and one-hot encoded, with the first level of each categorical variable used 
+#' as the reference category. The `catScaling` parameter allows control over 
+#' the weight of categorical differences in distance calculations. For spherical
+#' covariates, the function assumes that the final spherical dimension 
+#' corresponds to the polar angle, which has a range of 0 to 2*pi. The `metric` 
+#' parameter can be used to specify the type of each covariate (Euclidean, 
+#' Spherical, or Categorical), and the `members` parameter can indicate
+#' membership of covariates into different subspaces when using multiple spheres 
+#' in covariate space. 
 #'
 #' @param y A vector of the output values.
 #' @param x A matrix or data frame of the covariates. Character and factor columns
@@ -121,19 +131,26 @@ AddiVortes <- function(y, x, m = 200,
   }
   
   old_metric <- metric
-  old_metric[old_metric == "E" | old_metric == "Euc" | old_metric == "Euclidean"] <- 0
-  old_metric[old_metric == "S" | old_metric == "Sphere" | old_metric == "Spherical"] <- 1
-  old_metric[old_metric == "C" | old_metric == "Cat" | old_metric == "Categorical"] <- 2
+  old_metric[old_metric == "E" | old_metric == "Euc" |
+               old_metric == "Euclidean"] <- 0
+  old_metric[old_metric == "S" | old_metric == "Sphere" |
+               old_metric == "Spherical"] <- 1
+  old_metric[old_metric == "C" | old_metric == "Cat" |
+               old_metric == "Categorical"] <- 2
   old_metric <- as.integer(old_metric)
   old_members <- if(is.null(members)) NULL else as.integer(members)
   
-  san_data <- covariateStructure_internal(x, metric, members)
+  san_data <- covariateStructure_internal(x,
+                                          metric, members)
   x <- san_data$data
   members <- as.integer(san_data$membership)
   
-  encResult <- encodeCategories_internal(x, catScaling = catScaling)
+  encResult <- encodeCategories_internal(x,
+                                         catScaling = catScaling)
   catEncoding <- encResult$encoding
-  covariateSummary <- formatCovariateSummary_internal(x, metric, catEncoding)
+  covariateSummary <- formatCovariateSummary_internal(x, 
+                                                      metric, 
+                                                      catEncoding)
   x <- encResult$encoded
   
   metric <- san_data$structure
@@ -149,18 +166,18 @@ AddiVortes <- function(y, x, m = 200,
   } else {
     sphere_ranges <- NULL
   }
-
+  
   #### Scaling x and y ---------------------------------------------------------
   yScalingResult <- scaleData_internal(y)
   yScaled <- yScalingResult$scaledData # Vector of values
   yCentre <- yScalingResult$centres
   yRange <- yScalingResult$ranges
-
+  
   xScalingResult <- scaleData_internal(x)
   xScaled <- xScalingResult$scaledData # Matrix of values
   xCentres <- xScalingResult$centres # Vector of values
   xRanges <- xScalingResult$ranges # Vector of values
-
+  
   ##### Dealing with unscaled data ---------------------------------------------
   xScaled[, metric != 0] <- x[, metric != 0]
   # Binary columns from categorical encoding keep their {0, catScaling} values
@@ -171,11 +188,13 @@ AddiVortes <- function(y, x, m = 200,
   }
   mus <- rep(0, nrow(x))
   mus[metric != 0] <- xCentres[metric != 0]
-
+  
   #### Handling NULL sigma choice and ensuring it's vectorised
-  sd <- sapply(xRanges, function(r) uniroot(function(x) qnorm(0.75, 0, x) - r / 2, c(0, r))$root)
+  sd <- sapply(xRanges,
+               function(r) uniroot(function(x) 
+                 qnorm(0.75, 0, x) - r / 2, c(0, r))$root)
   sd[metric == 0] <- 0.8
-
+  
   #### Check dimensions --------------------------------------------------------
   n <- length(y)
   p <- ncol(xScaled)
@@ -187,14 +206,14 @@ AddiVortes <- function(y, x, m = 200,
       call. = FALSE
     )
   }
-
+  
   if (Omega > p) {
     message(
       "Note: Omega (", Omega, ") exceeds number of covariates (", p, "). ",
       "The dimension inclusion probability will be clamped to 100%."
     )
   }
-
+  
   #### Initialise predictions --------------------------------------------------
   # Initialise:
   # Prediction Set (A list of vectors with the output values for each tessellation),
@@ -239,14 +258,14 @@ AddiVortes <- function(y, x, m = 200,
       }
     }
   }
-
+  
   #### Set-up MCMC -------------------------------------------------------------
   # The variance that captures variability around the mean of the scaled y values.
   SigmaSquaredMu <- (0.5 / (k * sqrt(m)))^2
-
+  
   # Finding lambda
   if (InitialSigma == "Naive") {
-    # Usually used if p is greater then n. Uses Standard deviation of y to predict sigma.
+    # Usually used if p is greater then n. Uses std dev of y to predict sigma.
     SigmaSquaredHat <- var(yScaled)
   } else {
     # Default method using residual standard deviation from a least-squared linear
@@ -264,7 +283,7 @@ AddiVortes <- function(y, x, m = 200,
     q = q, nu = nu,
     SigmaSquaredHat = SigmaSquaredHat
   )$par
-
+  
   # Normalise tess, dim and pred to plain R objects before passing to C++.
   # sapply may wrap results in lists or simplify to arrays; ensure each
   # element is a plain double matrix / integer vector / double vector.
@@ -277,15 +296,16 @@ AddiVortes <- function(y, x, m = 200,
   })
   init_dim  <- lapply(dim,  function(d) as.integer(unlist(d)))
   init_pred <- lapply(pred, function(p_j) as.double(p_j))
-
+  
   # Binary column indices for categorical clamping (NULL when not applicable)
-  binaryCols_r <- if (!is.null(catEncoding) && length(catEncoding$encodedBinaryCols) > 0) {
+  binaryCols_r <- if (!is.null(catEncoding) && 
+                      length(catEncoding$encodedBinaryCols) > 0) {
     as.integer(catEncoding$encodedBinaryCols)
   } else {
     NULL
   }
   catScaling_r <- if (!is.null(catEncoding)) catEncoding$catScaling else 0.0
-
+  
   # Progress message
   if (showProgress) {
     cat("Fitting AddiVortes model to input data...\n")
@@ -293,19 +313,19 @@ AddiVortes <- function(y, x, m = 200,
       cat(paste(covariateSummary, collapse = "\n"), "\n\n", sep = "")
     }
     cat("Input dimensions: ", nrow(xScaled),
-      " observations, ", ncol(xScaled),
-      " covariates\n",
-      sep = ""
+        " observations, ", ncol(xScaled),
+        " covariates\n",
+        sep = ""
     )
     cat("Model configuration: ", m,
-      " tessellations, ", totalMCMCIter,
-      " total iterations (", mcmcBurnIn,
-      " burn-in)\n\n",
-      sep = ""
+        " tessellations, ", totalMCMCIter,
+        " total iterations (", mcmcBurnIn,
+        " burn-in)\n\n",
+        sep = ""
     )
     cat("Running MCMC...\n")
   }
-
+  
   #### MCMC (single C++ call) --------------------------------------------------
   mcmcResult <- .Call(
     "addi_vortes_mcmc_cpp",
@@ -331,17 +351,17 @@ AddiVortes <- function(y, x, m = 200,
     as.double(catScaling_r),
     as.logical(showProgress)
   )
-
+  
   if (showProgress) cat("MCMC sampling completed.\n\n")
-
+  
   outputPosteriorTess  <- mcmcResult$posteriorTess
   outputPosteriorDim   <- mcmcResult$posteriorDim
   outputPosteriorPred  <- mcmcResult$posteriorPred
   outputPosteriorSigma <- mcmcResult$posteriorSigma
   predictionMatrix     <- mcmcResult$predictionMatrix
-
+  
   posteriorSamples <- ncol(predictionMatrix)
-
+  
   # Finding the mean of the prediction over the iterations and then unscaling
   # the predictions.
   meanYhat <- if (posteriorSamples > 0) {
@@ -349,7 +369,7 @@ AddiVortes <- function(y, x, m = 200,
   } else {
     rep(yCentre, length(y))
   }
-
+  
   # Create and return the AddiVortes object
   new_AddiVortes(
     posteriorTess = outputPosteriorTess,
@@ -373,14 +393,15 @@ countCovariateTypes_internal <- function(x, metric) {
   if (!is.data.frame(x)) {
     x <- as.data.frame(x, stringsAsFactors = FALSE)
   }
-
-  is_categorical <- vapply(x, function(col) is.character(col) || is.factor(col), logical(1))
+  
+  is_categorical <- vapply(x, function(col) is.character(col) ||
+                             is.factor(col), logical(1))
   metric_vec <- rep_len(metric, ncol(x))
   metric_vec <- as.character(metric_vec)
   metric_vec[metric_vec %in% c("E", "Euc", "Euclidean")] <- "0"
   metric_vec[metric_vec %in% c("S", "Sphere", "Spherical")] <- "1"
   metric_vec <- suppressWarnings(as.integer(metric_vec))
-
+  
   list(
     continuous = sum(metric_vec[!is_categorical] == 0L, na.rm = TRUE),
     spherical = sum(metric_vec[!is_categorical] == 1L, na.rm = TRUE),
@@ -391,7 +412,7 @@ countCovariateTypes_internal <- function(x, metric) {
 formatCovariateSummary_internal <- function(x, metric, catEncoding = NULL) {
   counts <- countCovariateTypes_internal(x, metric)
   parts <- character(0)
-
+  
   if (counts$continuous > 0) {
     parts <- c(parts, sprintf("%d continuous", counts$continuous))
   }
@@ -401,13 +422,13 @@ formatCovariateSummary_internal <- function(x, metric, catEncoding = NULL) {
   if (counts$categorical > 0) {
     parts <- c(parts, sprintf("%d categorical", counts$categorical))
   }
-
+  
   if (length(parts) == 0) {
     return(character(0))
   }
-
+  
   lines <- c(sprintf("Covariate summary: %s.", paste(parts, collapse = ", ")))
-
+  
   if (counts$categorical > 0) {
     if (!is.null(catEncoding) && !is.null(catEncoding$encodedBinaryCols)) {
       binary_cols <- length(catEncoding$encodedBinaryCols)
@@ -434,6 +455,6 @@ formatCovariateSummary_internal <- function(x, metric, catEncoding = NULL) {
       )
     }
   }
-
+  
   lines
 }

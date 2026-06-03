@@ -2,7 +2,7 @@
 % Please edit documentation in R/AddiVortes.R
 \name{AddiVortes}
 \alias{AddiVortes}
-\title{AddiVortes}
+\title{Fit AddiVortes regression model}
 \usage{
 AddiVortes(
   y,
@@ -78,14 +78,24 @@ An AddiVortes object containing the posterior samples of the
 tessellations, dimensions and predictions.
 }
 \description{
-The AddiVortes function is a Bayesian nonparametric regression model that
+The AddiVortes model is a Bayesian nonparametric regression model that
 uses a tessellation to model the relationship between the covariates and
 the output values. The model uses a backfitting algorithm to sample from
 the posterior distribution of the output values for each tessellation.
-The function returns the RMSE value for the test samples.
+Alongside fitting details and the posterior sample, the function returns
+the RMSE value for the test samples.
 
-For spherical data, it is assumed that the final spherical dimension is the
-polar angle: i.e. that with range 0 to 2*pi.
+The function can handle multiple types of covariates, including continuous,
+spherical and categorical. Categorical covariates are automatically detected
+and one-hot encoded, with the first level of each categorical variable used
+as the reference category. The \code{catScaling} parameter allows control over
+the weight of categorical differences in distance calculations. For spherical
+covariates, the function assumes that the final spherical dimension
+corresponds to the polar angle, which has a range of 0 to 2*pi. The \code{metric}
+parameter can be used to specify the type of each covariate (Euclidean,
+Spherical, or Categorical), and the \code{members} parameter can indicate
+membership of covariates into different subspaces when using multiple spheres
+in covariate space.
 }
 \examples{
 \donttest{
