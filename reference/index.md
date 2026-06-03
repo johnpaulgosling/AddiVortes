@@ -13,7 +13,7 @@ Package documentation and overview
 Core functions for fitting AddiVortes models
 
 - [`AddiVortes()`](https://johnpaulgosling.github.io/AddiVortes/reference/AddiVortes.md)
-  : AddiVortes
+  : Fit AddiVortes regression model
 
 ## S3 Methods
 
