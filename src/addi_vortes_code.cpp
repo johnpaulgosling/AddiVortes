@@ -347,7 +347,7 @@ extern "C" {
   // This function proposes a new tessellation based on the current one,
   // modifying it according to a set of rules and a random number generator.
   // The R wrapper function is `proposeTessellation`.
-  SEXP propose_tessellation_cpp(SEXP tess_j_sexp, SEXP dim_j_sexp, SEXP sd_sexp, SEXP mu_sexp, SEXP num_cov_sexp, SEXP metric_sexp) {
+  SEXP propose_tessellation_cpp(SEXP tess_j_sexp, SEXP dim_j_sexp, SEXP sd_sexp, SEXP mu_sexp, SEXP num_cov_sexp, SEXP metric_sexp, SEXP member_sexp) {
     
     // --- Unpack arguments ---
     double* p_tess_j = REAL(tess_j_sexp);
@@ -356,8 +356,10 @@ extern "C" {
     double* mu = REAL(mu_sexp);
     int numCovariates = INTEGER(num_cov_sexp)[0];
     int* metric_ptr = INTEGER(metric_sexp);
+    int* member_ptr = INTEGER(member_sexp);
 
     std::vector<int> metric(metric_ptr, metric_ptr + Rf_length(metric_sexp));
+    std::vector<int> members(member_ptr, member_ptr + Rf_length(member_sexp));
     
     int tess_j_rows = Rf_nrows(tess_j_sexp);
     int d_j_length = Rf_length(dim_j_sexp);
@@ -374,10 +376,10 @@ extern "C" {
     
     double p = unif_rand();
 
-    std::vector<int> sphere_index;
-    if (in_vector(1, metric)) {
-      sphere_index = which_elem(1, metric);
-    }
+    // std::vector<int> sphere_index;
+    // if (in_vector(1, metric)) {
+    //   sphere_index = which_elem(1, metric);
+    // }
     
     // --- Main Logic ---
     // Add Dimension (AD): ensure we don't try to add a dimension when all covariates are already selected
@@ -397,7 +399,8 @@ extern "C" {
         }
         new_val = mu[new_dim-1] + norm_rand() * sd[new_dim-1];
         if (metric[new_dim-1] == 1) {
-          if (new_dim - 1 == sphere_index[sphere_index.size()-1]) {
+          if (new_dim - 1 == members.size()-1 || members[new_dim] != members[new_dim-1]) {
+          //if (new_dim - 1 == sphere_index[sphere_index.size()-1]) {
             new_val = period_shift(new_val, M_PI);
           }
           // else {
@@ -430,7 +433,8 @@ extern "C" {
       for (int i = 0; i < d_j_length; ++i) {
         new_val = mu[i] + norm_rand() * sd[i];
         if (metric[i] == 1) {
-          if (i == sphere_index[sphere_index.size()-1]) {
+          if (i == members.size()-1 || members[i+1] != members[i]) {
+          //if (i == sphere_index[sphere_index.size()-1]) {
             new_val = period_shift(new_val, M_PI);
           }
           // else {
@@ -459,7 +463,8 @@ extern "C" {
       for (int c = 0; c < d_j_length; ++c) {
         new_val = mu[c] + norm_rand() * sd[c];
         if (metric[c] == 1) {
-          if (c == sphere_index[sphere_index.size()-1]) {
+          if (c == members.size()-1 || members[c+1] != members[c]) {
+          //if (c == sphere_index[sphere_index.size()-1]) {
             new_val = period_shift(new_val, M_PI);
           }
           // else {
@@ -481,7 +486,8 @@ extern "C" {
       for (int r = 0; r < tess_j_rows; ++r) {
         new_val = mu[dim_to_change_idx] + norm_rand() * sd[dim_to_change_idx];
         if (metric[dim_to_change_idx] == 1) {
-          if (dim_to_change_idx == sphere_index[sphere_index.size()-1]) {
+          if (dim_to_change_idx == members.size()-1 || members[dim_to_change_idx+1] != members[dim_to_change_idx]) {
+          //if (dim_to_change_idx == sphere_index[sphere_index.size()-1]) {
             new_val = period_shift(new_val, M_PI);
           }
           // else {
@@ -677,7 +683,7 @@ static ProposalResult propose_internal(
     int p,
     const double* sd, const double* mus,
     const std::vector<int>& metric,
-    const std::vector<int>& sphere_index) {  // 0-based spherical dim indices
+    const std::vector<int>& members) {  // 0-based spherical dim indices
 
   ProposalResult r;
   r.tess = tess_j; r.nC = nC; r.dim = dim_j; r.mod = "Change";
@@ -699,7 +705,8 @@ static ProposalResult propose_internal(
         new_tess[row + col * nC] = tess_j[row + col * nC];
       new_val = mus[new_dim - 1] + norm_rand() * sd[new_dim - 1];
       if (metric[new_dim - 1] == 1)
-        if ((new_dim - 1) == sphere_index.back())
+        if (new_dim - 1 == members.size()-1 || members[new_dim] != members[new_dim-1])
+        //if ((new_dim - 1) == sphere_index.back())
           new_val = period_shift(new_val, M_PI);
       new_tess[row + d_j * nC] = new_val;
     }
@@ -732,7 +739,8 @@ static ProposalResult propose_internal(
       // This mirrors the original propose_tessellation_cpp behaviour exactly.
       new_val = mus[i] + norm_rand() * sd[i];
       if (metric[i] == 1)
-        if (i == (int)sphere_index.back())
+        if (i == members.size()-1 || members[i+1] != members[i])
+        //if (i == (int)sphere_index.back())
           new_val = period_shift(new_val, M_PI);
       r.tess.insert(r.tess.begin() + (i * (nC + 1)) + nC, new_val);
     }
@@ -755,7 +763,8 @@ static ProposalResult propose_internal(
     for (int col = 0; col < d_j; col++) {
       new_val = mus[col] + norm_rand() * sd[col];
       if (metric[col] == 1)
-        if (col == (int)sphere_index.back())
+        if (col == members.size()-1 || members[col+1] != members[col])
+        //if (col == (int)sphere_index.back())
           new_val = period_shift(new_val, M_PI);
       r.tess[ci + col * nC] = new_val;
     }
@@ -771,7 +780,8 @@ static ProposalResult propose_internal(
     for (int row = 0; row < nC; row++) {
       new_val = mus[swap_idx] + norm_rand() * sd[swap_idx];
       if (metric[swap_idx] == 1)
-        if (swap_idx == (int)sphere_index.back())
+        if (swap_idx == members.size()-1 || members[swap_idx+1] != members[swap_idx])
+        //if (swap_idx == (int)sphere_index.back())
           new_val = period_shift(new_val, M_PI);
       r.tess[row + swap_idx * nC] = new_val;
     }
@@ -897,9 +907,9 @@ extern "C" {
     }
 
     // Precompute 0-based spherical dimension indices (mirrors which_elem in C++)
-    std::vector<int> sphere_index;
-    for (int g = 0; g < p; g++)
-      if (metric[g] == 1) sphere_index.push_back(g);
+    // std::vector<int> sphere_index;
+    // for (int g = 0; g < p; g++)
+    //   if (metric[g] == 1) sphere_index.push_back(g);
 
     // -------------------------------------------------------------------------
     // 2. Unpack initial tessellation state from R lists
@@ -1004,7 +1014,7 @@ extern "C" {
         // Propose new tessellation
         ProposalResult prop = propose_internal(
           tess[j], tess_nC[j], tess_d[j], dim_j[j],
-          p, sd, mus, metric, sphere_index);
+          p, sd, mus, metric, members);
 
         // Clamp binary columns to [0, catScaling] in the proposal
         if (!binaryCols.empty()) {
