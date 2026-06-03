@@ -1,5 +1,15 @@
 # AddiVortes News
 
+## AddiVortes 0.6.1
+
+* AddiVortes now supports covariates drawn from multiple subspaces of the same
+  type and allows future support for more complex categorical covariate distance
+  metrics; `AddiVortes` now takes a `members` argument as well as the `metric`
+  argument to identify different covariate subspaces.
+* Distance calculation has been streamlined and modularised via data preprocessing
+  in `covariateStructure` and associated changes in C++ code.
+* Package dependency has been updated to **explicitly require** C++20 compilation.
+
 ## AddiVortes 0.6.0
 
 * Consolidated model fitting into a single C++ call (`addi_vortes_mcmc_cpp`).
