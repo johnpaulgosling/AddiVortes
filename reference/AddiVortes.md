@@ -27,6 +27,7 @@ AddiVortes(
   InitialSigma = "Linear",
   thinning = 1,
   metric = "E",
+  members = NULL,
   catScaling = 1,
   showProgress = interactive()
 )
@@ -92,7 +93,13 @@ AddiVortes(
 
 - metric:
 
-  Either "E" (Euclidean, default) or "S" (Spherical).
+  Either "E" (Euclidean, default), "S" (Spherical), or "C"
+  (Categorical).
+
+- members:
+
+  If needed, indicates membership of covariates into different subspaces
+  (needed if using multiple spheres in covariate space). Default `NULL`.
 
 - catScaling:
 

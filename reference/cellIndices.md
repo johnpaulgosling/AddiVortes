@@ -6,7 +6,7 @@ each observation belongs to based on nearest neighbour classification.
 ## Usage
 
 ``` r
-cellIndices(x, tess, dim, metric = "Euclidean")
+cellIndices(x, tess, dim, metric = "E", members)
 ```
 
 ## Arguments
@@ -28,6 +28,10 @@ cellIndices(x, tess, dim, metric = "Euclidean")
 - metric:
 
   Either "Euclidean" or "Spherical".
+
+- members:
+
+  A vector indicating covariate membership.
 
 ## Value
 

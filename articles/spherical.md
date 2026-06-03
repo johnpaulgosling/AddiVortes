@@ -57,6 +57,7 @@ synthetic “temperature” that is warmest at the equator and varies with
 longitude.
 
 ``` r
+
 library(AddiVortes)
 
 set.seed(42)
@@ -80,6 +81,7 @@ The plot below shows the spatial distribution of the simulated response
 values:
 
 ``` r
+
 # Colour scale for the response
 cols <- colorRampPalette(c("blue", "white", "red"))(100)
 col_index <- cut(y, breaks = 100, labels = FALSE)
@@ -110,6 +112,7 @@ columns are spherical coordinates. The model will then use great-circle
 distance when assigning observations to Voronoi cells.
 
 ``` r
+
 fit_sph <- AddiVortes(
   y = y,
   x = x,
@@ -122,6 +125,7 @@ fit_sph <- AddiVortes(
 ```
 
 ``` r
+
 cat("In-sample RMSE (spherical metric):", round(fit_sph$inSampleRmse, 3), "\n")
 #> In-sample RMSE (spherical metric): 1.284
 ```
@@ -132,6 +136,7 @@ ordinary continuous variables and will not handle the wrap-around near
 ±π correctly.
 
 ``` r
+
 fit_euc <- AddiVortes(
   y = y,
   x = x,
@@ -144,6 +149,7 @@ fit_euc <- AddiVortes(
 ```
 
 ``` r
+
 cat("In-sample RMSE (Euclidean metric):", round(fit_euc$inSampleRmse, 3), "\n")
 #> In-sample RMSE (Euclidean metric): 1.377
 ```
@@ -155,6 +161,7 @@ include a group of observations near the date line (longitude ≈ ±π) to
 highlight where the Euclidean metric is most likely to struggle.
 
 ``` r
+
 set.seed(101)
 n_test <- 200
 
@@ -168,11 +175,13 @@ x_test <- cbind(lat_test, lon_test)
 ```
 
 ``` r
+
 preds_sph <- predict(fit_sph, x_test, showProgress = FALSE)
 preds_euc <- predict(fit_euc, x_test, showProgress = FALSE)
 ```
 
 ``` r
+
 rmse_sph <- sqrt(mean((y_test - preds_sph)^2))
 rmse_euc <- sqrt(mean((y_test - preds_euc)^2))
 
@@ -189,6 +198,7 @@ the test set. A well-calibrated model should have points lying close to
 the diagonal.
 
 ``` r
+
 y_range <- range(c(y_test, preds_sph, preds_euc))
 
 plot(y_test, preds_sph,

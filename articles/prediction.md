@@ -16,6 +16,7 @@ is determined by a simple rule based on the first two predictors,
 model.
 
 ``` r
+
 # Load the package
 library(AddiVortes)
 
@@ -52,11 +53,13 @@ example, we’ll use a small number of trees (`m=50`) for a quick
 demonstration.
 
 ``` r
+
 # Fit the model
 AModel <- AddiVortes(Y, X, m = 50, showProgress = FALSE)
 ```
 
 ``` r
+
 # We can check the in-sample Root Mean Squared Error
 cat("In-sample RMSE:", AModel$inSampleRmse, "\n")
 #> In-sample RMSE: 0.8454648
@@ -74,6 +77,7 @@ the [`predict()`](https://rdrr.io/r/stats/predict.html) method on our
 fitted model (`AModel`) to get predictions for this new data.
 
 ``` r
+
 # --- Generate Test Data ---
 set.seed(101) # Use a different seed for the test set
 testX <- matrix(runif(1000), ncol = 5)
@@ -122,6 +126,7 @@ represent the 90% credible intervals for each prediction, giving us a
 sense of the model’s uncertainty.
 
 ``` r
+
 # Plot observed vs. predicted values
 plot(testY,
   preds,
@@ -184,6 +189,7 @@ two types of intervals, similar to R’s built-in `lm` function:
 Let’s compare these two types of intervals on a subset of test data:
 
 ``` r
+
 # Use a subset of test data for clearer visualization
 subset_indices <- 1:20
 testX_subset <- testX[subset_indices, ]
@@ -266,6 +272,7 @@ account for both:
 We can quantify this difference:
 
 ``` r
+
 # Calculate average interval widths
 cred_width <- mean(cred_intervals[, 2] - cred_intervals[, 1])
 pred_width <- mean(pred_intervals[, 2] - pred_intervals[, 1])

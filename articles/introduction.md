@@ -15,6 +15,7 @@ the well-known Boston Housing dataset, included within this package as
 `Boston`.
 
 ``` r
+
 # Load the package
 require(AddiVortes)
 
@@ -30,6 +31,7 @@ training set and a testing set. We will use a standard 5/6 split for
 training and 1/6 for testing.
 
 ``` r
+
 n <- length(Y_Boston)
 
 # Set a seed for reproducibility
@@ -49,6 +51,7 @@ will specify several parameters for the algorithm, such as the number of
 iterations and trees.
 
 ``` r
+
 # Run the AddiVortes algorithm on the training data
 results <- AddiVortes(
   y = Y_Boston[TrainSet],
@@ -74,6 +77,7 @@ test data. We will then calculate the Root Mean Squared Error (RMSE) to
 see how well the model performed.
 
 ``` r
+
 # Generate predictions on the test set
 preds <- predict(results,
   X_Boston[TestSet, ],
@@ -98,6 +102,7 @@ the equality line (y = x). We will also plot the prediction intervals to
 visualise the model’s uncertainty.
 
 ``` r
+
 # Plot true values vs. predicted values
 plot(Y_Boston[TestSet],
   preds,

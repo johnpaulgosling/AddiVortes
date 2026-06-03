@@ -39,6 +39,7 @@ AddiVortes is particularly well-suited for:
 You can install the latest version of AddiVortes from GitHub with:
 
 ``` r
+
 # install.packages("devtools")
 devtools::install_github("johnpaulgosling/AddiVortes", 
                          build_vignettes = TRUE)
@@ -47,6 +48,7 @@ devtools::install_github("johnpaulgosling/AddiVortes",
 ## Quick Start
 
 ``` r
+
 library(AddiVortes)
 
 # Load your data
@@ -85,6 +87,7 @@ provide:
 If you use this package in your research, please cite:
 
 ``` r
+
 citation("AddiVortes")
 ```
 

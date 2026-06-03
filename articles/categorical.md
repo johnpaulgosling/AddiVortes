@@ -65,6 +65,7 @@ and two categorical covariates. The response variable depends on all
 four:
 
 ``` r
+
 library(AddiVortes)
 
 set.seed(123)
@@ -104,6 +105,7 @@ We can call the internal encoding function directly to see exactly what
 the encoded matrix looks like before fitting the model.
 
 ``` r
+
 # Show the first few rows of x before encoding
 head(x, 5)
 #>        age   income region product
@@ -115,6 +117,7 @@ head(x, 5)
 ```
 
 ``` r
+
 # Manually inspect the encoding applied by AddiVortes
 enc_result <- AddiVortes:::encodeCategories_internal(x, catScaling = 1)
 head(enc_result$encoded, 5)
@@ -148,6 +151,7 @@ the data frame with character or factor columns directly. `AddiVortes`
 handles the encoding internally.
 
 ``` r
+
 # Split into training and test sets
 set.seed(42)
 train_idx <- sample(n, 300)
@@ -169,6 +173,7 @@ fit <- AddiVortes(
 ```
 
 ``` r
+
 cat("In-sample RMSE:", round(fit$inSampleRmse, 3), "\n")
 #> In-sample RMSE: 2.393
 
@@ -201,16 +206,19 @@ the same categorical levels as the training data, the encoding is
 applied consistently.
 
 ``` r
+
 preds <- predict(fit, x_test, showProgress = FALSE)
 ```
 
 ``` r
+
 rmse_test <- sqrt(mean((y_test - preds)^2))
 cat("Test RMSE:", round(rmse_test, 3), "\n")
 #> Test RMSE: 2.883
 ```
 
 ``` r
+
 # Colour observations by product category
 prod_cols <- c("Basic" = "steelblue", "Premium" = "darkorange", "Deluxe" = "darkgreen")
 point_cols <- prod_cols[x_test$product]
@@ -240,6 +248,7 @@ the model cannot infer anything about a previously unseen level and
 falls back to the baseline.
 
 ``` r
+
 # Create a test point with an unseen product level "Luxury"
 x_new <- data.frame(
   age = 45,
@@ -251,10 +260,12 @@ x_new <- data.frame(
 ```
 
 ``` r
+
 pred_new <- predict(fit, x_new, showProgress = FALSE)
 ```
 
 ``` r
+
 cat(
   "Prediction for unseen category 'Luxury' (treated as 'Basic'):",
   round(pred_new, 3), "\n"
@@ -271,6 +282,7 @@ one with `catScaling = 1` (equal weight) and one with `catScaling = 2`
 RMSEs.
 
 ``` r
+
 fit_cs2 <- AddiVortes(
   y = y_train,
   x = x_train,
@@ -283,10 +295,12 @@ fit_cs2 <- AddiVortes(
 ```
 
 ``` r
+
 preds_cs2 <- predict(fit_cs2, x_test, showProgress = FALSE)
 ```
 
 ``` r
+
 cat("Test RMSE (catScaling = 1):", round(rmse_test, 3), "\n")
 #> Test RMSE (catScaling = 1): 2.883
 cat("Test RMSE (catScaling = 2):", round(sqrt(mean((y_test - preds_cs2)^2)), 3), "\n")

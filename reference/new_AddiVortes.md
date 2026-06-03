@@ -16,6 +16,9 @@ new_AddiVortes(
   yRange,
   inSampleRmse,
   metric = "E",
+  members = rep(1, length(xCentres)),
+  metric_aug = "E",
+  member_aug = rep(1, length(xCentres)),
   catEncoding = NULL
 )
 ```
@@ -61,6 +64,19 @@ new_AddiVortes(
 - metric:
 
   The metric used for scaling covariates (default "E" for Euclidean).
+
+- members:
+
+  The membership vector for the covariates
+
+- metric_aug:
+
+  The augmented metric after categorical variables are converted to
+  one-hot
+
+- member_aug:
+
+  The membership vector corresponding to metric_aug
 
 - catEncoding:
 
