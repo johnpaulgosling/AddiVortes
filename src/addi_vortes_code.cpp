@@ -18,11 +18,12 @@
 #include <Rmath.h>        // For dbinom(), dpois(), rgamma()
 #include <R_ext/Random.h> // For unif_rand() and norm_rand()
 
-// Helper function to check if a value is in a vector
+// Check if a value is in a vector
 bool in_vector(int value, const std::vector<int>& vec) {
   return std::find(vec.begin(), vec.end(), value) != vec.end();
 }
 
+// Count the number of elements in an array equalling a given value
 int n_elem(int value, const std::vector<int>& vec) {
   int total = 0;
   for (int i = 0; i < vec.size(); ++i) {
@@ -33,6 +34,7 @@ int n_elem(int value, const std::vector<int>& vec) {
   return total;
 }
 
+// Collates indices of elements in an array equalling a given value
 std::vector<int> which_elem(int value, const std::vector<int>& vec) {
   std::vector<int> indexes(n_elem(value, vec));
   int indexes_index = 0;
@@ -45,6 +47,7 @@ std::vector<int> which_elem(int value, const std::vector<int>& vec) {
   return indexes;
 }
 
+// Performs periodic shifts, based on given limit (for redefining spherical coords)
 double period_shift(double val, double lim) {
   while (val >= lim) {
     val -= 2*lim;
@@ -55,19 +58,7 @@ double period_shift(double val, double lim) {
   return val;
 }
 
-// Computes Euclidean distance between two points
-double euclidean_distance(const std::vector<double>& p1, const std::vector<double>& p2) {
-  if (p1.size() != p2.size()) {
-    Rf_error("Points have incompatible dimensions.");
-  }
-  double dist = 0.0;
-  for (int i = 0; i < static_cast<int>(p1.size()); ++i) {
-    const double diff = p1[i] - p2[i];
-    dist += diff * diff;
-  }
-  return dist;
-}
-
+// Calculates Euclidean distance between two vectors
 double euclidean_distance(std::span<const double> p1, std::span<const double> p2) {
   if (p1.size() != p2.size()) {
     Rf_error("Points have incompatible dimensions.");
@@ -80,39 +71,7 @@ double euclidean_distance(std::span<const double> p1, std::span<const double> p2
   return dist;
 }
 
-// Computes great circle distance on an n-sphere.
-// It assumes that the last dimension is the 'azimuthal' distance; i.e. the one with range [-pi, pi].
-// Optimisation not great: needs some work with the trigonometric functions.
-// The issue is that one needs all the covariates to calculate: you can't just cull the covariates not in the tessellation.
-double spherical_distance(const std::vector<double>& p1, const std::vector<double>& p2) {
-  if (p1.size() != p2.size()) {
-    Rf_error("Points have incompatible dimensions.");
-  }
-  if (p1.size() == 1) {
-    double a1 = abs(p1[0]-p2[0]);
-    double a2 = 2*M_PI-a1;
-    if (a1 < a2) return(a1*a1);
-    return(a2*a2);
-  }
-  double angle_diff = cos(p1[p1.size()-1]-p2[p2.size()-1]);
-  for (int i = p1.size()-2; i >= 0; --i) {
-    double internal = sin(p1[i]) * sin(p2[i]) + cos(p1[i]) * cos(p2[i]) * angle_diff;
-    if (internal > 1) {
-      internal = 1;
-    }
-    if (internal < -1) {
-      internal = -1.0;
-    }
-    if (i == 0) {
-      angle_diff = acos(internal);
-    }
-    else {
-      angle_diff = internal;
-    }
-  }
-  return(angle_diff * angle_diff);
-}
-
+// Calculates spherical distance between two vectors
 double spherical_distance(std::span<const double> p1, std::span<const double> p2) {
   if (p1.size() != p2.size()) {
     Rf_error("Points have incompatible dimensions.");
@@ -142,19 +101,22 @@ double spherical_distance(std::span<const double> p1, std::span<const double> p2
   return(angle_diff * angle_diff);
 }
 
+/* 
+A wrapper for distance calculation; takes two vectors to calculate distance between,
+as well as two more vectors:
+- nvals: each element indicates how many coordinates are of a specified type
+- type: The corresponding type of coordinates; eg Euclidean, Spherical.
+For example, for 6-vectors with the first 4 coordinates Euclidean and the last
+two Spherical, nvals = {4,2} and type = {0, 1}.
+This is easily extensible for additional coordinate types (e.g. categorical).
+*/
 double calc_distance(std::vector<double>& vec1, std::vector<double>& vec2,
     const std::vector<int>& nvals, const std::vector<int>& type) {
     int idx = 0;
     double tot = 0;
     for (int i = 0; i < nvals.size(); i++) {
         int these_vals = nvals[i];
-        // std::vector<double>::const_iterator first1 = vec1.begin()+idx;
-        // std::vector<double>::const_iterator last1 = vec1.begin()+idx+these_vals;
-        // std::vector<double> subvec1(first1, last1);
         std::span<const double> subvec1(vec1.data() + idx, these_vals);
-        // std::vector<double>::const_iterator first2 = vec2.begin()+idx;
-        // std::vector<double>::const_iterator last2 = vec2.begin()+idx+these_vals;
-        // std::vector<double> subvec2(first2, last2); 
         std::span<const double> subvec2(vec2.data() + idx, these_vals);
         if (type[i] == 0) {
             double val = euclidean_distance(subvec1, subvec2);
@@ -375,11 +337,6 @@ extern "C" {
     double new_val = 0.0;
     
     double p = unif_rand();
-
-    // std::vector<int> sphere_index;
-    // if (in_vector(1, metric)) {
-    //   sphere_index = which_elem(1, metric);
-    // }
     
     // --- Main Logic ---
     // Add Dimension (AD): ensure we don't try to add a dimension when all covariates are already selected
@@ -400,12 +357,8 @@ extern "C" {
         new_val = mu[new_dim-1] + norm_rand() * sd[new_dim-1];
         if (metric[new_dim-1] == 1) {
           if (new_dim - 1 == members.size()-1 || members[new_dim] != members[new_dim-1]) {
-          //if (new_dim - 1 == sphere_index[sphere_index.size()-1]) {
             new_val = period_shift(new_val, M_PI);
           }
-          // else {
-          //   new_val = period_shift(new_val, M_PI_2);
-          // }
         }
         new_tess[r + d_j_length * tess_j_rows] = new_val;
       }
@@ -434,12 +387,8 @@ extern "C" {
         new_val = mu[i] + norm_rand() * sd[i];
         if (metric[i] == 1) {
           if (i == members.size()-1 || members[i+1] != members[i]) {
-          //if (i == sphere_index[sphere_index.size()-1]) {
             new_val = period_shift(new_val, M_PI);
           }
-          // else {
-          //   new_val = period_shift(new_val, M_PI_2);
-          // }
         }
         tess_j_star.insert(tess_j_star.begin() + (i * (tess_j_rows + 1)) + tess_j_rows, new_val);
       }
@@ -464,12 +413,8 @@ extern "C" {
         new_val = mu[c] + norm_rand() * sd[c];
         if (metric[c] == 1) {
           if (c == members.size()-1 || members[c+1] != members[c]) {
-          //if (c == sphere_index[sphere_index.size()-1]) {
             new_val = period_shift(new_val, M_PI);
           }
-          // else {
-          //   new_val = period_shift(new_val, M_PI_2);
-          // }
         }
         tess_j_star[centre_to_change_idx + c * tess_j_rows] = new_val;
       }
@@ -487,12 +432,8 @@ extern "C" {
         new_val = mu[dim_to_change_idx] + norm_rand() * sd[dim_to_change_idx];
         if (metric[dim_to_change_idx] == 1) {
           if (dim_to_change_idx == members.size()-1 || members[dim_to_change_idx+1] != members[dim_to_change_idx]) {
-          //if (dim_to_change_idx == sphere_index[sphere_index.size()-1]) {
             new_val = period_shift(new_val, M_PI);
           }
-          // else {
-          //   new_val = period_shift(new_val, M_PI_2);
-          // }
         }
         tess_j_star[r + dim_to_change_idx * tess_j_rows] = new_val;
       }
@@ -706,7 +647,6 @@ static ProposalResult propose_internal(
       new_val = mus[new_dim - 1] + norm_rand() * sd[new_dim - 1];
       if (metric[new_dim - 1] == 1)
         if (new_dim - 1 == members.size()-1 || members[new_dim] != members[new_dim-1])
-        //if ((new_dim - 1) == sphere_index.back())
           new_val = period_shift(new_val, M_PI);
       new_tess[row + d_j * nC] = new_val;
     }
@@ -740,7 +680,6 @@ static ProposalResult propose_internal(
       new_val = mus[i] + norm_rand() * sd[i];
       if (metric[i] == 1)
         if (i == members.size()-1 || members[i+1] != members[i])
-        //if (i == (int)sphere_index.back())
           new_val = period_shift(new_val, M_PI);
       r.tess.insert(r.tess.begin() + (i * (nC + 1)) + nC, new_val);
     }
@@ -781,7 +720,6 @@ static ProposalResult propose_internal(
       new_val = mus[swap_idx] + norm_rand() * sd[swap_idx];
       if (metric[swap_idx] == 1)
         if (swap_idx == members.size()-1 || members[swap_idx+1] != members[swap_idx])
-        //if (swap_idx == (int)sphere_index.back())
           new_val = period_shift(new_val, M_PI);
       r.tess[row + swap_idx * nC] = new_val;
     }
@@ -885,15 +823,6 @@ extern "C" {
       for (int i = 0; i < nb; i++) binaryCols.push_back(bc[i] - 1);
     }
 
-    // Precompute coind: global dim index -> position in E or S sub-vector
-    // std::vector<int> coind(p, 0);
-    // int cntE = 0, cntS = 0;
-    // for (int g = 0; g < p; g++) {
-    //   if (metric[g] == 0) coind[g] = cntE++;
-    //   else                 coind[g] = cntS++;
-    // }
-    // int nE = cntE, nS = cntS;
-
     // Precompute reduced metric and membership, for distance calculation
     std::vector<int> metric_red, member_red;
     int i = 0;
@@ -905,11 +834,6 @@ extern "C" {
       metric_red.push_back(this_metric);
       i += how_many;
     }
-
-    // Precompute 0-based spherical dimension indices (mirrors which_elem in C++)
-    // std::vector<int> sphere_index;
-    // for (int g = 0; g < p; g++)
-    //   if (metric[g] == 1) sphere_index.push_back(g);
 
     // -------------------------------------------------------------------------
     // 2. Unpack initial tessellation state from R lists
