@@ -62,7 +62,7 @@
                         <h4 data-toc-skip class="author">Andy Iskauskas
 and John Paul Gosling</h4>
             
-            <h4 data-toc-skip class="date">2026-06-03</h4>
+            <h4 data-toc-skip class="date">2026-06-05</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/johnpaulgosling/AddiVortes/blob/main/vignettes/spherical.Rmd" class="external-link"><code>vignettes/spherical.Rmd</code></a></small>
       <div class="d-none name"><code>spherical.Rmd</code></div>
@@ -269,7 +269,113 @@ to the diagonal.</p>
 <p><img src="spherical_files/figure-html/plot_predictions-1.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level3">
-<h3 id="summary-of-key-points">7. Summary of Key Points<a class="anchor" aria-label="anchor" href="#summary-of-key-points"></a>
+<h3 id="multiple-spherical-covariates">7. Multiple Spherical Covariates<a class="anchor" aria-label="anchor" href="#multiple-spherical-covariates"></a>
+</h3>
+<p>If the dataset contains covariates whose embedding is on separate
+n-spheres, then these must be treated separately in
+<code>AddiVortes</code>. We augment the data above to illustrate
+this.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
+<span><span class="va">lat_prime1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="op">-</span><span class="va">pi</span><span class="op">/</span><span class="fl">2</span>, <span class="va">pi</span><span class="op">/</span><span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">lat_prime2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="op">-</span><span class="va">pi</span><span class="op">/</span><span class="fl">2</span>, <span class="va">pi</span><span class="op">/</span><span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">lon_prime</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, <span class="op">-</span><span class="va">pi</span>, <span class="va">pi</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">y_prime_true</span> <span class="op">&lt;-</span> <span class="fl">20</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">cos</a></span><span class="op">(</span><span class="va">lat</span><span class="op">)</span> <span class="op">+</span> <span class="fl">5</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">sin</a></span><span class="op">(</span><span class="va">lon</span><span class="op">)</span> <span class="op">-</span> <span class="fl">5</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">cos</a></span><span class="op">(</span><span class="va">lat_prime1</span><span class="op">)</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">sin</a></span><span class="op">(</span><span class="va">lat_prime2</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fl">10</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">sin</a></span><span class="op">(</span><span class="va">lon_prime</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">sin</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">lat_prime1</span> <span class="op">-</span> <span class="va">lat_prime2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">y_prime</span> <span class="op">&lt;-</span> <span class="va">y_prime_true</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, sd <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">x_prime</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">lat</span>, <span class="va">lon</span>, <span class="va">lat_prime1</span>, <span class="va">lat_prime2</span>, <span class="va">lon_prime</span><span class="op">)</span></span></code></pre></div>
+<p>If we try to use <code>AddiVortes</code> as before, we will encounter
+an error, since there are two azimuthal coordinates in the
+covariates.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit_sph_new</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AddiVortes.html">AddiVortes</a></span><span class="op">(</span></span>
+<span>  y <span class="op">=</span> <span class="va">y_prime</span>,</span>
+<span>  x <span class="op">=</span> <span class="va">x_prime</span>,</span>
+<span>  m <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  totalMCMCIter <span class="op">=</span> <span class="fl">500</span>,</span>
+<span>  mcmcBurnIn <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  metric <span class="op">=</span> <span class="st">"S"</span>, <span class="co"># use great-circle distance for all columns</span></span>
+<span>  showProgress <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;"> in `covariateStructure_internal()`:</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> More than one spherical parameter in membership group 2 has range &gt;pi.</span></span></code></pre></div>
+<p>To recitfy this, we provide <code>AddiVortes</code> with an
+additional argument, <code>members</code>, which indicates which
+coordinates belong to which space: in this case we give the first two
+coordinates membership 1, and the other three membership 2.</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit_sph_new</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AddiVortes.html">AddiVortes</a></span><span class="op">(</span></span>
+<span>  y <span class="op">=</span> <span class="va">y_prime</span>,</span>
+<span>  x <span class="op">=</span> <span class="va">x_prime</span>,</span>
+<span>  m <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  totalMCMCIter <span class="op">=</span> <span class="fl">500</span>,</span>
+<span>  mcmcBurnIn <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  metric <span class="op">=</span> <span class="st">"S"</span>, <span class="co"># use great-circle distance for all columns,</span></span>
+<span>  members <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">2</span>, times <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>,<span class="fl">3</span><span class="op">)</span><span class="op">)</span>, <span class="co"># indicate membership</span></span>
+<span>  showProgress <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>We follow the same process as before; fitting with Euclidean
+coordinates, and comparing the results relative to a hold-out test
+set.</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit_euc_new</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AddiVortes.html">AddiVortes</a></span><span class="op">(</span></span>
+<span>  y <span class="op">=</span> <span class="va">y_prime</span>,</span>
+<span>  x <span class="op">=</span> <span class="va">x_prime</span>,</span>
+<span>  m <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  totalMCMCIter <span class="op">=</span> <span class="fl">500</span>,</span>
+<span>  mcmcBurnIn <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  metric <span class="op">=</span> <span class="st">"E"</span>, <span class="co"># Euclidean distance (default)</span></span>
+<span>  showProgress <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">## Set up test data</span></span>
+<span><span class="va">lat_prime_test1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n_test</span>, <span class="op">-</span><span class="va">pi</span><span class="op">/</span><span class="fl">2</span>, <span class="va">pi</span><span class="op">/</span><span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">lat_prime_test2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n_test</span>, <span class="op">-</span><span class="va">pi</span><span class="op">/</span><span class="fl">2</span>, <span class="va">pi</span><span class="op">/</span><span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">lon_prime_test</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n_test</span>, <span class="op">-</span><span class="va">pi</span>, <span class="va">pi</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">y_prime_test_true</span> <span class="op">&lt;-</span> <span class="fl">20</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">cos</a></span><span class="op">(</span><span class="va">lat_test</span><span class="op">)</span> <span class="op">+</span> <span class="fl">5</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">sin</a></span><span class="op">(</span><span class="va">lon_test</span><span class="op">)</span> <span class="op">-</span> <span class="fl">5</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">cos</a></span><span class="op">(</span><span class="va">lat_prime_test1</span><span class="op">)</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">sin</a></span><span class="op">(</span><span class="va">lat_prime_test2</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fl">10</span><span class="op">*</span><span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">sin</a></span><span class="op">(</span><span class="va">lon_prime_test</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">sin</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">lat_prime_test1</span> <span class="op">-</span> <span class="va">lat_prime_test2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">y_prime_test</span> <span class="op">&lt;-</span> <span class="va">y_prime_test_true</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_test</span>, sd <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">x_prime_test</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">lat_test</span>, <span class="va">lon_test</span>, <span class="va">lat_prime_test1</span>, <span class="va">lat_prime_test2</span>, <span class="va">lon_prime_test</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">## Make predictions</span></span>
+<span><span class="va">preds_prime_sph</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_sph_new</span>, <span class="va">x_prime_test</span>, showProgress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">preds_prime_euc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_euc_new</span>, <span class="va">x_prime_test</span>, showProgress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">rmse_prime_sph</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">y_prime_test</span> <span class="op">-</span> <span class="va">preds_prime_sph</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">rmse_prime_euc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">y_prime_test</span> <span class="op">-</span> <span class="va">preds_prime_euc</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Test RMSE — spherical metric:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">rmse_prime_sph</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Test RMSE — spherical metric: 3.595</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Test RMSE — Euclidean metric:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">rmse_prime_euc</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Test RMSE — Euclidean metric: 3.536</span></span>
+<span></span>
+<span><span class="va">y_prime_range</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">y_prime_test</span>, <span class="va">preds_prime_sph</span>, <span class="va">preds_prime_euc</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">y_prime_test</span>, <span class="va">preds_prime_sph</span>,</span>
+<span>  pch <span class="op">=</span> <span class="fl">19</span>, col <span class="op">=</span> <span class="st">"darkblue"</span>, cex <span class="op">=</span> <span class="fl">0.7</span>,</span>
+<span>  xlab <span class="op">=</span> <span class="st">"Observed values"</span>,</span>
+<span>  ylab <span class="op">=</span> <span class="st">"Predicted values"</span>,</span>
+<span>  main <span class="op">=</span> <span class="st">"Spherical vs. Euclidean Metric: Predicted vs. Observed"</span>,</span>
+<span>  xlim <span class="op">=</span> <span class="va">y_prime_range</span>, ylim <span class="op">=</span> <span class="va">y_prime_range</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/points.html" class="external-link">points</a></span><span class="op">(</span><span class="va">y_prime_test</span>, <span class="va">preds_prime_euc</span>, pch <span class="op">=</span> <span class="fl">4</span>, col <span class="op">=</span> <span class="st">"darkred"</span>, cex <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, lwd <span class="op">=</span> <span class="fl">2</span>, lty <span class="op">=</span> <span class="fl">2</span>, col <span class="op">=</span> <span class="st">"grey40"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topleft"</span>,</span>
+<span>  legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Spherical metric"</span>, <span class="st">"Euclidean metric"</span>, <span class="st">"y = x"</span><span class="op">)</span>,</span>
+<span>  col    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"darkblue"</span>, <span class="st">"darkred"</span>, <span class="st">"grey40"</span><span class="op">)</span>,</span>
+<span>  pch    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">19</span>, <span class="fl">4</span>, <span class="cn">NA</span><span class="op">)</span>,</span>
+<span>  lty    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="cn">NA</span>, <span class="fl">2</span><span class="op">)</span>,</span>
+<span>  lwd    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="cn">NA</span>, <span class="fl">2</span><span class="op">)</span>,</span>
+<span>  bty    <span class="op">=</span> <span class="st">"n"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><img src="spherical_files/figure-html/multi_sph_compare-1.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>
+</div>
+<div class="section level3">
+<h3 id="summary-of-key-points">8. Summary of Key Points<a class="anchor" aria-label="anchor" href="#summary-of-key-points"></a>
 </h3>
 <ul>
 <li>Set <code>metric = "S"</code> (or <code>metric = "Spherical"</code>)
@@ -278,11 +384,16 @@ columns.</li>
 <li>For datasets that mix spherical and non-spherical covariates, pass a
 vector of 0s and 1s, e.g. <code>metric = c(1, 1, 0)</code> for two
 spherical dimensions and one Euclidean dimension.</li>
+<li>For datasets with covariates taken from multiple different spherical
+coordinate systems, pass a vector of membership to indicate which
+belongs to which. For example, for five covariates where the first three
+are from S3 and the remaining two are from S2,
+<code>members = rep(1:2, times = c(3,2))</code>.</li>
 <li>Spherical coordinates must be in <strong>radians</strong>: latitude
 in [−π/2, π/2] and longitude in [−π, π].</li>
-<li>The <strong>last</strong> spherical column is treated as the
-azimuthal (longitude) dimension; all other spherical columns are treated
-as polar (latitude) dimensions.</li>
+<li>The <strong>last</strong> spherical column for each set is treated
+as the azimuthal (longitude) dimension; all other spherical columns are
+treated as polar (latitude) dimensions.</li>
 <li>The great-circle distance correctly handles wrap-around, so points
 near longitude ±π are recognised as neighbours.</li>
 </ul>

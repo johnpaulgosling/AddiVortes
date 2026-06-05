@@ -222,17 +222,143 @@ legend("topleft",
 
 ![](spherical_files/figure-html/plot_predictions-1.png)
 
-### 7. Summary of Key Points
+### 7. Multiple Spherical Covariates
+
+If the dataset contains covariates whose embedding is on separate
+n-spheres, then these must be treated separately in `AddiVortes`. We
+augment the data above to illustrate this.
+
+``` r
+
+
+lat_prime1 <- runif(n, -pi/2, pi/2)
+lat_prime2 <- runif(n, -pi/2, pi/2)
+lon_prime <- runif(n, -pi, pi)
+
+y_prime_true <- 20 * cos(lat) + 5 * sin(lon) - 5 * cos(lat_prime1) * sin(lat_prime2) +
+  10*sin(lon_prime)^2 * sin(abs(lat_prime1 - lat_prime2))
+y_prime <- y_prime_true + rnorm(n, sd = 3)
+
+x_prime <- cbind(lat, lon, lat_prime1, lat_prime2, lon_prime)
+```
+
+If we try to use `AddiVortes` as before, we will encounter an error,
+since there are two azimuthal coordinates in the covariates.
+
+``` r
+
+fit_sph_new <- AddiVortes(
+  y = y_prime,
+  x = x_prime,
+  m = 50,
+  totalMCMCIter = 500,
+  mcmcBurnIn = 100,
+  metric = "S", # use great-circle distance for all columns
+  showProgress = FALSE
+)
+#> Error in `covariateStructure_internal()`:
+#> ! More than one spherical parameter in membership group 2 has range >pi.
+```
+
+To recitfy this, we provide `AddiVortes` with an additional argument,
+`members`, which indicates which coordinates belong to which space: in
+this case we give the first two coordinates membership 1, and the other
+three membership 2.
+
+``` r
+
+fit_sph_new <- AddiVortes(
+  y = y_prime,
+  x = x_prime,
+  m = 50,
+  totalMCMCIter = 500,
+  mcmcBurnIn = 100,
+  metric = "S", # use great-circle distance for all columns,
+  members = rep(1:2, times = c(2,3)), # indicate membership
+  showProgress = FALSE
+)
+```
+
+We follow the same process as before; fitting with Euclidean
+coordinates, and comparing the results relative to a hold-out test set.
+
+``` r
+
+fit_euc_new <- AddiVortes(
+  y = y_prime,
+  x = x_prime,
+  m = 50,
+  totalMCMCIter = 500,
+  mcmcBurnIn = 100,
+  metric = "E", # Euclidean distance (default)
+  showProgress = FALSE
+)
+```
+
+``` r
+
+## Set up test data
+lat_prime_test1 <- runif(n_test, -pi/2, pi/2)
+lat_prime_test2 <- runif(n_test, -pi/2, pi/2)
+lon_prime_test <- runif(n_test, -pi, pi)
+
+y_prime_test_true <- 20 * cos(lat_test) + 5 * sin(lon_test) - 5 * cos(lat_prime_test1) * sin(lat_prime_test2) +
+  10*sin(lon_prime_test)^2 * sin(abs(lat_prime_test1 - lat_prime_test2))
+y_prime_test <- y_prime_test_true + rnorm(n_test, sd = 3)
+
+x_prime_test <- cbind(lat_test, lon_test, lat_prime_test1, lat_prime_test2, lon_prime_test)
+
+## Make predictions
+preds_prime_sph <- predict(fit_sph_new, x_prime_test, showProgress = FALSE)
+preds_prime_euc <- predict(fit_euc_new, x_prime_test, showProgress = FALSE)
+
+rmse_prime_sph <- sqrt(mean((y_prime_test - preds_prime_sph)^2))
+rmse_prime_euc <- sqrt(mean((y_prime_test - preds_prime_euc)^2))
+
+cat("Test RMSE — spherical metric:", round(rmse_prime_sph, 3), "\n")
+#> Test RMSE — spherical metric: 3.595
+cat("Test RMSE — Euclidean metric:", round(rmse_prime_euc, 3), "\n")
+#> Test RMSE — Euclidean metric: 3.536
+
+y_prime_range <- range(c(y_prime_test, preds_prime_sph, preds_prime_euc))
+
+plot(y_prime_test, preds_prime_sph,
+  pch = 19, col = "darkblue", cex = 0.7,
+  xlab = "Observed values",
+  ylab = "Predicted values",
+  main = "Spherical vs. Euclidean Metric: Predicted vs. Observed",
+  xlim = y_prime_range, ylim = y_prime_range
+)
+points(y_prime_test, preds_prime_euc, pch = 4, col = "darkred", cex = 0.7)
+abline(0, 1, lwd = 2, lty = 2, col = "grey40")
+legend("topleft",
+  legend = c("Spherical metric", "Euclidean metric", "y = x"),
+  col    = c("darkblue", "darkred", "grey40"),
+  pch    = c(19, 4, NA),
+  lty    = c(NA, NA, 2),
+  lwd    = c(NA, NA, 2),
+  bty    = "n"
+)
+```
+
+![](spherical_files/figure-html/multi_sph_compare-1.png)
+
+### 8. Summary of Key Points
 
 - Set `metric = "S"` (or `metric = "Spherical"`) to use the great-circle
   distance for **all** covariate columns.
 - For datasets that mix spherical and non-spherical covariates, pass a
   vector of 0s and 1s, e.g. `metric = c(1, 1, 0)` for two spherical
   dimensions and one Euclidean dimension.
+- For datasets with covariates taken from multiple different spherical
+  coordinate systems, pass a vector of membership to indicate which
+  belongs to which. For example, for five covariates where the first
+  three are from S3 and the remaining two are from S2,
+  `members = rep(1:2, times = c(3,2))`.
 - Spherical coordinates must be in **radians**: latitude in \[−π/2,
   π/2\] and longitude in \[−π, π\].
-- The **last** spherical column is treated as the azimuthal (longitude)
-  dimension; all other spherical columns are treated as polar (latitude)
-  dimensions.
+- The **last** spherical column for each set is treated as the azimuthal
+  (longitude) dimension; all other spherical columns are treated as
+  polar (latitude) dimensions.
 - The great-circle distance correctly handles wrap-around, so points
   near longitude ±π are recognised as neighbours.

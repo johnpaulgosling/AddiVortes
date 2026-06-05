@@ -41,5 +41,8 @@ Statistics.
 
 Authors:
 
+- John Paul Gosling <john-paul.gosling@durham.ac.uk>
+  ([ORCID](https://orcid.org/0000-0002-4072-3022))
+
 - Adam Stone <adam.stone2@durham.ac.uk>
   ([ORCID](https://orcid.org/0009-0004-0058-6117))
