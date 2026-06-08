@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel", "pybind11>=2.12"]
+requires = ["setuptools>=77", "wheel", "pybind11>=2.12"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,7 +8,8 @@ version = "0.6.1"
 description = "Bayesian Additive Voronoi Tessellation regression for Python"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "GPL-3.0-or-later" }
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
 authors = [
   { name = "Adam Stone", email = "adam.stone2@durham.ac.uk" },
   { name = "John Paul Gosling", email = "john-paul.gosling@durham.ac.uk" }
@@ -24,7 +25,6 @@ classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Science/Research",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
   "Operating System :: OS Independent",
   "Programming Language :: C++",
   "Programming Language :: Python :: 3",
@@ -48,7 +48,7 @@ test = [
 ]
 
 [project.urls]
-Homepage = "https://johnpaulgosling.github.io/AddiVortes/"
+Homepage = "https://github.com/johnpaulgosling/AddiVortes"
 Repository = "https://github.com/johnpaulgosling/AddiVortes"
 Issues = "https://github.com/johnpaulgosling/AddiVortes/issues"
 
@@ -57,5 +57,5 @@ packages = ["addivortes"]
 include-package-data = false
 
 [tool.pytest.ini_options]
-testpaths = ["tests/python"]
+testpaths = ["tests"]
 addopts = "-q"

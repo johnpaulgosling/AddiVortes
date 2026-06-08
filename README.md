@@ -1,65 +1,38 @@
-# AddiVortes: Bayesian Additive Voronoi Tessellations
+# AddiVortes
 
-## Overview
+AddiVortes is a Python package for **Bayesian Additive Voronoi Tessellation**
+regression. It provides a machine-learning style estimator for non-parametric
+regression, spatial modeling, uncertainty quantification, and complex function
+approximation.
 
-AddiVortes implements the **Bayesian Additive Voronoi Tessellation** model for machine learning regression and non-parametric statistical modeling. This R package provides a flexible alternative to **BART (Bayesian Additive Regression Trees)**, using Voronoi tessellations instead of trees for spatial partitioning.
+The package exposes a Python API backed by a C++20 extension. It supports numpy
+arrays and pandas data frames, including categorical covariates via one-hot
+encoding.
 
-## Key Features
+## Features
 
-- **Machine Learning Regression**: Advanced Bayesian regression modeling for complex datasets
-- **Alternative to BART**: Uses Voronoi tessellations instead of trees for more flexible spatial modeling
-- **Spatial Data Analysis**: Excellent for geographic and spatial datasets
-- **Non-parametric Modeling**: No assumptions about functional form
-- **Bayesian Framework**: Full posterior inference with uncertainty quantification
-- **Complex Function Approximation**: Captures non-linear relationships and interactions
-
-## Applications
-
-AddiVortes is particularly well-suited for:
-
-- **Spatial regression** and geographic data analysis
-- **Machine learning** tasks requiring interpretable models
-- **Non-parametric regression** where the functional form is unknown
-- **Bayesian modeling** with uncertainty quantification
-- **Complex surface modeling** and function approximation
-- **Alternative to BART** for researchers seeking different ensemble approaches
+- Pythonic estimator API with `fit`, `predict`, `fit_predict`, `score`, and
+  sklearn-style parameter access.
+- Bayesian posterior samples for mean predictions and credible intervals.
+- Prediction intervals that include posterior error variance.
+- Numeric and categorical covariate preprocessing.
+- C++20 backend for the MCMC sampler and nearest-cell assignment.
 
 ## Installation
 
-You can install the latest version of AddiVortes from GitHub with:
-
-```R
-# install.packages("devtools")
-devtools::install_github("johnpaulgosling/AddiVortes", 
-                         build_vignettes = TRUE)
-```
-
-The Python package is named `addivortes` and targets Python 3.10 or newer.
-For local development or installation from a source checkout:
+The package name is `addivortes` and it targets Python 3.10 or newer.
 
 ```bash
-python -m pip install .
+python -m pip install addivortes
 ```
 
-## Quick Start
+For local development from a source checkout:
 
-### R
-
-```R
-library(AddiVortes)
-
-# Load your data
-# X <- your_predictors
-# y <- your_response
-
-# Fit the AddiVortes model
-# model <- AddiVortes(X, y)
-
-# Make predictions
-# predictions <- predict(model, newdata = X_test)
+```bash
+python -m pip install -e ".[test]"
 ```
 
-### Python
+## Quick start
 
 ```python
 import numpy as np
@@ -81,33 +54,51 @@ predictions = model.predict(X[:5])
 intervals = model.predict(X[:5], kind="quantile", quantiles=(0.025, 0.975))
 ```
 
-## Documentation
+## Data frames and categorical covariates
 
-- [Getting Started Guide](https://johnpaulgosling.github.io/AddiVortes/articles/introduction.html)
-- [Prediction Examples](https://johnpaulgosling.github.io/AddiVortes/articles/prediction.html)
-- [Function Reference](https://johnpaulgosling.github.io/AddiVortes/reference/)
+```python
+import pandas as pd
+from addivortes import AddiVortesRegressor
 
-## Comparison with BART
+X = pd.DataFrame(
+    {
+        "x1": [0.1, 0.4, 0.2, 0.8],
+        "group": pd.Categorical(["a", "b", "a", "c"]),
+    }
+)
+y = [0.0, 1.1, 0.2, 0.9]
 
-While **BART (Bayesian Additive Regression Trees)** uses tree-based partitioning, **AddiVortes** uses Voronoi tessellations, which can provide:
-
-- More natural spatial partitioning
-- Flexible geometric boundaries
-- Alternative ensemble approach for machine learning
-- Enhanced performance on spatial data
-
-## Cite Us
-
-If you use this package in your research, please cite:
-
-```R
-citation("AddiVortes")
+model = AddiVortesRegressor(
+    n_tessellations=5,
+    total_mcmc_iter=50,
+    burn_in=10,
+    random_state=123,
+)
+model.fit(X, y)
+predictions = model.predict(X)
 ```
 
-## References
+## Development
 
-Stone, A. and Gosling, J.P. (2025). AddiVortes: (Bayesian) additive Voronoi tessellations. Journal of Computational and Graphical Statistics.
+Run the Python test suite with:
 
-## Keywords
+```bash
+python -m pytest
+```
 
-Bayesian machine learning, BART alternative, Voronoi tessellation, spatial regression, non-parametric regression, ensemble methods, statistical modeling, R package
+Build a wheel locally with:
+
+```bash
+python -m pip wheel . -w dist
+```
+
+## Citation
+
+If you use AddiVortes in research, please cite:
+
+Stone, A. and Gosling, J.P. (2025). AddiVortes: (Bayesian) additive Voronoi
+tessellations. Journal of Computational and Graphical Statistics.
+
+## License
+
+AddiVortes is distributed under the GPL-3.0-or-later license.

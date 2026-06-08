@@ -752,7 +752,7 @@ py::array_t<int> cell_indices(py::array_t<double, py::array::c_style | py::array
 }
 
 PYBIND11_MODULE(_core, m) {
-  m.doc() = "R-independent C++ backend for the AddiVortes Python package.";
+  m.doc() = "Standalone C++ backend for the AddiVortes Python package.";
   m.def("run_mcmc", &run_mcmc, py::arg("x_scaled"), py::arg("y_scaled"), py::arg("metric"),
         py::arg("members"), py::arg("n_tessellations"), py::arg("total_iter"), py::arg("burn_in"),
         py::arg("thinning"), py::arg("nu"), py::arg("lambda_value"), py::arg("sigma_squared_mu"),
