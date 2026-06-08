@@ -64,6 +64,7 @@ src/*.dll
 __pycache__/
 *.py[cod]
 *.egg-info/
+addivortes/*.so
 build/
 dist/
 .pytest_cache/
