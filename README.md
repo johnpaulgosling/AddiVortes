@@ -34,7 +34,16 @@ devtools::install_github("johnpaulgosling/AddiVortes",
                          build_vignettes = TRUE)
 ```
 
+The Python package is named `addivortes` and targets Python 3.10 or newer.
+For local development or installation from a source checkout:
+
+```bash
+python -m pip install .
+```
+
 ## Quick Start
+
+### R
 
 ```R
 library(AddiVortes)
@@ -48,6 +57,28 @@ library(AddiVortes)
 
 # Make predictions
 # predictions <- predict(model, newdata = X_test)
+```
+
+### Python
+
+```python
+import numpy as np
+from addivortes import AddiVortesRegressor
+
+rng = np.random.default_rng(123)
+X = rng.normal(size=(100, 4))
+y = X[:, 0] - 0.5 * X[:, 1] + rng.normal(scale=0.2, size=100)
+
+model = AddiVortesRegressor(
+    n_tessellations=25,
+    total_mcmc_iter=300,
+    burn_in=100,
+    random_state=123,
+)
+model.fit(X, y)
+
+predictions = model.predict(X[:5])
+intervals = model.predict(X[:5], kind="quantile", quantiles=(0.025, 0.975))
 ```
 
 ## Documentation

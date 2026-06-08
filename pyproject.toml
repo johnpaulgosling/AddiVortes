@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=68", "wheel", "pybind11>=2.12"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "addivortes"
+version = "0.6.1"
+description = "Bayesian Additive Voronoi Tessellation regression for Python"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "GPL-3.0-or-later" }
+authors = [
+  { name = "Adam Stone", email = "adam.stone2@durham.ac.uk" },
+  { name = "John Paul Gosling", email = "john-paul.gosling@durham.ac.uk" }
+]
+keywords = [
+  "bayesian",
+  "machine-learning",
+  "nonparametric-regression",
+  "voronoi",
+  "spatial-statistics"
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Operating System :: OS Independent",
+  "Programming Language :: C++",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Mathematics"
+]
+dependencies = [
+  "numpy>=1.23",
+  "pandas>=1.5",
+  "scipy>=1.10"
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8"
+]
+
+[project.urls]
+Homepage = "https://johnpaulgosling.github.io/AddiVortes/"
+Repository = "https://github.com/johnpaulgosling/AddiVortes"
+Issues = "https://github.com/johnpaulgosling/AddiVortes/issues"
+
+[tool.setuptools]
+packages = ["addivortes"]
+include-package-data = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests/python"]
+addopts = "-q"

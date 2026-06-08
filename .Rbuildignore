@@ -14,3 +14,8 @@
 ^codecov\.yml$
 ^\.lintr$
 ^\.lintr\.R$
+^pyproject\.toml$
+^setup\.py$
+^addivortes$
+^python_src$
+^tests/python$
