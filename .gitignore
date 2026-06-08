@@ -9,6 +9,7 @@ dist/
 .ruff_cache/
 .mypy_cache/
 .venv/
+site/
 
 # Build products
 *.o

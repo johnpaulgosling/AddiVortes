@@ -22,14 +22,22 @@ encoding.
 
 The package name is `addivortes` and it targets Python 3.10 or newer.
 
+After a release has been published to PyPI:
+
 ```bash
 python -m pip install addivortes
+```
+
+To install the current GitHub version with pip:
+
+```bash
+python -m pip install "git+https://github.com/johnpaulgosling/AddiVortes.git"
 ```
 
 For local development from a source checkout:
 
 ```bash
-python -m pip install -e ".[test]"
+python -m pip install -e ".[dev]"
 ```
 
 ## Quick start
@@ -89,7 +97,7 @@ python -m pytest
 Build a wheel locally with:
 
 ```bash
-python -m pip wheel . -w dist
+python -m build
 ```
 
 ## Citation

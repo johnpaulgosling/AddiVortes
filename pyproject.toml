@@ -46,9 +46,21 @@ dependencies = [
 test = [
   "pytest>=8"
 ]
+docs = [
+  "mkdocs>=1.6,<2",
+  "mkdocs-material>=9.5"
+]
+dev = [
+  "build>=1.2",
+  "twine>=5",
+  "pytest>=8",
+  "mkdocs>=1.6,<2",
+  "mkdocs-material>=9.5"
+]
 
 [project.urls]
 Homepage = "https://github.com/johnpaulgosling/AddiVortes"
+Documentation = "https://johnpaulgosling.github.io/AddiVortes/"
 Repository = "https://github.com/johnpaulgosling/AddiVortes"
 Issues = "https://github.com/johnpaulgosling/AddiVortes/issues"
 

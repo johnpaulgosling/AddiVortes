@@ -1,0 +1,26 @@
+site_name: AddiVortes
+site_description: Bayesian Additive Voronoi Tessellation regression for Python
+site_url: https://johnpaulgosling.github.io/AddiVortes/
+repo_url: https://github.com/johnpaulgosling/AddiVortes
+repo_name: johnpaulgosling/AddiVortes
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Quick start: quickstart.md
+  - API reference: api.md
+  - Release checklist: release.md
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
