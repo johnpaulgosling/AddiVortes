@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
+import warnings
 
 import numpy as np
 from scipy import optimize, stats
@@ -94,6 +95,12 @@ class AddiVortesRegressor:
         x_scaled = self._restore_unscaled_columns(x_scaled, design.values, design.metric, design.encoding)
 
         n_obs, n_features = x_scaled.shape
+        if n_features > n_obs:
+            warnings.warn(
+                "Number of covariates exceeds number of observations; model results may not be stable.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
         omega = min(3.0, float(raw_columns)) if self.omega is None else float(self.omega)
         sigma_squared_mu = (0.5 / (float(self.k) * np.sqrt(float(self.n_tessellations)))) ** 2
         sigma_squared_hat = self._initial_sigma_squared(x_scaled, y_scaled)
@@ -173,6 +180,7 @@ class AddiVortesRegressor:
         self.original_members_ = original_members
         self.cat_encoding_: CategoryEncoding | None = design.encoding
         self.feature_names_in_ = tuple(design.columns)
+        self.n_original_features_in_ = raw_columns
         self.n_features_in_ = n_features
         self.metric_red_, self.member_red_ = reduced_metric_and_members(design.metric, design.members)
         self.lambda_ = float(lambda_value)
@@ -196,6 +204,10 @@ class AddiVortesRegressor:
         quantiles_arr = np.asarray(quantiles, dtype=float)
         if np.any((quantiles_arr < 0) | (quantiles_arr > 1)):
             raise ValueError("quantiles must be probabilities in [0, 1].")
+
+        raw_columns = np.asarray(X).shape[1] if np.asarray(X).ndim == 2 else 1
+        if raw_columns != self.n_original_features_in_:
+            raise ValueError("X has a different number of columns than the fitted model.")
 
         design = prepare_design(
             X,
