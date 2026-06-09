@@ -1,4 +1,4 @@
-#' @title Fit AddiVortes regression model 
+#' @title Fit an AddiVortes regression model 
 #'
 #' @description
 #' The AddiVortes model is a Bayesian nonparametric regression model that
@@ -114,7 +114,7 @@ AddiVortes <- function(y, x, m = 200,
   # and causing prob = 1 in acceptanceProbability (which produces 0/0 = NaN).
   force(Omega)
   ### Pre-processing data
-  
+
   #### Encode categorical covariates -------------------------------------------
   if (!is.numeric(catScaling) || length(catScaling) != 1 || catScaling <= 0) {
     stop("'catScaling' must be a single positive number.")
@@ -129,7 +129,7 @@ AddiVortes <- function(y, x, m = 200,
       metric <- rep("C", ncol(x))
     }
   }
-  
+
   old_metric <- metric
   old_metric[old_metric == "E" | old_metric == "Euc" |
                old_metric == "Euclidean"] <- 0

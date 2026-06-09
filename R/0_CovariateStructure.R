@@ -2,7 +2,7 @@
 #'
 #' @description
 #' Converts the structure of the covariates to reflect geometric properties.
-#' 
+#'
 #' @details
 #' A covariate data.frame can comprise coordinates taken from an outer product
 #' of arbitrarily many Euclidean, Spherical, and Categorical spaces, which must
@@ -11,26 +11,26 @@
 #' compatibility, reordering them to combine Euclidean covariates and categorical
 #' covariates, and grouping respective spherical coordinates in the required
 #' form for later use.
-#' 
+#'
 #' If membership is not provided, it is inferred from the structure vector (often
 #' passed as `metric` in AddiVortes). If the argument `one.hot` is `TRUE`, then
 #' the categorical coordinates will be one-hot encoded and so the structure and
 #' membership vectors are augmented for later use, with each categorical covariate
 #' having (n-1) membership and structure elements, where n is the number of levels.
-#' 
+#'
 #' @param data The data.frame of covariates.
-#' @param structure The structure vector, containing combinations of "E", "S", 
+#' @param structure The structure vector, containing combinations of "E", "S",
 #' and "C" for Euclidean, Spherical, and Categorical respectively.
 #' @param membership The specific membership groups, as integers; if `NULL`, the
 #' membership is inferred from the structure vector.
 #' @param one.hot Boolean: are the categorical covariates to be one-hot encoded?
-#' 
+#'
 #' @return A list consisting of:
 #'   \item{data}{The (potentially reordered) covariate data.frame.}
 #'   \item{structure}{The structure vector detailing the types of covariates.}
-#'   item{membership}{The membership vector indicating which covariates belong 
+#'   item{membership}{The membership vector indicating which covariates belong
 #'   to which group.}
-#' 
+#'
 #' @keywords internal
 #' @noRd
 covariateStructure_internal <- function(data, structure, membership = NULL, one.hot = TRUE) {
@@ -86,7 +86,7 @@ covariateStructure_internal <- function(data, structure, membership = NULL, one.
       if (!has_lev) {
         is_chr <- is.character(reduced_data[,i])
         if (!is_chr) stop(paste("Covariate", names(reduced_data)[i],
-                                "specified as categorical but has neither", 
+                                "specified as categorical but has neither",
                                 "levels nor is a character."))
         reduced_data[,i] <- as.factor(reduced_data[,i])
       }
@@ -99,7 +99,7 @@ covariateStructure_internal <- function(data, structure, membership = NULL, one.
       has_lev <- sapply(seq_len(ncol(sphere_data)), function(idx) is.factor(sphere_data[,idx]))
       if(any(has_lev)) stop("Covariate(s) specified as spherical have factors.")
       param_extent <- apply(apply(sphere_data, 2, range), 2, diff)
-      if (sum(param_extent > pi) > 1) 
+      if (sum(param_extent > pi) > 1)
         stop(paste("More than one spherical parameter in membership group",
                                                  mem, "has range >pi."))
       if (sum(param_extent > pi) == 1) {
