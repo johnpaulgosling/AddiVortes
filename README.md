@@ -2,7 +2,7 @@
 
 ## Overview
 
-AddiVortes implements the **Bayesian Additive Voronoi Tessellation** model for machine learning regression and non-parametric statistical modeling. This R package provides a flexible alternative to **BART (Bayesian Additive Regression Trees)**, using Voronoi tessellations instead of trees for spatial partitioning.
+AddiVortes implements the **Bayesian Additive Voronoi Tessellation** model for machine learning regression and non-parametric statistical modelling. This R package provides a flexible alternative to **BART (Bayesian Additive Regression Trees)**, using Voronoi tessellations instead of trees for spatial partitioning.
 
 ## Key Features
 
@@ -30,8 +30,7 @@ You can install the latest version of AddiVortes from GitHub with:
 
 ```R
 # install.packages("devtools")
-devtools::install_github("johnpaulgosling/AddiVortes", 
-                         build_vignettes = TRUE)
+pak::pak("johnpaulgosling/AddiVortes")
 ```
 
 ## Quick Start
