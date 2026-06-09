@@ -10,13 +10,13 @@ instead of trees for spatial partitioning.
 
 ## Key Features
 
-- **Machine Learning Regression**: Advanced Bayesian regression modeling
-  for complex datasets
+- **Machine Learning Regression**: Advanced Bayesian regression
+  modelling for complex datasets
 - **Alternative to BART**: Uses Voronoi tessellations instead of trees
   for more flexible spatial modeling
 - **Spatial Data Analysis**: Excellent for geographic and spatial
   datasets
-- **Non-parametric Modeling**: No assumptions about functional form
+- **Non-parametric Modelling**: No assumptions about functional form
 - **Bayesian Framework**: Full posterior inference with uncertainty
   quantification
 - **Complex Function Approximation**: Captures non-linear relationships
@@ -29,8 +29,8 @@ AddiVortes is particularly well-suited for:
 - **Spatial regression** and geographic data analysis
 - **Machine learning** tasks requiring interpretable models
 - **Non-parametric regression** where the functional form is unknown
-- **Bayesian modeling** with uncertainty quantification
-- **Complex surface modeling** and function approximation
+- **Bayesian modelling** with uncertainty quantification
+- **Complex surface modelling** and function approximation
 - **Alternative to BART** for researchers seeking different ensemble
   approaches
 
@@ -100,4 +100,4 @@ Statistics.
 
 Bayesian machine learning, BART alternative, Voronoi tessellation,
 spatial regression, non-parametric regression, ensemble methods,
-statistical modeling, R package
+statistical modelling, R package
