@@ -2,7 +2,7 @@
 % Please edit documentation in R/AddiVortes.R
 \name{AddiVortes}
 \alias{AddiVortes}
-\title{Fit AddiVortes regression model}
+\title{Fit an AddiVortes regression model}
 \usage{
 AddiVortes(
   y,
