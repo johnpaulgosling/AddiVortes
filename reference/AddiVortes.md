@@ -1,4 +1,4 @@
-# Fit AddiVortes regression model
+# Fit an AddiVortes regression model
 
 The AddiVortes model is a Bayesian nonparametric regression model that
 uses a tessellation to model the relationship between the covariates and
