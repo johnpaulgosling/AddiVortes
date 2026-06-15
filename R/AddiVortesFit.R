@@ -617,7 +617,7 @@ plotBurnInTrace_internal <- function(trace_data, y, ylab, main, col, legend_digi
   }
 
   if (length(legend_entries) > 0) {
-    legend("topright",
+    legend("bottomright",
       legend = legend_entries,
       col = legend_cols,
       lty = legend_lty,
@@ -736,7 +736,7 @@ traceplots.AddiVortes <- function(x, ask = FALSE, ...) {
   }
   plotBurnInTrace_internal(trace_data, trace_data$logLikelihood,
     ylab = "Log Likelihood",
-    main = "MCMC Trace: Acceptance Log Likelihood",
+    main = "MCMC Trace: Log Likelihood",
     col = "darkgreen",
     legend_digits = 4,
     ...
