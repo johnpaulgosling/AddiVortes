@@ -3,8 +3,8 @@
 Displays four MCMC trace plots for a fitted `AddiVortes` object: the
 average number of centres per tessellation, the standard deviation of
 the number of centres per tessellation, the average number of dimensions
-used per tessellation, and the log-likelihood component used in the
-acceptance ratio.
+used per tessellation, and the retained-state log-likelihood component
+whose differences form the likelihood part of the acceptance ratio.
 
 ## Usage
 
@@ -45,8 +45,8 @@ The four trace plots are:
 3.  **Average Dimensions**: Average number of active dimensions used per
     tessellation.
 
-4.  **Log Likelihood**: Average log-likelihood component used in the
-    tessellation acceptance ratios during each MCMC iteration.
+4.  **Log Likelihood**: Average retained-state log-likelihood component
+    at the end of each MCMC iteration.
 
 ## Examples
 
