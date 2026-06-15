@@ -590,6 +590,7 @@ traceplots <- function(x, ...) {
 #' @importFrom stats sd
 #' @export
 #' @method traceplots AddiVortes
+#' @rdname traceplots
 #'
 #' @examples
 #' \dontrun{
