@@ -19,7 +19,8 @@ new_AddiVortes(
   members = rep(1, length(xCentres)),
   metric_aug = "E",
   member_aug = rep(1, length(xCentres)),
-  catEncoding = NULL
+  catEncoding = NULL,
+  traceStats = NULL
 )
 ```
 
@@ -83,6 +84,10 @@ new_AddiVortes(
   Optional list of categorical encoding metadata returned by
   `encodeCategories_internal`, or `NULL` if no categorical covariates
   were present.
+
+- traceStats:
+
+  Optional data frame of per-iteration MCMC trace statistics.
 
 ## Value
 

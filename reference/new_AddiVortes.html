@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">AddiVortes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -59,7 +59,8 @@
 <span>  members <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">xCentres</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  metric_aug <span class="op">=</span> <span class="st">"E"</span>,</span>
 <span>  member_aug <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">xCentres</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  catEncoding <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  catEncoding <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  traceStats <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -124,6 +125,10 @@ to one-hot</p></dd>
 <dd><p>Optional list of categorical encoding metadata returned by
 <code>encodeCategories_internal</code>, or <code>NULL</code> if no categorical covariates
 were present.</p></dd>
+
+
+<dt id="arg-tracestats">traceStats<a class="anchor" aria-label="anchor" href="#arg-tracestats"></a></dt>
+<dd><p>Optional data frame of per-iteration MCMC trace statistics.</p></dd>
 
 </dl></div>
     <div class="section level2">

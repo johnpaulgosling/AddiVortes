@@ -3,13 +3,14 @@
 Displays four MCMC trace plots for a fitted `AddiVortes` object: the
 average number of centres per tessellation, the standard deviation of
 the number of centres per tessellation, the average number of dimensions
-used per tessellation, and the error standard deviation.
+used per tessellation, and the log-likelihood component used in the
+acceptance ratio.
 
 ## Usage
 
 ``` r
 # S3 method for class 'AddiVortes'
-traceplots(x, sigma_trace = NULL, ask = FALSE, ...)
+traceplots(x, ask = FALSE, ...)
 ```
 
 ## Arguments
@@ -18,12 +19,6 @@ traceplots(x, sigma_trace = NULL, ask = FALSE, ...)
 
   An object of class `AddiVortes`, typically the result of a call to
   [`AddiVortes()`](https://johnpaulgosling.github.io/AddiVortes/reference/AddiVortes.md).
-
-- sigma_trace:
-
-  An optional numeric vector of error standard deviation values from
-  MCMC samples. If not provided, the method uses
-  `sqrt(x$posteriorSigma)`.
 
 - ask:
 
@@ -50,8 +45,8 @@ The four trace plots are:
 3.  **Average Dimensions**: Average number of active dimensions used per
     tessellation.
 
-4.  **Error Standard Deviation**: MCMC trace for the error standard
-    deviation.
+4.  **Log Likelihood**: Average log-likelihood component used in the
+    tessellation acceptance ratios during each MCMC iteration.
 
 ## Examples
 
@@ -59,8 +54,5 @@ The four trace plots are:
 if (FALSE) { # \dontrun{
 # Assuming 'fit' is a trained AddiVortes object
 traceplots(fit)
-
-# With a custom error standard deviation trace
-traceplots(fit, sigma_trace = my_sigma_samples)
 } # }
 ```
