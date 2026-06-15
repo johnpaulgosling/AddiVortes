@@ -41,6 +41,8 @@ reference:
     - predict.AddiVortes
     - print.AddiVortes
     - summary.AddiVortes
+    - traceplots
+    - traceplots.AddiVortes
   - title: "Datasets"
     contents:
       - Boston

@@ -1,5 +1,11 @@
 # AddiVortes News
 
+## AddiVortes 0.6.2
+
+* Added `traceplots()` for `AddiVortes` objects, showing trace plots for
+  average tessellation centres, the standard deviation of tessellation centres,
+  average active dimensions, and the error standard deviation.
+
 ## AddiVortes 0.6.1
 
 * AddiVortes now supports covariates drawn from multiple subspaces of the same

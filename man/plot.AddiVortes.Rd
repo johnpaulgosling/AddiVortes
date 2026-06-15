@@ -23,7 +23,8 @@ call to \code{AddiVortes()}.}
 \item{y_train}{A numeric vector of the original training true outcomes.}
 
 \item{sigma_trace}{An optional numeric vector of sigma values from MCMC samples.
-If not provided, the method will attempt to extract it from the model object.}
+If not provided, the method will attempt to extract the posterior error
+standard deviation from the model object.}
 
 \item{which}{A numeric vector specifying which plots to generate:
 1 = Residuals plot, 2 = Sigma trace, 3 = Tessellation complexity trace,
@@ -46,7 +47,7 @@ MCMC traces for sigma, and tessellation complexity over iterations.
 The function generates up to four diagnostic plots:
 \enumerate{
 \item \strong{Residuals Plot}: Residuals vs fitted values with smoothed trend line
-\item \strong{Sigma Trace}: MCMC trace plot for the error variance parameter
+\item \strong{Sigma Trace}: MCMC trace plot for the error standard deviation
 \item \strong{Tessellation Complexity}: Trace of average tessellation size over iterations
 \item \strong{Predicted vs Observed}: Scatter plot with credible intervals
 }

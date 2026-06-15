@@ -370,3 +370,96 @@ test_that("plot.AddiVortes validates which parameter", {
     "which.*must contain values between 1 and 4"
   )
 })
+
+# --- Tests for traceplots.AddiVortes() ---
+
+create_traceplot_test_object <- function() {
+  new_AddiVortes(
+    posteriorTess = list(
+      list(
+        matrix(0, nrow = 2, ncol = 1),
+        matrix(0, nrow = 4, ncol = 2)
+      ),
+      list(
+        matrix(0, nrow = 3, ncol = 1),
+        matrix(0, nrow = 7, ncol = 2)
+      )
+    ),
+    posteriorDim = list(
+      list(1L, c(1L, 2L, 3L)),
+      list(c(1L, 2L), c(2L, 3L))
+    ),
+    posteriorSigma = c(4, 9),
+    posteriorPred = list(),
+    xCentres = c(0, 0, 0),
+    xRanges = c(1, 1, 1),
+    yCentre = 0,
+    yRange = 1,
+    inSampleRmse = 0.5
+  )
+}
+
+test_that("traceplotData_internal computes requested traces", {
+  obj <- create_traceplot_test_object()
+
+  trace_data <- AddiVortes:::traceplotData_internal(obj)
+
+  expect_equal(trace_data$iteration, 1:2)
+  expect_equal(trace_data$averageCentresPerTessellation, c(3, 5))
+  expect_equal(
+    trace_data$sdCentresPerTessellation,
+    c(stats::sd(c(2, 4)), stats::sd(c(3, 7)))
+  )
+  expect_equal(trace_data$averageDimensionsPerTessellation, c(2, 2))
+  expect_equal(trace_data$errorStandardDeviation, c(2, 3))
+})
+
+test_that("traceplotData_internal accepts custom sigma trace", {
+  obj <- create_traceplot_test_object()
+
+  trace_data <- AddiVortes:::traceplotData_internal(
+    obj,
+    sigma_trace = c(0.5, 0.75)
+  )
+
+  expect_equal(trace_data$errorStandardDeviation, c(0.5, 0.75))
+})
+
+test_that("traceplots.AddiVortes requires AddiVortes object", {
+  expect_error(
+    traceplots.AddiVortes(list()),
+    "must be an object of class 'AddiVortes'"
+  )
+})
+
+test_that("traceplots.AddiVortes handles empty posterior samples", {
+  obj <- new_AddiVortes(
+    posteriorTess = list(),
+    posteriorDim = list(),
+    posteriorSigma = numeric(),
+    posteriorPred = list(),
+    xCentres = c(0),
+    xRanges = c(1),
+    yCentre = 0,
+    yRange = 1,
+    inSampleRmse = 0.5
+  )
+
+  expect_error(
+    traceplots(obj),
+    "No posterior samples available"
+  )
+})
+
+test_that("traceplots.AddiVortes creates trace plots", {
+  obj <- create_traceplot_test_object()
+  trace_file <- tempfile(fileext = ".pdf")
+  grDevices::pdf(trace_file)
+  on.exit({
+    grDevices::dev.off()
+    unlink(trace_file)
+  }, add = TRUE)
+
+  expect_silent(result <- traceplots(obj))
+  expect_null(result)
+})
