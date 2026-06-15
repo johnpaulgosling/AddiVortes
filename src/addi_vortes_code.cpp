@@ -530,10 +530,26 @@ static void aggregate_residuals(
 
 struct AcceptanceComponents {
   double logAlpha;
-  double logLikelihood;
 };
 
-// Compute the log acceptance probability and its log-likelihood component.
+// Compute the part of the marginal log-likelihood used in the tessellation
+// acceptance ratio for one retained/proposed tessellation state. Constants that
+// cancel in the acceptance ratio are omitted.
+static double tessellation_log_likelihood_component(
+    const std::vector<double>& R, const std::vector<int>& n,
+    double sigmaSquared, double sigmaSquaredMu) {
+
+  double sum_log = 0.0, sum_R = 0.0;
+  for (int k = 0; k < (int)n.size(); k++) {
+    double den = n[k] * sigmaSquaredMu + sigmaSquared;
+    sum_log += log(den);
+    sum_R   += (R[k] * R[k]) / den;
+  }
+
+  return -0.5 * sum_log + (sigmaSquaredMu / (2.0 * sigmaSquared)) * sum_R;
+}
+
+// Compute the log acceptance probability and its log-likelihood-ratio component.
 static AcceptanceComponents log_acceptance_components(
     const std::vector<double>& R_old, const std::vector<int>& n_old,
     const std::vector<double>& R_new, const std::vector<int>& n_new,
@@ -542,21 +558,11 @@ static AcceptanceComponents log_acceptance_components(
     double omega, double lambdaRate, int p,
     const std::string& mod) {
 
-  double sum_log_old = 0.0, sum_R_old = 0.0;
-  for (int k = 0; k < (int)n_old.size(); k++) {
-    double den = n_old[k] * sigmaSquaredMu + sigmaSquared;
-    sum_log_old += log(den);
-    sum_R_old   += (R_old[k] * R_old[k]) / den;
-  }
-  double sum_log_new = 0.0, sum_R_new = 0.0;
-  for (int k = 0; k < (int)n_new.size(); k++) {
-    double den = n_new[k] * sigmaSquaredMu + sigmaSquared;
-    sum_log_new += log(den);
-    sum_R_new   += (R_new[k] * R_new[k]) / den;
-  }
-
-  double log_lik = 0.5 * (sum_log_old - sum_log_new) +
-    (sigmaSquaredMu / (2.0 * sigmaSquared)) * (sum_R_new - sum_R_old);
+  double old_log_lik = tessellation_log_likelihood_component(
+    R_old, n_old, sigmaSquared, sigmaSquaredMu);
+  double new_log_lik = tessellation_log_likelihood_component(
+    R_new, n_new, sigmaSquared, sigmaSquaredMu);
+  double log_lik = new_log_lik - old_log_lik;
 
   const double prob_eps = 1e-10;
   double prob = std::min(1.0 - prob_eps, std::max(0.0, omega / p));
@@ -595,7 +601,7 @@ static AcceptanceComponents log_acceptance_components(
   }
   // "Change" and "Swap": log(TessStructure * TransitionRatio) = 0
 
-  return {acc, log_lik};
+  return {acc};
 }
 
 // Sample mu values for all centres of tessellation j.
@@ -932,9 +938,6 @@ extern "C" {
       double rate  = (nu * lambda + sum_sq) / 2.0;
       sigmaSquared = 1.0 / rgamma(shape, 1.0 / rate);
 
-      double iterLogLikSum = 0.0;
-      int iterLogLikCount = 0;
-
       for (int j = 0; j < m; j++) {
 
         // Update sumAllTess to exclude tessellation j
@@ -999,8 +1002,6 @@ extern "C" {
             sigmaSquared, sigSqMu,
             omega, lambdaRate, p,
             prop.mod);
-          iterLogLikSum += acc.logLikelihood;
-          iterLogLikCount++;
           accepted = (log(unif_rand()) < acc.logAlpha);
         }
 
@@ -1028,9 +1029,24 @@ extern "C" {
 
       double meanCenters = 0.0;
       double meanDims = 0.0;
+      double retainedLogLikSum = 0.0;
       for (int j = 0; j < m; j++) {
         meanCenters += tess_nC[j];
         meanDims += tess_d[j];
+
+        // Recompute partial residuals from the final retained state after the
+        // full sweep, so the trace reflects what remains at iteration end.
+        std::vector<double> R_retained(tess_nC[j], 0.0);
+        std::vector<int> n_retained(tess_nC[j], 0);
+        for (int obs = 0; obs < n; obs++) {
+          int cell = curIdx[j][obs];
+          double tessContribution = pred[j][cell];
+          double r = yScaled[obs] - (sumAllTess[obs] - tessContribution);
+          R_retained[cell] += r;
+          n_retained[cell]++;
+        }
+        retainedLogLikSum += tessellation_log_likelihood_component(
+          R_retained, n_retained, sigmaSquared, sigSqMu);
       }
       meanCenters /= m;
       meanDims /= m;
@@ -1050,8 +1066,7 @@ extern "C" {
       REAL(outTraceAvgCenters)[traceIdx] = meanCenters;
       REAL(outTraceSdCenters)[traceIdx] = sdCenters;
       REAL(outTraceAvgDims)[traceIdx] = meanDims;
-      REAL(outTraceLogLik)[traceIdx] =
-        (iterLogLikCount > 0) ? (iterLogLikSum / iterLogLikCount) : NA_REAL;
+      REAL(outTraceLogLik)[traceIdx] = retainedLogLikSum / m;
 
       // Store posterior sample (post burn-in, respecting thinning)
       if (iter > burnIn && (iter - burnIn) % thinning == 0) {

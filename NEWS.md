@@ -1,5 +1,12 @@
 # AddiVortes News
 
+## AddiVortes 0.6.4
+
+* Corrected the log-likelihood trace in `traceplots()` so it now shows the
+  retained-state log-likelihood component at the end of each MCMC iteration,
+  rather than the average proposal log-likelihood-ratio component evaluated
+  during the sweep.
+
 ## AddiVortes 0.6.3
 
 * `traceplots()` now includes the burn-in period in its MCMC traces and colours
