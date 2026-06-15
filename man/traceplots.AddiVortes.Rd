@@ -4,15 +4,11 @@
 \alias{traceplots.AddiVortes}
 \title{Trace Plot Diagnostics for AddiVortes}
 \usage{
-\method{traceplots}{AddiVortes}(x, sigma_trace = NULL, ask = FALSE, ...)
+\method{traceplots}{AddiVortes}(x, ask = FALSE, ...)
 }
 \arguments{
 \item{x}{An object of class \code{AddiVortes}, typically the result of a
 call to \code{AddiVortes()}.}
-
-\item{sigma_trace}{An optional numeric vector of error standard deviation
-values from MCMC samples. If not provided, the method uses
-\code{sqrt(x$posteriorSigma)}.}
 
 \item{ask}{Logical; if TRUE, the user is asked to press Enter before each plot.}
 
@@ -26,7 +22,8 @@ This function is called for its side effect of creating plots and returns
 Displays four MCMC trace plots for a fitted \code{AddiVortes} object:
 the average number of centres per tessellation, the standard deviation
 of the number of centres per tessellation, the average number of dimensions
-used per tessellation, and the error standard deviation.
+used per tessellation, and the log-likelihood component used in the
+acceptance ratio.
 }
 \details{
 The four trace plots are:
@@ -36,16 +33,13 @@ The four trace plots are:
 number of centres per tessellation.
 \item \strong{Average Dimensions}: Average number of active dimensions used
 per tessellation.
-\item \strong{Error Standard Deviation}: MCMC trace for the error standard
-deviation.
+\item \strong{Log Likelihood}: Average log-likelihood component used in the
+tessellation acceptance ratios during each MCMC iteration.
 }
 }
 \examples{
 \dontrun{
 # Assuming 'fit' is a trained AddiVortes object
 traceplots(fit)
-
-# With a custom error standard deviation trace
-traceplots(fit, sigma_trace = my_sigma_samples)
 }
 }

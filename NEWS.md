@@ -1,5 +1,12 @@
 # AddiVortes News
 
+## AddiVortes 0.6.3
+
+* `traceplots()` now includes the burn-in period in its MCMC traces and colours
+  burn-in sections black.
+* Replaced the error standard deviation panel in `traceplots()` with the
+  log-likelihood component used in tessellation acceptance ratios.
+
 ## AddiVortes 0.6.2
 
 * Added `traceplots()` for `AddiVortes` objects, showing trace plots for

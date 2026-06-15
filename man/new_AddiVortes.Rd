@@ -18,7 +18,8 @@ new_AddiVortes(
   members = rep(1, length(xCentres)),
   metric_aug = "E",
   member_aug = rep(1, length(xCentres)),
-  catEncoding = NULL
+  catEncoding = NULL,
+  traceStats = NULL
 )
 }
 \arguments{
@@ -52,6 +53,8 @@ to one-hot}
 \item{catEncoding}{Optional list of categorical encoding metadata returned by
 \code{encodeCategories_internal}, or \code{NULL} if no categorical covariates
 were present.}
+
+\item{traceStats}{Optional data frame of per-iteration MCMC trace statistics.}
 }
 \value{
 An object of class AddiVortes.

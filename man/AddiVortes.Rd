@@ -75,7 +75,8 @@ decrease below 1 to give them less weight. Binary indicator columns are named
 }
 \value{
 An AddiVortes object containing the posterior samples of the
-tessellations, dimensions and predictions.
+tessellations, dimensions and predictions, plus per-iteration trace
+statistics used by \code{traceplots()}.
 }
 \description{
 The AddiVortes model is a Bayesian nonparametric regression model that

@@ -19,6 +19,7 @@
 #' @param catEncoding Optional list of categorical encoding metadata returned by
 #'   \code{encodeCategories_internal}, or \code{NULL} if no categorical covariates
 #'   were present.
+#' @param traceStats Optional data frame of per-iteration MCMC trace statistics.
 #'
 #' @return An object of class AddiVortes.
 #' @export
@@ -29,7 +30,8 @@ new_AddiVortes <- function(posteriorTess, posteriorDim,
                            members = rep(1, length(xCentres)),
                            metric_aug = "E",
                            member_aug = rep(1, length(xCentres)),
-                           catEncoding = NULL) {
+                           catEncoding = NULL,
+                           traceStats = NULL) {
   member_length <- sapply(unique(member_aug), function(x) sum(member_aug == x))
   metric_type <- sapply(unique(member_aug), function(x) metric_aug[which(member_aug == x)[1]])
   structure(
@@ -47,7 +49,8 @@ new_AddiVortes <- function(posteriorTess, posteriorDim,
       members = members,
       metric_red = metric_type,
       member_red = member_length,
-      catEncoding = catEncoding
+      catEncoding = catEncoding,
+      traceStats = traceStats
     ),
     class = "AddiVortes"
   )
@@ -491,7 +494,25 @@ extractErrorStandardDeviationTrace_internal <- function(x, sigma_trace = NULL,
   sigma_values
 }
 
-traceplotData_internal <- function(x, sigma_trace = NULL) {
+traceplotData_internal <- function(x) {
+  expected_columns <- c(
+    "iteration",
+    "isBurnIn",
+    "averageCentresPerTessellation",
+    "sdCentresPerTessellation",
+    "averageDimensionsPerTessellation",
+    "logLikelihood"
+  )
+
+  if (!is.null(x$traceStats)) {
+    missing_columns <- setdiff(expected_columns, names(x$traceStats))
+    if (length(missing_columns) > 0) {
+      stop("Trace statistics are missing required columns: ",
+           paste(missing_columns, collapse = ", "))
+    }
+    return(as.data.frame(x$traceStats[expected_columns]))
+  }
+
   if (length(x$posteriorTess) == 0) {
     stop("No posterior samples available for plotting.")
   }
@@ -520,6 +541,7 @@ traceplotData_internal <- function(x, sigma_trace = NULL) {
 
   data.frame(
     iteration = seq_len(num_samples),
+    isBurnIn = rep(FALSE, num_samples),
     averageCentresPerTessellation = vapply(centre_counts, mean, numeric(1)),
     sdCentresPerTessellation = vapply(centre_counts, function(counts) {
       if (length(counts) <= 1) {
@@ -529,12 +551,80 @@ traceplotData_internal <- function(x, sigma_trace = NULL) {
       }
     }, numeric(1)),
     averageDimensionsPerTessellation = vapply(dimension_counts, mean, numeric(1)),
-    errorStandardDeviation = extractErrorStandardDeviationTrace_internal(
-      x,
-      sigma_trace,
-      expected_length = num_samples
-    )
+    logLikelihood = rep(NA_real_, num_samples)
   )
+}
+
+plotBurnInTrace_internal <- function(trace_data, y, ylab, main, col, legend_digits = 2,
+                                     show_summary = TRUE, ...) {
+  burn_in <- trace_data$isBurnIn %in% TRUE
+  finite_y <- y[is.finite(y)]
+  if (length(finite_y) == 0) {
+    plot(trace_data$iteration, rep(0, length(trace_data$iteration)),
+      type = "n",
+      xlab = "MCMC Iteration",
+      ylab = ylab,
+      main = main,
+      ylim = c(0, 1),
+      ...
+    )
+    text(mean(range(trace_data$iteration)), 0.5, "Trace unavailable", cex = 0.9)
+    return(invisible(NULL))
+  }
+
+  plot(trace_data$iteration, y,
+    type = "l",
+    xlab = "MCMC Iteration",
+    ylab = ylab,
+    main = main,
+    col = col, lwd = 1.5,
+    ...
+  )
+
+  if (any(burn_in)) {
+    lines(trace_data$iteration[burn_in], y[burn_in], col = "black", lwd = 1.5)
+  }
+
+  summary_y <- y[!burn_in & is.finite(y)]
+  if (length(summary_y) == 0) {
+    summary_y <- finite_y
+  }
+
+  if (show_summary && length(summary_y) > 0) {
+    abline(h = mean(summary_y), col = "red", lty = 2)
+  }
+
+  legend_entries <- character(0)
+  legend_cols <- character(0)
+  legend_lty <- numeric(0)
+  legend_lwd <- numeric(0)
+
+  if (any(burn_in)) {
+    legend_entries <- c(legend_entries, "Burn-in")
+    legend_cols <- c(legend_cols, "black")
+    legend_lty <- c(legend_lty, 1)
+    legend_lwd <- c(legend_lwd, 1.5)
+  }
+
+  if (show_summary && length(summary_y) > 0) {
+    legend_entries <- c(
+      legend_entries,
+      paste("Mean:", round(mean(summary_y), legend_digits))
+    )
+    legend_cols <- c(legend_cols, "red")
+    legend_lty <- c(legend_lty, 2)
+    legend_lwd <- c(legend_lwd, 1)
+  }
+
+  if (length(legend_entries) > 0) {
+    legend("topright",
+      legend = legend_entries,
+      col = legend_cols,
+      lty = legend_lty,
+      lwd = legend_lwd,
+      bty = "n", cex = 0.9
+    )
+  }
 }
 
 #' @title Trace Plot Diagnostics
@@ -560,13 +650,11 @@ traceplots <- function(x, ...) {
 #' Displays four MCMC trace plots for a fitted `AddiVortes` object:
 #' the average number of centres per tessellation, the standard deviation
 #' of the number of centres per tessellation, the average number of dimensions
-#' used per tessellation, and the error standard deviation.
+#' used per tessellation, and the log-likelihood component used in the
+#' acceptance ratio.
 #'
 #' @param x An object of class `AddiVortes`, typically the result of a
 #'   call to `AddiVortes()`.
-#' @param sigma_trace An optional numeric vector of error standard deviation
-#'   values from MCMC samples. If not provided, the method uses
-#'   `sqrt(x$posteriorSigma)`.
 #' @param ask Logical; if TRUE, the user is asked to press Enter before each plot.
 #' @param ... Additional arguments passed to plotting functions.
 #'
@@ -582,11 +670,11 @@ traceplots <- function(x, ...) {
 #'     number of centres per tessellation.
 #'   \item \strong{Average Dimensions}: Average number of active dimensions used
 #'     per tessellation.
-#'   \item \strong{Error Standard Deviation}: MCMC trace for the error standard
-#'     deviation.
+#'   \item \strong{Log Likelihood}: Average log-likelihood component used in the
+#'     tessellation acceptance ratios during each MCMC iteration.
 #' }
 #'
-#' @importFrom graphics plot abline legend par
+#' @importFrom graphics plot abline legend par text
 #' @importFrom stats sd
 #' @export
 #' @method traceplots AddiVortes
@@ -595,16 +683,13 @@ traceplots <- function(x, ...) {
 #' \dontrun{
 #' # Assuming 'fit' is a trained AddiVortes object
 #' traceplots(fit)
-#'
-#' # With a custom error standard deviation trace
-#' traceplots(fit, sigma_trace = my_sigma_samples)
 #' }
-traceplots.AddiVortes <- function(x, sigma_trace = NULL, ask = FALSE, ...) {
+traceplots.AddiVortes <- function(x, ask = FALSE, ...) {
   if (!inherits(x, "AddiVortes")) {
     stop("`x` must be an object of class 'AddiVortes'.")
   }
 
-  trace_data <- traceplotData_internal(x, sigma_trace)
+  trace_data <- traceplotData_internal(x)
 
   old_par <- par(no.readonly = TRUE)
   on.exit(par(old_par))
@@ -614,75 +699,47 @@ traceplots.AddiVortes <- function(x, sigma_trace = NULL, ask = FALSE, ...) {
     cat("Press [Enter] to see average centres trace plot: ")
     readline()
   }
-  plot(trace_data$iteration, trace_data$averageCentresPerTessellation,
-    type = "l",
-    xlab = "MCMC Iteration",
+  plotBurnInTrace_internal(trace_data, trace_data$averageCentresPerTessellation,
     ylab = "Average Number of Tessellation Centers",
     main = "MCMC Trace: Average Centres",
-    col = "purple", lwd = 1.5,
+    col = "purple",
+    legend_digits = 1,
     ...
-  )
-  abline(h = mean(trace_data$averageCentresPerTessellation), col = "red", lty = 2)
-  legend("topright",
-    legend = paste("Mean:", round(mean(trace_data$averageCentresPerTessellation), 1)),
-    bty = "n", cex = 0.9
   )
 
   if (ask) {
     cat("Press [Enter] to see centre-count standard deviation trace plot: ")
     readline()
   }
-  plot(trace_data$iteration, trace_data$sdCentresPerTessellation,
-    type = "l",
-    xlab = "MCMC Iteration",
+  plotBurnInTrace_internal(trace_data, trace_data$sdCentresPerTessellation,
     ylab = "SD of Tessellation Centers",
     main = "MCMC Trace: Centre Count SD",
-    col = "darkorange", lwd = 1.5,
+    col = "darkorange",
     ...
-  )
-  abline(h = mean(trace_data$sdCentresPerTessellation), col = "red", lty = 2)
-  legend("topright",
-    legend = paste("Mean:", round(mean(trace_data$sdCentresPerTessellation), 2)),
-    bty = "n", cex = 0.9
   )
 
   if (ask) {
     cat("Press [Enter] to see average dimensions trace plot: ")
     readline()
   }
-  plot(trace_data$iteration, trace_data$averageDimensionsPerTessellation,
-    type = "l",
-    xlab = "MCMC Iteration",
+  plotBurnInTrace_internal(trace_data, trace_data$averageDimensionsPerTessellation,
     ylab = "Average Number of Dimensions",
     main = "MCMC Trace: Average Dimensions",
-    col = "darkblue", lwd = 1.5,
+    col = "darkblue",
+    legend_digits = 1,
     ...
-  )
-  abline(h = mean(trace_data$averageDimensionsPerTessellation), col = "red", lty = 2)
-  legend("topright",
-    legend = paste("Mean:", round(mean(trace_data$averageDimensionsPerTessellation), 1)),
-    bty = "n", cex = 0.9
   )
 
   if (ask) {
-    cat("Press [Enter] to see error standard deviation trace plot: ")
+    cat("Press [Enter] to see log-likelihood trace plot: ")
     readline()
   }
-  plot(trace_data$iteration, trace_data$errorStandardDeviation,
-    type = "l",
-    xlab = "MCMC Iteration",
-    ylab = expression(sigma),
-    main = "MCMC Trace: Error Standard Deviation",
-    col = "darkgreen", lwd = 1.5,
+  plotBurnInTrace_internal(trace_data, trace_data$logLikelihood,
+    ylab = "Log Likelihood",
+    main = "MCMC Trace: Acceptance Log Likelihood",
+    col = "darkgreen",
+    legend_digits = 4,
     ...
-  )
-  abline(h = mean(trace_data$errorStandardDeviation), col = "red", lty = 2)
-  legend("topright",
-    legend = c(
-      paste("Mean:", round(mean(trace_data$errorStandardDeviation), 4)),
-      paste("SD:", round(sd(trace_data$errorStandardDeviation), 4))
-    ),
-    bty = "n", cex = 0.9
   )
 
   invisible(NULL)
