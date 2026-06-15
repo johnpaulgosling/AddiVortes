@@ -33,8 +33,8 @@ The four trace plots are:
 number of centres per tessellation.
 \item \strong{Average Dimensions}: Average number of active dimensions used
 per tessellation.
-\item \strong{Log Likelihood}: Average retained-state log-likelihood component
-at the end of each MCMC iteration.
+\item \strong{Log Likelihood}: Average retained-state log-likelihood
+component at the end of each MCMC iteration.
 }
 }
 \examples{
