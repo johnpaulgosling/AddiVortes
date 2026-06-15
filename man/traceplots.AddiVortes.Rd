@@ -22,8 +22,8 @@ This function is called for its side effect of creating plots and returns
 Displays four MCMC trace plots for a fitted \code{AddiVortes} object:
 the average number of centres per tessellation, the standard deviation
 of the number of centres per tessellation, the average number of dimensions
-used per tessellation, and the log-likelihood component used in the
-acceptance ratio.
+used per tessellation, and the retained-state log-likelihood component whose
+differences form the likelihood part of the acceptance ratio.
 }
 \details{
 The four trace plots are:
@@ -33,8 +33,8 @@ The four trace plots are:
 number of centres per tessellation.
 \item \strong{Average Dimensions}: Average number of active dimensions used
 per tessellation.
-\item \strong{Log Likelihood}: Average log-likelihood component used in the
-tessellation acceptance ratios during each MCMC iteration.
+\item \strong{Log Likelihood}: Average retained-state log-likelihood component
+at the end of each MCMC iteration.
 }
 }
 \examples{

@@ -650,8 +650,8 @@ traceplots <- function(x, ...) {
 #' Displays four MCMC trace plots for a fitted `AddiVortes` object:
 #' the average number of centres per tessellation, the standard deviation
 #' of the number of centres per tessellation, the average number of dimensions
-#' used per tessellation, and the log-likelihood component used in the
-#' acceptance ratio.
+#' used per tessellation, and the retained-state log-likelihood component whose
+#' differences form the likelihood part of the acceptance ratio.
 #'
 #' @param x An object of class `AddiVortes`, typically the result of a
 #'   call to `AddiVortes()`.
@@ -670,8 +670,8 @@ traceplots <- function(x, ...) {
 #'     number of centres per tessellation.
 #'   \item \strong{Average Dimensions}: Average number of active dimensions used
 #'     per tessellation.
-#'   \item \strong{Log Likelihood}: Average log-likelihood component used in the
-#'     tessellation acceptance ratios during each MCMC iteration.
+#'   \item \strong{Log Likelihood}: Average retained-state log-likelihood
+#'     component at the end of each MCMC iteration.
 #' }
 #'
 #' @importFrom graphics plot abline legend par text
