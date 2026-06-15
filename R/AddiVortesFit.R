@@ -465,6 +465,229 @@ predict.AddiVortes <- function(object, newdata,
   return(predictions)
 }
 
+extractErrorStandardDeviationTrace_internal <- function(x, sigma_trace = NULL,
+                                                        expected_length = length(x$posteriorTess)) {
+  if (is.null(sigma_trace)) {
+    if ("posteriorSigma" %in% names(x) && length(x$posteriorSigma) > 0) {
+      sigma_values <- sqrt(as.numeric(x$posteriorSigma))
+    } else {
+      stop(
+        "No sigma trace found. Provide `sigma_trace` or use an AddiVortes ",
+        "object with posterior sigma samples."
+      )
+    }
+  } else {
+    if (!is.numeric(sigma_trace)) {
+      stop("`sigma_trace` must be a numeric vector.")
+    }
+    sigma_values <- as.numeric(sigma_trace)
+  }
+
+  if (length(sigma_values) != expected_length) {
+    warning("Length of sigma trace doesn't match number of posterior samples.")
+    sigma_values <- rep(sigma_values[1], expected_length)
+  }
+
+  sigma_values
+}
+
+traceplotData_internal <- function(x, sigma_trace = NULL) {
+  if (length(x$posteriorTess) == 0) {
+    stop("No posterior samples available for plotting.")
+  }
+  if (length(x$posteriorDim) == 0) {
+    stop("No posterior dimension samples available for plotting.")
+  }
+  if (length(x$posteriorDim) != length(x$posteriorTess)) {
+    stop("Number of posterior dimension samples does not match number of posterior tessellation samples.")
+  }
+
+  num_samples <- length(x$posteriorTess)
+
+  centre_counts <- lapply(x$posteriorTess, function(sample) {
+    if (length(sample) == 0) {
+      stop("Posterior tessellation samples must contain at least one tessellation.")
+    }
+    vapply(sample, nrow, numeric(1))
+  })
+
+  dimension_counts <- lapply(x$posteriorDim, function(sample) {
+    if (length(sample) == 0) {
+      stop("Posterior dimension samples must contain at least one tessellation.")
+    }
+    vapply(sample, length, numeric(1))
+  })
+
+  data.frame(
+    iteration = seq_len(num_samples),
+    averageCentresPerTessellation = vapply(centre_counts, mean, numeric(1)),
+    sdCentresPerTessellation = vapply(centre_counts, function(counts) {
+      if (length(counts) <= 1) {
+        0
+      } else {
+        sd(counts)
+      }
+    }, numeric(1)),
+    averageDimensionsPerTessellation = vapply(dimension_counts, mean, numeric(1)),
+    errorStandardDeviation = extractErrorStandardDeviationTrace_internal(
+      x,
+      sigma_trace,
+      expected_length = num_samples
+    )
+  )
+}
+
+#' @title Trace Plot Diagnostics
+#'
+#' @description
+#' Creates trace plots for MCMC diagnostics of a fitted model.
+#'
+#' @param x A fitted model object.
+#' @param ... Further arguments passed to methods.
+#'
+#' @return
+#' This function is called for its side effect of creating plots and returns
+#' `NULL` invisibly.
+#'
+#' @export
+traceplots <- function(x, ...) {
+  UseMethod("traceplots")
+}
+
+#' @title Trace Plot Diagnostics for AddiVortes
+#'
+#' @description
+#' Displays four MCMC trace plots for a fitted `AddiVortes` object:
+#' the average number of centres per tessellation, the standard deviation
+#' of the number of centres per tessellation, the average number of dimensions
+#' used per tessellation, and the error standard deviation.
+#'
+#' @param x An object of class `AddiVortes`, typically the result of a
+#'   call to `AddiVortes()`.
+#' @param sigma_trace An optional numeric vector of error standard deviation
+#'   values from MCMC samples. If not provided, the method uses
+#'   `sqrt(x$posteriorSigma)`.
+#' @param ask Logical; if TRUE, the user is asked to press Enter before each plot.
+#' @param ... Additional arguments passed to plotting functions.
+#'
+#' @return
+#' This function is called for its side effect of creating plots and returns
+#' `NULL` invisibly.
+#'
+#' @details
+#' The four trace plots are:
+#' \enumerate{
+#'   \item \strong{Average Centres}: Average number of centres per tessellation.
+#'   \item \strong{Centre Count Standard Deviation}: Standard deviation of the
+#'     number of centres per tessellation.
+#'   \item \strong{Average Dimensions}: Average number of active dimensions used
+#'     per tessellation.
+#'   \item \strong{Error Standard Deviation}: MCMC trace for the error standard
+#'     deviation.
+#' }
+#'
+#' @importFrom graphics plot abline legend par
+#' @importFrom stats sd
+#' @export
+#' @method traceplots AddiVortes
+#'
+#' @examples
+#' \dontrun{
+#' # Assuming 'fit' is a trained AddiVortes object
+#' traceplots(fit)
+#'
+#' # With a custom error standard deviation trace
+#' traceplots(fit, sigma_trace = my_sigma_samples)
+#' }
+traceplots.AddiVortes <- function(x, sigma_trace = NULL, ask = FALSE, ...) {
+  if (!inherits(x, "AddiVortes")) {
+    stop("`x` must be an object of class 'AddiVortes'.")
+  }
+
+  trace_data <- traceplotData_internal(x, sigma_trace)
+
+  old_par <- par(no.readonly = TRUE)
+  on.exit(par(old_par))
+  par(mfrow = c(2, 2))
+
+  if (ask) {
+    cat("Press [Enter] to see average centres trace plot: ")
+    readline()
+  }
+  plot(trace_data$iteration, trace_data$averageCentresPerTessellation,
+    type = "l",
+    xlab = "MCMC Iteration",
+    ylab = "Average Number of Tessellation Centers",
+    main = "MCMC Trace: Average Centres",
+    col = "purple", lwd = 1.5,
+    ...
+  )
+  abline(h = mean(trace_data$averageCentresPerTessellation), col = "red", lty = 2)
+  legend("topright",
+    legend = paste("Mean:", round(mean(trace_data$averageCentresPerTessellation), 1)),
+    bty = "n", cex = 0.9
+  )
+
+  if (ask) {
+    cat("Press [Enter] to see centre-count standard deviation trace plot: ")
+    readline()
+  }
+  plot(trace_data$iteration, trace_data$sdCentresPerTessellation,
+    type = "l",
+    xlab = "MCMC Iteration",
+    ylab = "SD of Tessellation Centers",
+    main = "MCMC Trace: Centre Count SD",
+    col = "darkorange", lwd = 1.5,
+    ...
+  )
+  abline(h = mean(trace_data$sdCentresPerTessellation), col = "red", lty = 2)
+  legend("topright",
+    legend = paste("Mean:", round(mean(trace_data$sdCentresPerTessellation), 2)),
+    bty = "n", cex = 0.9
+  )
+
+  if (ask) {
+    cat("Press [Enter] to see average dimensions trace plot: ")
+    readline()
+  }
+  plot(trace_data$iteration, trace_data$averageDimensionsPerTessellation,
+    type = "l",
+    xlab = "MCMC Iteration",
+    ylab = "Average Number of Dimensions",
+    main = "MCMC Trace: Average Dimensions",
+    col = "darkblue", lwd = 1.5,
+    ...
+  )
+  abline(h = mean(trace_data$averageDimensionsPerTessellation), col = "red", lty = 2)
+  legend("topright",
+    legend = paste("Mean:", round(mean(trace_data$averageDimensionsPerTessellation), 1)),
+    bty = "n", cex = 0.9
+  )
+
+  if (ask) {
+    cat("Press [Enter] to see error standard deviation trace plot: ")
+    readline()
+  }
+  plot(trace_data$iteration, trace_data$errorStandardDeviation,
+    type = "l",
+    xlab = "MCMC Iteration",
+    ylab = expression(sigma),
+    main = "MCMC Trace: Error Standard Deviation",
+    col = "darkgreen", lwd = 1.5,
+    ...
+  )
+  abline(h = mean(trace_data$errorStandardDeviation), col = "red", lty = 2)
+  legend("topright",
+    legend = c(
+      paste("Mean:", round(mean(trace_data$errorStandardDeviation), 4)),
+      paste("SD:", round(sd(trace_data$errorStandardDeviation), 4))
+    ),
+    bty = "n", cex = 0.9
+  )
+
+  invisible(NULL)
+}
+
 #' @title Plot Method for AddiVortes
 #'
 #' @description
@@ -477,7 +700,8 @@ predict.AddiVortes <- function(object, newdata,
 #' @param x_train A matrix of the original training covariates.
 #' @param y_train A numeric vector of the original training true outcomes.
 #' @param sigma_trace An optional numeric vector of sigma values from MCMC samples.
-#'   If not provided, the method will attempt to extract it from the model object.
+#'   If not provided, the method will attempt to extract the posterior error
+#'   standard deviation from the model object.
 #' @param which A numeric vector specifying which plots to generate:
 #'   1 = Residuals plot, 2 = Sigma trace, 3 = Tessellation complexity trace,
 #'   4 = Predicted vs Observed. Default is c(1, 2, 3).
@@ -492,7 +716,7 @@ predict.AddiVortes <- function(object, newdata,
 #' The function generates up to four diagnostic plots:
 #' \enumerate{
 #'   \item \strong{Residuals Plot}: Residuals vs fitted values with smoothed trend line
-#'   \item \strong{Sigma Trace}: MCMC trace plot for the error variance parameter
+#'   \item \strong{Sigma Trace}: MCMC trace plot for the error standard deviation
 #'   \item \strong{Tessellation Complexity}: Trace of average tessellation size over iterations
 #'   \item \strong{Predicted vs Observed}: Scatter plot with credible intervals
 #' }
@@ -607,25 +831,7 @@ plot.AddiVortes <- function(x, x_train, y_train, sigma_trace = NULL,
       readline()
     }
 
-    # Try to extract sigma from the model object or use provided trace
-    if (is.null(sigma_trace)) {
-      # Attempt to extract sigma from model object
-      if ("posteriorSigma" %in% names(x)) {
-        sigma_values <- x$posteriorSigma
-      } else {
-        # If no sigma trace available, create a placeholder
-        warning("No sigma trace found. Creating synthetic trace for demonstration.")
-        sigma_values <- x$inSampleRmse + rnorm(length(x$posteriorTess), 0, x$inSampleRmse * 0.1)
-      }
-    } else {
-      sigma_values <- sigma_trace
-    }
-
-    # Ensure sigma_values has same length as posterior samples
-    if (length(sigma_values) != length(x$posteriorTess)) {
-      warning("Length of sigma trace doesn't match number of posterior samples.")
-      sigma_values <- rep(sigma_values[1], length(x$posteriorTess))
-    }
+    sigma_values <- extractErrorStandardDeviationTrace_internal(x, sigma_trace)
 
     plot(seq_along(sigma_values), sigma_values,
       type = "l",
