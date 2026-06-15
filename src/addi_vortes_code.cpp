@@ -528,8 +528,13 @@ static void aggregate_residuals(
   }
 }
 
-// Compute the log acceptance probability.
-static double log_acceptance_prob(
+struct AcceptanceComponents {
+  double logAlpha;
+  double logLikelihood;
+};
+
+// Compute the log acceptance probability and its log-likelihood component.
+static AcceptanceComponents log_acceptance_components(
     const std::vector<double>& R_old, const std::vector<int>& n_old,
     const std::vector<double>& R_new, const std::vector<int>& n_new,
     int d_new, int nC_new,
@@ -590,7 +595,7 @@ static double log_acceptance_prob(
   }
   // "Change" and "Swap": log(TessStructure * TransitionRatio) = 0
 
-  return acc;
+  return {acc, log_lik};
 }
 
 // Sample mu values for all centres of tessellation j.
@@ -766,6 +771,7 @@ extern "C" {
   //   posteriorPred    — list[numSamples] of list[m] of double vectors
   //   posteriorSigma   — double vector[numSamples]
   //   predictionMatrix — n x numSamples double matrix
+  //   traceStats       — data.frame[totalMCMCIter] of lightweight trace stats
   SEXP addi_vortes_mcmc_cpp(
       SEXP xScaled_sexp,
       SEXP yScaled_sexp,
@@ -891,6 +897,13 @@ extern "C" {
     SEXP outPredMatrix = PROTECT(Rf_allocMatrix(REALSXP, n, numSamples));
     double* p_outPredMatrix = REAL(outPredMatrix);
 
+    SEXP outTraceIteration  = PROTECT(Rf_allocVector(INTSXP,  totalIter));
+    SEXP outTraceBurnIn     = PROTECT(Rf_allocVector(LGLSXP,  totalIter));
+    SEXP outTraceAvgCenters = PROTECT(Rf_allocVector(REALSXP, totalIter));
+    SEXP outTraceSdCenters  = PROTECT(Rf_allocVector(REALSXP, totalIter));
+    SEXP outTraceAvgDims    = PROTECT(Rf_allocVector(REALSXP, totalIter));
+    SEXP outTraceLogLik     = PROTECT(Rf_allocVector(REALSXP, totalIter));
+
     // -------------------------------------------------------------------------
     // 5. MCMC loop
     // -------------------------------------------------------------------------
@@ -918,6 +931,9 @@ extern "C" {
       double shape = (nu + n) / 2.0;
       double rate  = (nu * lambda + sum_sq) / 2.0;
       sigmaSquared = 1.0 / rgamma(shape, 1.0 / rate);
+
+      double iterLogLikSum = 0.0;
+      int iterLogLikCount = 0;
 
       for (int j = 0; j < m; j++) {
 
@@ -977,13 +993,15 @@ extern "C" {
 
         bool accepted = false;
         if (!hasEmpty) {
-          double logAlpha = log_acceptance_prob(
+          AcceptanceComponents acc = log_acceptance_components(
             R_old, n_old, R_new, n_new,
             (int)prop.dim.size(), prop.nC,
             sigmaSquared, sigSqMu,
             omega, lambdaRate, p,
             prop.mod);
-          accepted = (log(unif_rand()) < logAlpha);
+          iterLogLikSum += acc.logLikelihood;
+          iterLogLikCount++;
+          accepted = (log(unif_rand()) < acc.logAlpha);
         }
 
         if (accepted) {
@@ -1007,6 +1025,33 @@ extern "C" {
             sumAllTess[obs] += lastTessPred[obs];
         }
       } // end j loop
+
+      double meanCenters = 0.0;
+      double meanDims = 0.0;
+      for (int j = 0; j < m; j++) {
+        meanCenters += tess_nC[j];
+        meanDims += tess_d[j];
+      }
+      meanCenters /= m;
+      meanDims /= m;
+
+      double sdCenters = 0.0;
+      if (m > 1) {
+        for (int j = 0; j < m; j++) {
+          double diff = tess_nC[j] - meanCenters;
+          sdCenters += diff * diff;
+        }
+        sdCenters = sqrt(sdCenters / (m - 1));
+      }
+
+      int traceIdx = iter - 1;
+      INTEGER(outTraceIteration)[traceIdx] = iter;
+      LOGICAL(outTraceBurnIn)[traceIdx] = iter <= burnIn;
+      REAL(outTraceAvgCenters)[traceIdx] = meanCenters;
+      REAL(outTraceSdCenters)[traceIdx] = sdCenters;
+      REAL(outTraceAvgDims)[traceIdx] = meanDims;
+      REAL(outTraceLogLik)[traceIdx] =
+        (iterLogLikCount > 0) ? (iterLogLikSum / iterLogLikCount) : NA_REAL;
 
       // Store posterior sample (post burn-in, respecting thinning)
       if (iter > burnIn && (iter - burnIn) % thinning == 0) {
@@ -1054,23 +1099,47 @@ extern "C" {
     // -------------------------------------------------------------------------
     // 6. Build and return named result list
     // -------------------------------------------------------------------------
-    SEXP result    = PROTECT(Rf_allocVector(VECSXP, 5));
-    SEXP listNames = PROTECT(Rf_allocVector(STRSXP, 5));
+    SEXP outTraceStats = PROTECT(Rf_allocVector(VECSXP, 6));
+    SEXP traceNames    = PROTECT(Rf_allocVector(STRSXP, 6));
+    SET_VECTOR_ELT(outTraceStats, 0, outTraceIteration);
+    SET_VECTOR_ELT(outTraceStats, 1, outTraceBurnIn);
+    SET_VECTOR_ELT(outTraceStats, 2, outTraceAvgCenters);
+    SET_VECTOR_ELT(outTraceStats, 3, outTraceSdCenters);
+    SET_VECTOR_ELT(outTraceStats, 4, outTraceAvgDims);
+    SET_VECTOR_ELT(outTraceStats, 5, outTraceLogLik);
+    SET_STRING_ELT(traceNames, 0, Rf_mkChar("iteration"));
+    SET_STRING_ELT(traceNames, 1, Rf_mkChar("isBurnIn"));
+    SET_STRING_ELT(traceNames, 2, Rf_mkChar("averageCentresPerTessellation"));
+    SET_STRING_ELT(traceNames, 3, Rf_mkChar("sdCentresPerTessellation"));
+    SET_STRING_ELT(traceNames, 4, Rf_mkChar("averageDimensionsPerTessellation"));
+    SET_STRING_ELT(traceNames, 5, Rf_mkChar("logLikelihood"));
+    Rf_setAttrib(outTraceStats, R_NamesSymbol, traceNames);
+    SEXP dataFrameClass = PROTECT(Rf_mkString("data.frame"));
+    Rf_setAttrib(outTraceStats, R_ClassSymbol, dataFrameClass);
+    SEXP rowNames = PROTECT(Rf_allocVector(INTSXP, 2));
+    INTEGER(rowNames)[0] = NA_INTEGER;
+    INTEGER(rowNames)[1] = -totalIter;
+    Rf_setAttrib(outTraceStats, R_RowNamesSymbol, rowNames);
+
+    SEXP result    = PROTECT(Rf_allocVector(VECSXP, 6));
+    SEXP listNames = PROTECT(Rf_allocVector(STRSXP, 6));
 
     SET_VECTOR_ELT(result, 0, outTess);
     SET_VECTOR_ELT(result, 1, outDim);
     SET_VECTOR_ELT(result, 2, outPred);
     SET_VECTOR_ELT(result, 3, outSigma);
     SET_VECTOR_ELT(result, 4, outPredMatrix);
+    SET_VECTOR_ELT(result, 5, outTraceStats);
 
     SET_STRING_ELT(listNames, 0, Rf_mkChar("posteriorTess"));
     SET_STRING_ELT(listNames, 1, Rf_mkChar("posteriorDim"));
     SET_STRING_ELT(listNames, 2, Rf_mkChar("posteriorPred"));
     SET_STRING_ELT(listNames, 3, Rf_mkChar("posteriorSigma"));
     SET_STRING_ELT(listNames, 4, Rf_mkChar("predictionMatrix"));
+    SET_STRING_ELT(listNames, 5, Rf_mkChar("traceStats"));
     Rf_setAttrib(result, R_NamesSymbol, listNames);
 
-    UNPROTECT(7); // result, listNames, outTess, outDim, outPred, outSigma, outPredMatrix
+    UNPROTECT(17); // result, listNames, trace stats, and output storage
     return result;
   }
 

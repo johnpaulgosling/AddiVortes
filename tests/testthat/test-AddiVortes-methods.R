@@ -395,7 +395,20 @@ create_traceplot_test_object <- function() {
     xRanges = c(1, 1, 1),
     yCentre = 0,
     yRange = 1,
-    inSampleRmse = 0.5
+    inSampleRmse = 0.5,
+    traceStats = data.frame(
+      iteration = 1:4,
+      isBurnIn = c(TRUE, TRUE, FALSE, FALSE),
+      averageCentresPerTessellation = c(2, 2.5, 3, 5),
+      sdCentresPerTessellation = c(
+        0,
+        0.5,
+        stats::sd(c(2, 4)),
+        stats::sd(c(3, 7))
+      ),
+      averageDimensionsPerTessellation = c(1, 1.5, 2, 2),
+      logLikelihood = c(-0.25, -0.1, 0.05, 0.2)
+    )
   )
 }
 
@@ -404,25 +417,32 @@ test_that("traceplotData_internal computes requested traces", {
 
   trace_data <- AddiVortes:::traceplotData_internal(obj)
 
+  expect_equal(trace_data$iteration, 1:4)
+  expect_equal(trace_data$isBurnIn, c(TRUE, TRUE, FALSE, FALSE))
+  expect_equal(trace_data$averageCentresPerTessellation, c(2, 2.5, 3, 5))
+  expect_equal(
+    trace_data$sdCentresPerTessellation,
+    c(0, 0.5, stats::sd(c(2, 4)), stats::sd(c(3, 7)))
+  )
+  expect_equal(trace_data$averageDimensionsPerTessellation, c(1, 1.5, 2, 2))
+  expect_equal(trace_data$logLikelihood, c(-0.25, -0.1, 0.05, 0.2))
+})
+
+test_that("traceplotData_internal falls back for objects without traceStats", {
+  obj <- create_traceplot_test_object()
+  obj$traceStats <- NULL
+
+  trace_data <- AddiVortes:::traceplotData_internal(obj)
+
   expect_equal(trace_data$iteration, 1:2)
+  expect_equal(trace_data$isBurnIn, c(FALSE, FALSE))
   expect_equal(trace_data$averageCentresPerTessellation, c(3, 5))
   expect_equal(
     trace_data$sdCentresPerTessellation,
     c(stats::sd(c(2, 4)), stats::sd(c(3, 7)))
   )
   expect_equal(trace_data$averageDimensionsPerTessellation, c(2, 2))
-  expect_equal(trace_data$errorStandardDeviation, c(2, 3))
-})
-
-test_that("traceplotData_internal accepts custom sigma trace", {
-  obj <- create_traceplot_test_object()
-
-  trace_data <- AddiVortes:::traceplotData_internal(
-    obj,
-    sigma_trace = c(0.5, 0.75)
-  )
-
-  expect_equal(trace_data$errorStandardDeviation, c(0.5, 0.75))
+  expect_true(all(is.na(trace_data$logLikelihood)))
 })
 
 test_that("traceplots.AddiVortes requires AddiVortes object", {

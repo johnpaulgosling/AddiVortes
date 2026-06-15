@@ -53,7 +53,8 @@
 #' @param showProgress Logical; if TRUE, progress bars and messages are shown during fitting.
 #'
 #' @return An AddiVortes object containing the posterior samples of the
-#' tessellations, dimensions and predictions.
+#' tessellations, dimensions and predictions, plus per-iteration trace
+#' statistics used by `traceplots()`.
 #'
 #' @examples
 #' \donttest{
@@ -359,6 +360,7 @@ AddiVortes <- function(y, x, m = 200,
   outputPosteriorPred  <- mcmcResult$posteriorPred
   outputPosteriorSigma <- mcmcResult$posteriorSigma
   predictionMatrix     <- mcmcResult$predictionMatrix
+  traceStats           <- mcmcResult$traceStats
   
   posteriorSamples <- ncol(predictionMatrix)
   
@@ -385,7 +387,8 @@ AddiVortes <- function(y, x, m = 200,
     members = old_members,
     metric_aug = metric,
     member_aug = members,
-    catEncoding = catEncoding
+    catEncoding = catEncoding,
+    traceStats = traceStats
   )
 }
 
