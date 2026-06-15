@@ -38,7 +38,8 @@ plot(
 - sigma_trace:
 
   An optional numeric vector of sigma values from MCMC samples. If not
-  provided, the method will attempt to extract it from the model object.
+  provided, the method will attempt to extract the posterior error
+  standard deviation from the model object.
 
 - which:
 
@@ -66,7 +67,7 @@ The function generates up to four diagnostic plots:
 1.  **Residuals Plot**: Residuals vs fitted values with smoothed trend
     line
 
-2.  **Sigma Trace**: MCMC trace plot for the error variance parameter
+2.  **Sigma Trace**: MCMC trace plot for the error standard deviation
 
 3.  **Tessellation Complexity**: Trace of average tessellation size over
     iterations

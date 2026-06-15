@@ -16,13 +16,13 @@ Source:
 [`DESCRIPTION`](https://github.com/johnpaulgosling/AddiVortes/blob/main/DESCRIPTION)
 
 Stone A, Gosling J, Iskauskas A (2026). *AddiVortes: (Bayesian) Additive
-Voronoi Tessellations*. R package version 0.6.1,
+Voronoi Tessellations*. R package version 0.6.2,
 <https://johnpaulgosling.github.io/AddiVortes/>.
 
     @Manual{,
       title = {AddiVortes: (Bayesian) Additive Voronoi Tessellations},
       author = {Adam Stone and John Paul Gosling and Andrew Iskauskas},
       year = {2026},
-      note = {R package version 0.6.1},
+      note = {R package version 0.6.2},
       url = {https://johnpaulgosling.github.io/AddiVortes/},
     }

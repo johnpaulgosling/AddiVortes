@@ -131,6 +131,10 @@ Methods for AddiVortes objects
   : Print Method for AddiVortes
 - [`summary(`*`<AddiVortes>`*`)`](https://johnpaulgosling.github.io/AddiVortes/reference/summary.AddiVortes.md)
   : Summary Method for AddiVortes
+- [`traceplots()`](https://johnpaulgosling.github.io/AddiVortes/reference/traceplots.md)
+  : Trace Plot Diagnostics
+- [`traceplots(`*`<AddiVortes>`*`)`](https://johnpaulgosling.github.io/AddiVortes/reference/traceplots.AddiVortes.md)
+  : Trace Plot Diagnostics for AddiVortes
 
 ## Datasets
 
