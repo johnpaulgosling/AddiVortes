@@ -1,3 +1,13 @@
+if (!exists("acceptanceProbability")) {
+  acceptance_probability_file <- "R/0_AcceptanceProbability.R"
+  if (!file.exists(acceptance_probability_file)) {
+    acceptance_probability_file <- "../../R/0_AcceptanceProbability.R"
+  }
+  if (file.exists(acceptance_probability_file)) {
+    source(acceptance_probability_file)
+  }
+}
+
 log_likelihood_ratio_for_test <- function(R_old, n_old, R_new, n_new,
                                           sigma_sq, sigma_mu) {
   0.5 * (
