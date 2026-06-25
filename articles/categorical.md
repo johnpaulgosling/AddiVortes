@@ -175,7 +175,7 @@ fit <- AddiVortes(
 ``` r
 
 cat("In-sample RMSE:", round(fit$inSampleRmse, 3), "\n")
-#> In-sample RMSE: 2.393
+#> In-sample RMSE: 2.253
 
 # The catEncoding field records how the encoding was built
 cat("\nReference levels used:\n")
@@ -214,7 +214,7 @@ preds <- predict(fit, x_test, showProgress = FALSE)
 
 rmse_test <- sqrt(mean((y_test - preds)^2))
 cat("Test RMSE:", round(rmse_test, 3), "\n")
-#> Test RMSE: 2.883
+#> Test RMSE: 3.029
 ```
 
 ``` r
@@ -270,7 +270,7 @@ cat(
   "Prediction for unseen category 'Luxury' (treated as 'Basic'):",
   round(pred_new, 3), "\n"
 )
-#> Prediction for unseen category 'Luxury' (treated as 'Basic'): 25.783
+#> Prediction for unseen category 'Luxury' (treated as 'Basic'): 26.385
 ```
 
 ### 8. Effect of `catScaling`
@@ -302,9 +302,9 @@ preds_cs2 <- predict(fit_cs2, x_test, showProgress = FALSE)
 ``` r
 
 cat("Test RMSE (catScaling = 1):", round(rmse_test, 3), "\n")
-#> Test RMSE (catScaling = 1): 2.883
+#> Test RMSE (catScaling = 1): 3.029
 cat("Test RMSE (catScaling = 2):", round(sqrt(mean((y_test - preds_cs2)^2)), 3), "\n")
-#> Test RMSE (catScaling = 2): 2.935
+#> Test RMSE (catScaling = 2): 3.009
 ```
 
 In this example, the true response has substantial category effects (up

@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">AddiVortes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,7 +62,7 @@
                         <h4 data-toc-skip class="author">John Paul
 Gosling and Adam Stone</h4>
             
-            <h4 data-toc-skip class="date">2026-06-15</h4>
+            <h4 data-toc-skip class="date">2026-06-25</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/johnpaulgosling/AddiVortes/blob/main/vignettes/categorical.Rmd" class="external-link"><code>vignettes/categorical.Rmd</code></a></small>
       <div class="d-none name"><code>categorical.Rmd</code></div>
@@ -265,7 +265,7 @@ the data frame with character or factor columns directly.
 <span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"In-sample RMSE:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">inSampleRmse</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; In-sample RMSE: 2.393</span></span>
+<span><span class="co">#&gt; In-sample RMSE: 2.253</span></span>
 <span></span>
 <span><span class="co"># The catEncoding field records how the encoding was built</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nReference levels used:\n"</span><span class="op">)</span></span>
@@ -298,7 +298,7 @@ is applied consistently.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rmse_test</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">y_test</span> <span class="op">-</span> <span class="va">preds</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Test RMSE:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">rmse_test</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Test RMSE: 2.883</span></span></code></pre></div>
+<span><span class="co">#&gt; Test RMSE: 3.029</span></span></code></pre></div>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Colour observations by product category</span></span>
 <span><span class="va">prod_cols</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Basic"</span> <span class="op">=</span> <span class="st">"steelblue"</span>, <span class="st">"Premium"</span> <span class="op">=</span> <span class="st">"darkorange"</span>, <span class="st">"Deluxe"</span> <span class="op">=</span> <span class="st">"darkgreen"</span><span class="op">)</span></span>
@@ -342,7 +342,7 @@ a previously unseen level and falls back to the baseline.</p>
 <span>  <span class="st">"Prediction for unseen category 'Luxury' (treated as 'Basic'):"</span>,</span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">pred_new</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Prediction for unseen category 'Luxury' (treated as 'Basic'): 25.783</span></span></code></pre></div>
+<span><span class="co">#&gt; Prediction for unseen category 'Luxury' (treated as 'Basic'): 26.385</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="effect-of-catscaling">8. Effect of <code>catScaling</code><a class="anchor" aria-label="anchor" href="#effect-of-catscaling"></a>
@@ -366,9 +366,9 @@ differences) — and compare their test RMSEs.</p>
 <code class="sourceCode R"><span><span class="va">preds_cs2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_cs2</span>, <span class="va">x_test</span>, showProgress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Test RMSE (catScaling = 1):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">rmse_test</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Test RMSE (catScaling = 1): 2.883</span></span>
+<span><span class="co">#&gt; Test RMSE (catScaling = 1): 3.029</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Test RMSE (catScaling = 2):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">y_test</span> <span class="op">-</span> <span class="va">preds_cs2</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Test RMSE (catScaling = 2): 2.935</span></span></code></pre></div>
+<span><span class="co">#&gt; Test RMSE (catScaling = 2): 3.009</span></span></code></pre></div>
 <p>In this example, the true response has substantial category effects
 (up to ±20 units for product type) relative to the continuous effects,
 so increasing <code>catScaling</code> may help the model focus more on

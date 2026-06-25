@@ -86,12 +86,12 @@ preds <- predict(results,
 
 # The RMSE is contained in the results object
 cat("In-Sample RMSE:", results$inSampleRmse, "\n")
-#> In-Sample RMSE: 1.182148
+#> In-Sample RMSE: 0.9235547
 
 # Calculate the Root Mean Squared Error (RMSE) for the test set
 rmse <- sqrt(mean((Y_Boston[TestSet] - preds)^2))
 cat("Test Set RMSE:", rmse, "\n")
-#> Test Set RMSE: 3.206674
+#> Test Set RMSE: 3.172987
 ```
 
 ### 5. Visualising the Results

@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">AddiVortes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,7 +62,7 @@
                         <h4 data-toc-skip class="author">John Paul
 Gosling and Adam Stone</h4>
             
-            <h4 data-toc-skip class="date">2026-06-15</h4>
+            <h4 data-toc-skip class="date">2026-06-25</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/johnpaulgosling/AddiVortes/blob/main/vignettes/introduction.Rmd" class="external-link"><code>vignettes/introduction.Rmd</code></a></small>
       <div class="d-none name"><code>introduction.Rmd</code></div>
@@ -148,12 +148,12 @@ unseen test data. We will then calculate the Root Mean Squared Error
 <span></span>
 <span><span class="co"># The RMSE is contained in the results object</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"In-Sample RMSE:"</span>, <span class="va">results</span><span class="op">$</span><span class="va">inSampleRmse</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; In-Sample RMSE: 1.182148</span></span>
+<span><span class="co">#&gt; In-Sample RMSE: 0.9235547</span></span>
 <span></span>
 <span><span class="co"># Calculate the Root Mean Squared Error (RMSE) for the test set</span></span>
 <span><span class="va">rmse</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">Y_Boston</span><span class="op">[</span><span class="va">TestSet</span><span class="op">]</span> <span class="op">-</span> <span class="va">preds</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Test Set RMSE:"</span>, <span class="va">rmse</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Test Set RMSE: 3.206674</span></span></code></pre></div>
+<span><span class="co">#&gt; Test Set RMSE: 3.172987</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="visualising-the-results">5. Visualising the Results<a class="anchor" aria-label="anchor" href="#visualising-the-results"></a>
