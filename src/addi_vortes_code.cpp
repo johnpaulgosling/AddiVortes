@@ -588,37 +588,37 @@ static AcceptanceComponents log_acceptance_components(
   double acc = log_lik;
 
   if (mod == "AD") {
-    double log_ts_tr = 2.0 * log((double)(p - d_old))
-                     - log((double)d_old)
+    double log_ts_tr = 2.0 * log((double)(p - d_new + 1))
+                     - log((double)d_new - 1)
                      - log((double)d_new)
-                     + log(prob)
-                     - log1p(-prob)
-                     + log(remove_dimension_probability(d_new, p))
-                     - log(add_dimension_probability(d_old, p));
+                     + log(omega)
+                     - log(p-omega);
     acc += log_ts_tr;
-
+    if (d_new == 2) {
+      acc += - log(2);
+    }
   } else if (mod == "RD") {
-    double log_ts_tr = log((double)d_old)
+    double log_ts_tr = log((double)d_new + 1)
                      + log((double)d_new)
                      - 2.0 * log((double)(p - d_new))
-                     + log1p(-prob)
-                     - log(prob)
-                     + log(add_dimension_probability(d_new, p))
-                     - log(remove_dimension_probability(d_old, p));
+                     + log(p-omega)
+                     - log(omega);
     acc += log_ts_tr;
-
+    if (d_new == (p - 1)) {
+      acc += - log(2);
+    }
   } else if (mod == "AC") {
     double log_ts_tr = log(lambdaRate)
-                     - 2.0 * log((double)nC_new)
-                     + log(remove_centre_probability(nC_new))
-                     - log(add_centre_probability(nC_old));
+                     - log((double)nC_new)
+                     - log((double)nC_new - 1);
     acc += log_ts_tr + 0.5 * log(sigmaSquared);
-
+    if (nC_new == 2) {
+      acc += - log(2);
+    }
   } else if (mod == "RC") {
-    double log_ts_tr = 2.0 * log((double)nC_old)
-                     - log(lambdaRate)
-                     + log(add_centre_probability(nC_new))
-                     - log(remove_centre_probability(nC_old));
+    double log_ts_tr = log((double)nC_new + 1)
+                     + log((double)nC_new)
+                     - log(lambdaRate);
     acc += log_ts_tr - 0.5 * log(sigmaSquared);
   }
   // "Change" and "Swap": log(TessStructure * TransitionRatio) = 0
