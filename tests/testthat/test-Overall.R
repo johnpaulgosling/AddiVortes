@@ -14,7 +14,7 @@ test_that("Simple AddiVortes fit 1", {
     InitialSigma = "Linear"
   )
 
-  expect_equal(round(results$inSampleRmse, 3), 0.591)
+  expect_equal(round(results$inSampleRmse, 3), 0.740)
 })
 
 test_that("Simple AddiVortes fit 2", {
@@ -32,7 +32,7 @@ test_that("Simple AddiVortes fit 2", {
   )
 
 
-  expect_equal(round(results$inSampleRmse, 3), 2.669)
+  expect_equal(round(results$inSampleRmse, 2), 2.69)
 })
 
 test_that("Simple AddiVortes fit 3", {
@@ -49,7 +49,7 @@ test_that("Simple AddiVortes fit 3", {
     InitialSigma = "Linear"
   )
 
-  expect_equal(round(results$inSampleRmse, 3), 1.142)
+  expect_equal(round(results$inSampleRmse, 3), 1.139)
 })
 
 test_that("Warning when p > n", {

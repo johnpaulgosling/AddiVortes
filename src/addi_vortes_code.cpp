@@ -532,6 +532,24 @@ struct AcceptanceComponents {
   double logAlpha;
 };
 
+static double add_dimension_probability(int d, int p) {
+  if (d >= p) return 0.0;
+  return (d == 1) ? 0.4 : 0.2;
+}
+
+static double remove_dimension_probability(int d, int p) {
+  if (d <= 1) return 0.0;
+  return (d == p) ? 0.4 : 0.2;
+}
+
+static double add_centre_probability(int nC) {
+  return (nC == 1) ? 0.4 : 0.2;
+}
+
+static double remove_centre_probability(int nC) {
+  return (nC > 1) ? 0.2 : 0.0;
+}
+
 // Compute the part of the marginal log-likelihood used in the tessellation
 // acceptance ratio for one retained/proposed tessellation state. Constants that
 // cancel in the acceptance ratio are omitted.
@@ -553,7 +571,7 @@ static double tessellation_log_likelihood_component(
 static AcceptanceComponents log_acceptance_components(
     const std::vector<double>& R_old, const std::vector<int>& n_old,
     const std::vector<double>& R_new, const std::vector<int>& n_new,
-    int d_new, int nC_new,
+    int d_old, int d_new, int nC_old, int nC_new,
     double sigmaSquared, double sigmaSquaredMu,
     double omega, double lambdaRate, int p,
     const std::string& mod) {
@@ -570,34 +588,38 @@ static AcceptanceComponents log_acceptance_components(
   double acc = log_lik;
 
   if (mod == "AD") {
-    double log_ts_tr = dbinom(d_new - 1, p - 1, prob, 1)
-                     - dbinom(d_new - 2, p - 1, prob, 1)
-                     - log((double)d_new);
+    double log_ts_tr = 2.0 * log((double)(p - d_new + 1))
+                     - log((double)d_new - 1)
+                     - log((double)d_new)
+                     + log(omega)
+                     - log(p-omega);
     acc += log_ts_tr;
-    if (d_new == 1)     acc += log(0.5);
-    else if (d_new == p - 1) acc += log(2.0);
-
+    if (d_new == 2) {
+      acc += - log(2);
+    }
   } else if (mod == "RD") {
-    double log_ts_tr = dbinom(d_new - 1, p, prob, 1)
-                     - dbinom(d_new,     p, prob, 1)
-                     + log((double)(d_new + 1));
+    double log_ts_tr = log((double)d_new + 1)
+                     + log((double)d_new)
+                     - 2.0 * log((double)(p - d_new))
+                     + log(p-omega)
+                     - log(omega);
     acc += log_ts_tr;
-    if (d_new == p) acc += log(0.5);
-    else if (d_new == 2) acc += log(2.0);
-
+    if (d_new == (p - 1)) {
+      acc += - log(2);
+    }
   } else if (mod == "AC") {
-    double log_ts_tr = dpois(nC_new - 1, lambdaRate, 1)
-                     - dpois(nC_new - 2, lambdaRate, 1)
-                     - log((double)nC_new);
+    double log_ts_tr = log(lambdaRate)
+                     - log((double)nC_new)
+                     - log((double)nC_new - 1);
     acc += log_ts_tr + 0.5 * log(sigmaSquared);
-    if (nC_new == 1) acc += log(0.5);
-
+    if (nC_new == 2) {
+      acc += - log(2);
+    }
   } else if (mod == "RC") {
-    double log_ts_tr = dpois(nC_new - 1, lambdaRate, 1)
-                     - dpois(nC_new,     lambdaRate, 1)
-                     + log((double)(nC_new + 1));
+    double log_ts_tr = log((double)nC_new + 1)
+                     + log((double)nC_new)
+                     - log(lambdaRate);
     acc += log_ts_tr - 0.5 * log(sigmaSquared);
-    if (nC_new == 2) acc += log(2.0);
   }
   // "Change" and "Swap": log(TessStructure * TransitionRatio) = 0
 
@@ -998,7 +1020,8 @@ extern "C" {
         if (!hasEmpty) {
           AcceptanceComponents acc = log_acceptance_components(
             R_old, n_old, R_new, n_new,
-            (int)prop.dim.size(), prop.nC,
+            tess_d[j], (int)prop.dim.size(),
+            tess_nC[j], prop.nC,
             sigmaSquared, sigSqMu,
             omega, lambdaRate, p,
             prop.mod);
