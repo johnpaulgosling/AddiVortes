@@ -29,7 +29,6 @@ AddiVortes is particularly well-suited for:
 You can install the latest version of AddiVortes from GitHub with:
 
 ```R
-# install.packages("devtools")
 pak::pak("johnpaulgosling/AddiVortes")
 ```
 
