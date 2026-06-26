@@ -1,5 +1,13 @@
 # AddiVortes News
 
+## AddiVortes 0.6.5
+
+* Metropolis-Hastings acceptance ratios have been further simplified in the C++
+  MCMC implementation.
+* Removed legacy internal R functions for MCMC steps (acceptance probabilities,
+  tessellation proposals, residual aggregation, and mu/sigma sampling) that are
+  now handled entirely in C++.
+
 ## AddiVortes 0.6.4
 
 * Corrected the log-likelihood trace in `traceplots()` so it now shows the

@@ -18,8 +18,11 @@ fittingFunction <- function(lambda,
                             q,
                             nu,
                             SigmaSquaredHat) {
-  return((SigmaSquaredHat - qinvgamma_internal(q,
+  inv_gamma_q <- 1 / stats::qgamma(
+    q,
     shape = nu / 2,
-    rate = nu * lambda / 2
-  ))^2)
+    rate = nu * lambda / 2,
+    lower.tail = FALSE
+  )
+  return((SigmaSquaredHat - inv_gamma_q)^2)
 }

@@ -112,7 +112,7 @@ AddiVortes <- function(y, x, m = 200,
   # Force evaluation of Omega using the *original* x before categorical encoding
   # replaces x with the encoded matrix. Without this, R's lazy evaluation would
   # use ncol() of the encoded matrix, potentially making Omega = NumCovariates
-  # and causing prob = 1 in acceptanceProbability (which produces 0/0 = NaN).
+  # and causing prob = 1 in the dimension acceptance ratio (which produces 0/0 = NaN).
   force(Omega)
   ### Pre-processing data
 
