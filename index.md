@@ -40,7 +40,6 @@ You can install the latest version of AddiVortes from GitHub with:
 
 ``` r
 
-# install.packages("devtools")
 pak::pak("johnpaulgosling/AddiVortes")
 ```
 
