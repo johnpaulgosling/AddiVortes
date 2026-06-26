@@ -532,24 +532,6 @@ struct AcceptanceComponents {
   double logAlpha;
 };
 
-static double add_dimension_probability(int d, int p) {
-  if (d >= p) return 0.0;
-  return (d == 1) ? 0.4 : 0.2;
-}
-
-static double remove_dimension_probability(int d, int p) {
-  if (d <= 1) return 0.0;
-  return (d == p) ? 0.4 : 0.2;
-}
-
-static double add_centre_probability(int nC) {
-  return (nC == 1) ? 0.4 : 0.2;
-}
-
-static double remove_centre_probability(int nC) {
-  return (nC > 1) ? 0.2 : 0.0;
-}
-
 // Compute the part of the marginal log-likelihood used in the tessellation
 // acceptance ratio for one retained/proposed tessellation state. Constants that
 // cancel in the acceptance ratio are omitted.
@@ -571,7 +553,7 @@ static double tessellation_log_likelihood_component(
 static AcceptanceComponents log_acceptance_components(
     const std::vector<double>& R_old, const std::vector<int>& n_old,
     const std::vector<double>& R_new, const std::vector<int>& n_new,
-    int d_old, int d_new, int nC_old, int nC_new,
+    int d_new, int nC_new,
     double sigmaSquared, double sigmaSquaredMu,
     double omega, double lambdaRate, int p,
     const std::string& mod) {
@@ -592,7 +574,7 @@ static AcceptanceComponents log_acceptance_components(
                      - log((double)d_new - 1)
                      - log((double)d_new)
                      + log(omega)
-                     - log(p-omega);
+                     - log(p - omega);
     acc += log_ts_tr;
     if (d_new == 2) {
       acc += - log(2);
@@ -601,7 +583,7 @@ static AcceptanceComponents log_acceptance_components(
     double log_ts_tr = log((double)d_new + 1)
                      + log((double)d_new)
                      - 2.0 * log((double)(p - d_new))
-                     + log(p-omega)
+                     + log(p - omega)
                      - log(omega);
     acc += log_ts_tr;
     if (d_new == (p - 1)) {
@@ -1020,8 +1002,7 @@ extern "C" {
         if (!hasEmpty) {
           AcceptanceComponents acc = log_acceptance_components(
             R_old, n_old, R_new, n_new,
-            tess_d[j], (int)prop.dim.size(),
-            tess_nC[j], prop.nC,
+            (int)prop.dim.size(), prop.nC,
             sigmaSquared, sigSqMu,
             omega, lambdaRate, p,
             prop.mod);
