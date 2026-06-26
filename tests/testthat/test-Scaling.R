@@ -29,6 +29,16 @@ test_that("scaleData_internal throws an error for zero-range data", {
   expect_error(scaleData_internal(vec), "Range is zero. Cannot scale data.")
 })
 
+test_that("scaleData_internal returns zero for zero-range matrix columns", {
+  mat <- matrix(c(5, 5, 10, 20), nrow = 2)
+  result <- scaleData_internal(mat)
+
+  expect_equal(result$scaledData[, 1], c(0, 0))
+  expect_equal(result$centres[1], 5)
+  expect_equal(result$ranges[1], 0)
+  expect_equal(result$scaledData[, 2], c(-0.5, 0.5))
+})
+
 
 # --- Tests for applyScaling_internal ---
 
@@ -61,4 +71,15 @@ test_that("applyScaling_internal warns for NA parameters", {
     applyScaling_internal(mat, centres, ranges),
     "Scaling parameters for column 2"
   )
+})
+
+test_that("applyScaling_internal returns zero for zero-range columns", {
+  mat <- matrix(c(3, 7, 10, 20), nrow = 2)
+  centres <- c(5, 15)
+  ranges <- c(0, 10)
+
+  scaled <- applyScaling_internal(mat, centres, ranges)
+
+  expect_equal(scaled[, 1], c(0, 0))
+  expect_equal(scaled[, 2], c(-0.5, 0.5))
 })

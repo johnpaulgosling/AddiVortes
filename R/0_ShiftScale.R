@@ -81,7 +81,11 @@ scaleData_internal <- function(data) {
       maxV <- max(colData, na.rm = TRUE)
       centres[i] <- (maxV + minV) / 2
       ranges[i] <- maxV - minV
-      scaledMatWork[, i] <- (colData - centres[i]) / ranges[i]
+      if (ranges[i] == 0) {
+        scaledMatWork[, i] <- 0
+      } else {
+        scaledMatWork[, i] <- (colData - centres[i]) / ranges[i]
+      }
     }
 
     # Preserve names
@@ -181,7 +185,11 @@ applyScaling_internal <- function(mat, centres, ranges) {
     }
 
     # Apply scaling using provided centres and ranges
-    scaledMatWork[, i] <- (colData - centres[i]) / ranges[i]
+    if (ranges[i] == 0) {
+      scaledMatWork[, i] <- 0
+    } else {
+      scaledMatWork[, i] <- (colData - centres[i]) / ranges[i]
+    }
   }
 
   colnames(scaledMatWork) <- originalColnames

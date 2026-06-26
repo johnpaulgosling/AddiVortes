@@ -103,9 +103,10 @@ covariateStructure_internal <- function(data, structure, membership = NULL, one.
         stop(paste("More than one spherical parameter in membership group",
                                                  mem, "has range >pi."))
       if (sum(param_extent > pi) == 1) {
-        which_polar <- which(param_extent > pi)
-        reduced_data[,membership == mem] <- sphere_data[,c(which(param_extent <= pi),
-                                                     which(param_extent > pi))]
+        mem_cols <- which(membership == mem)
+        new_order <- c(which(param_extent <= pi), which(param_extent > pi))
+        reduced_data[, mem_cols] <- sphere_data[, new_order, drop = FALSE]
+        names(reduced_data)[mem_cols] <- names(sphere_data)[new_order]
       }
     }
   }
