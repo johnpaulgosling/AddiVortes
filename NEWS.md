@@ -1,6 +1,6 @@
 # AddiVortes News
 
-## AddiVortes 0.6.5
+## AddiVortes 0.6.6
 
 * Fixed out-of-sample prediction so that cell assignments match the in-sample
   fit. `cellIndices()` now always maps tessellation centre columns to their
@@ -12,6 +12,9 @@
   `covariateStructure_internal()` reorders covariates. Predictions on the
   training data now reproduce the in-sample fitted values, including for
   spherical and mixed-metric models.
+
+## AddiVortes 0.6.5
+
 * Metropolis-Hastings acceptance ratios have been further simplified in the C++
   MCMC implementation.
 * Removed legacy internal R functions for MCMC steps (acceptance probabilities,
