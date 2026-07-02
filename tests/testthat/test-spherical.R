@@ -138,3 +138,31 @@ test_that("spherical fit and predict preserve coordinate values", {
   expect_length(pred, 2)
   expect_true(all(is.finite(pred)))
 })
+
+test_that("spherical in-sample matches out-of-sample", {
+  n <- 10
+  lat <- runif(n, -pi / 4, pi / 4)
+  lon <- runif(n, -pi, pi)
+  x <- data.frame(lat = lat, 
+                  lon = lon)
+  y <- rnorm(n)
+  
+  fit <- AddiVortes(
+    y, x,
+    m = 2,
+    totalMCMCIter = 4,
+    mcmcBurnIn = 0,
+    metric = "S",
+    showProgress = FALSE
+  )
+  
+  pred <- predict(fit, 
+                  as.matrix(x))
+  
+  in_sample <- fit$inSampleRmse
+  out_sample <- sqrt(mean((y - pred)^2))
+  
+  expect_equal(in_sample, 
+               out_sample, 
+               tolerance = 1e-8)
+})

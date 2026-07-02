@@ -273,6 +273,20 @@ test_that("predict.AddiVortes handles empty posterior samples", {
   )
 })
 
+test_that("In- and out-of-sample predict methods match", {
+  # Test that in-sample and out-of-sample predictions match for training data
+  obj <- create_test_object()
+  withr::local_seed(42)
+  X_train <- matrix(rnorm(50), 10, 5)
+  Y_train <- rnorm(10)
+
+  preds_in_sample <- obj$inSampleRmse
+  preds_out_of_sample <- predict(obj, X_train, showProgress = FALSE)
+  preds_out_of_sample <- sqrt(mean((Y_train - preds_out_of_sample)^2))
+
+  expect_equal(preds_in_sample, preds_out_of_sample)
+})
+
 # --- Tests for plot.AddiVortes() ---
 
 test_that("plot.AddiVortes requires AddiVortes object", {
