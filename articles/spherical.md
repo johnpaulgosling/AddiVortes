@@ -186,9 +186,9 @@ rmse_sph <- sqrt(mean((y_test - preds_sph)^2))
 rmse_euc <- sqrt(mean((y_test - preds_euc)^2))
 
 cat("Test RMSE — spherical metric:", round(rmse_sph, 3), "\n")
-#> Test RMSE — spherical metric: 5.085
+#> Test RMSE — spherical metric: 2.124
 cat("Test RMSE — Euclidean metric:", round(rmse_euc, 3), "\n")
-#> Test RMSE — Euclidean metric: 6.584
+#> Test RMSE — Euclidean metric: 2.209
 ```
 
 ### 6. Visualising Predictions
@@ -316,9 +316,9 @@ rmse_prime_sph <- sqrt(mean((y_prime_test - preds_prime_sph)^2))
 rmse_prime_euc <- sqrt(mean((y_prime_test - preds_prime_euc)^2))
 
 cat("Test RMSE — spherical metric:", round(rmse_prime_sph, 3), "\n")
-#> Test RMSE — spherical metric: 4.064
+#> Test RMSE — spherical metric: 4.059
 cat("Test RMSE — Euclidean metric:", round(rmse_prime_euc, 3), "\n")
-#> Test RMSE — Euclidean metric: 4.096
+#> Test RMSE — Euclidean metric: 4.084
 
 y_prime_range <- range(c(y_prime_test, preds_prime_sph, preds_prime_euc))
 
