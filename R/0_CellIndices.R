@@ -25,11 +25,18 @@ cellIndices <- function(x, tess, dim, metric = "E", members) {
   if (n_tess == 1L) { # only 1 centre
     CellsForGivenTess <- rep.int(1L, n_x)
   } else { # multiple
-    if (ncol(tess) != ncol(x)) {
-      new_tess <- matrix(0, nrow = n_tess, ncol = ncol(x))
-      new_tess[, dim] <- tess
-      tess <- new_tess
-    }
+    # Always place the tessellation centre coordinates at their global column
+    # positions before computing distances. `tess` stores its columns in the
+    # order given by `dim` (the active dimensions), whereas the distance code
+    # (knnx_index_cpp) treats column i of `tess` as global covariate i. Guarding
+    # this remap on `ncol(tess) != ncol(x)` misses the case where every
+    # covariate is active (ncol(tess) == ncol(x)) but `dim` is a permutation of
+    # the columns, which silently mismatches coordinates (and, for spherical
+    # groups, the order-sensitive distance). Remapping unconditionally is a
+    # no-op when `dim` is already the identity order.
+    new_tess <- matrix(0, nrow = n_tess, ncol = ncol(x))
+    new_tess[, dim] <- tess
+    tess <- new_tess
     CellsForGivenTess <- knnx_index(
       tess,
       x, 1,
