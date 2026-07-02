@@ -378,7 +378,15 @@ predict.AddiVortes <- function(object, newdata,
     centres = object$xCentres,
     ranges = object$xRanges
   )
-  xNewScaled[, object$metric != 0] <- newdata[, object$metric != 0]
+  # Leave spherical columns on their original radian scale, exactly as the fit
+  # function does. The mask must be aligned to the (potentially reordered and
+  # augmented) column order of `newdata`, not the original user column order in
+  # `object$metric`: `covariateStructure_internal` may reorder covariates (e.g.
+  # move Euclidean covariates ahead of spherical ones). The per-column augmented
+  # metric is recovered from the reduced representation used for distances, which
+  # is already aligned to the reordered columns.
+  metricAug <- rep(object$metric_red, object$member_red)
+  xNewScaled[, metricAug != 0] <- newdata[, metricAug != 0]
   # Binary columns from categorical encoding are kept at their encoded values
   # (0 or catScaling) rather than being further scaled
   if (!is.null(object$catEncoding)) {

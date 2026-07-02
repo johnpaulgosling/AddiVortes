@@ -55,6 +55,64 @@ test_that("predict preprocessing matches fit for spherical columns", {
   expect_equal(xNewScaled[, 2], lon)
 })
 
+test_that("cellIndices remaps permuted active dimensions to global columns", {
+  # Two active dimensions covering all covariates but given in reversed order.
+  # The centre matrix columns follow `dim` order (col 1 -> covariate 2,
+  # col 2 -> covariate 1). cellIndices must place them at the correct global
+  # columns before computing distances, matching a brute-force nearest centre.
+  x <- matrix(c(
+    0.0, 0.0,
+    1.0, 0.0,
+    0.0, 1.0,
+    1.0, 1.0
+  ), ncol = 2, byrow = TRUE)
+  tess <- matrix(c(
+    0.0, 1.0, # covariate 2 coordinates (dim[1] == 2)
+    0.0, 1.0  # covariate 1 coordinates (dim[2] == 1)
+  ), ncol = 2)
+  dim <- c(2L, 1L)
+
+  idx <- cellIndices(x, tess, dim, metric = 0L, members = 2L)
+
+  brute <- apply(x, 1, function(row) {
+    dists <- apply(tess, 1, function(cen) {
+      sum((row[dim] - cen)^2)
+    })
+    which.min(dists)
+  })
+
+  expect_equal(idx, brute)
+})
+
+test_that("in-sample and predicted values agree on the training data", {
+  skip_on_cran()
+
+  consistency <- function(x, metric) {
+    withr::local_seed(11)
+    n <- nrow(x)
+    y <- sin(2 * x[, 1]) + cos(x[, 2]) + rnorm(n, sd = 0.2)
+    fit <- AddiVortes(y, x,
+      m = 15, totalMCMCIter = 200, mcmcBurnIn = 60,
+      metric = metric, showProgress = FALSE
+    )
+    preds <- predict(fit, as.matrix(x), showProgress = FALSE, parallel = FALSE)
+    reRmse <- sqrt(mean((y - preds)^2))
+    abs(fit$inSampleRmse - reRmse)
+  }
+
+  n <- 120
+  lat <- runif(n, -pi / 4, pi / 4)
+  lon <- runif(n, -pi, pi)
+
+  # Euclidean control and spherical configurations, including column orders that
+  # force covariateStructure_internal to reorder covariates.
+  expect_lt(consistency(cbind(a = lat, b = lon), "E"), 1e-8)
+  expect_lt(consistency(cbind(lat = lat, lon = lon), "S"), 1e-8)
+  expect_lt(consistency(cbind(lon = lon, lat = lat), "S"), 1e-8)
+  expect_lt(consistency(cbind(e = lat, lat = lat, lon = lon), c("E", "S", "S")), 1e-8)
+  expect_lt(consistency(cbind(lat = lat, lon = lon, e = lon), c("S", "S", "E")), 1e-8)
+})
+
 test_that("spherical fit and predict preserve coordinate values", {
   skip_on_cran()
   withr::local_seed(42)

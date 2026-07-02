@@ -2,6 +2,16 @@
 
 ## AddiVortes 0.6.5
 
+* Fixed out-of-sample prediction so that cell assignments match the in-sample
+  fit. `cellIndices()` now always maps tessellation centre columns to their
+  global covariate positions (previously the remapping was skipped when a
+  tessellation used every covariate, silently mismatching coordinates whenever
+  the active dimensions were in a permuted order). `predict()` now derives its
+  spherical column mask from the reordered/augmented metric so spherical
+  coordinates are left on their original radian scale even when
+  `covariateStructure_internal()` reorders covariates. Predictions on the
+  training data now reproduce the in-sample fitted values, including for
+  spherical and mixed-metric models.
 * Metropolis-Hastings acceptance ratios have been further simplified in the C++
   MCMC implementation.
 * Removed legacy internal R functions for MCMC steps (acceptance probabilities,
