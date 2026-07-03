@@ -426,10 +426,13 @@ predict.AddiVortes <- function(object, newdata,
       " posterior samples...\n",
       sep = ""
     )
+    apply_fn <- pbapply:pblapply
+  } else {
+    apply_fn <- lapply
   }
 
   # --- Parallel prediction loop with progress ---
-  prediction_list <- pbapply::pblapply(
+  prediction_list <- apply_fn(
     X = 1:numStoredSamples,
     FUN = function(sIdx) {
       current_tess <- posteriorTessSamples[[sIdx]]
