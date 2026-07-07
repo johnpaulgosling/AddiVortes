@@ -426,6 +426,9 @@ predict.AddiVortes <- function(object, newdata,
       " posterior samples...\n",
       sep = ""
     )
+  } else {
+    old_pboptions <- pbapply::pboptions(type = "none")
+    on.exit(pbapply::pboptions(old_pboptions), add = TRUE)
   }
 
   # --- Parallel prediction loop with progress ---
