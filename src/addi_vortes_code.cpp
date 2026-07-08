@@ -15,12 +15,29 @@
 // 3. R headers last
 #include <R.h>
 #include <Rinternals.h>
-#include <Rmath.h>        // For dbinom(), dpois(), rgamma()
-#include <R_ext/Random.h> // For unif_rand() and norm_rand()
+#include <Rmath.h>        // For dbinom(), dpois()
+#include <random>         // C++ RNG: mt19937, distributions
 
 // Check if a value is in a vector
 bool in_vector(int value, const std::vector<int>& vec) {
   return std::find(vec.begin(), vec.end(), value) != vec.end();
+}
+
+// ---------------------------------------------------------------------------
+// C++ RNG utilities (thread-local engine)
+// ---------------------------------------------------------------------------
+static thread_local std::mt19937_64 cxx_rng((std::random_device())());
+
+inline double cxx_unif() {
+  return std::uniform_real_distribution<double>(0.0, 1.0)(cxx_rng);
+}
+
+inline double cxx_norm() {
+  return std::normal_distribution<double>(0.0, 1.0)(cxx_rng);
+}
+
+inline double cxx_rgamma(double shape, double scale) {
+  return std::gamma_distribution<double>(shape, scale)(cxx_rng);
 }
 
 // Count the number of elements in an array equalling a given value
@@ -320,9 +337,8 @@ extern "C" {
     int tess_j_rows = Rf_nrows(tess_j_sexp);
     int d_j_length = Rf_length(dim_j_sexp);
     
-    // Get R's random number generator state
-    GetRNGstate();
-    
+    // Using a C++ thread-local RNG (std::mt19937_64) instead of R's RNG.
+    // The C++ RNG is independent and is not automatically seeded from R.
     // --- Create C++ copies for manipulation ---
     std::vector<int> dim_j_star(p_dim_j, p_dim_j + d_j_length);
     std::vector<double> tess_j_star(p_tess_j, p_tess_j + (tess_j_rows * d_j_length));
@@ -330,7 +346,7 @@ extern "C" {
 
     double new_val = 0.0;
     
-    double p = unif_rand();
+    double p = cxx_unif();
     
     // --- Main Logic ---
     // Add Dimension (AD): ensure we don't try to add a dimension when all covariates are already selected
@@ -338,7 +354,7 @@ extern "C" {
       modification = "AD";
       int new_dim;
       do {
-        new_dim = floor(unif_rand() * numCovariates) + 1;
+        new_dim = (int)(cxx_unif() * numCovariates) + 1;
       } while (in_vector(new_dim, dim_j_star));
       
       dim_j_star.push_back(new_dim);
@@ -348,7 +364,7 @@ extern "C" {
         for (int c = 0; c < d_j_length; ++c) {
           new_tess[r + c * tess_j_rows] = tess_j_star[r + c * tess_j_rows];
         }
-        new_val = mu[new_dim-1] + norm_rand() * sd[new_dim-1];
+        new_val = mu[new_dim-1] + cxx_norm() * sd[new_dim-1];
         if (metric[new_dim-1] == 1) {
           if (new_dim - 1 == members.size()-1 || members[new_dim] != members[new_dim-1]) {
             new_val = period_shift(new_val, M_PI);
@@ -360,7 +376,7 @@ extern "C" {
       
     } else if (p < 0.4 && d_j_length > 1) {
       modification = "RD";
-      int removed_dim_idx = floor(unif_rand() * d_j_length);
+      int removed_dim_idx = (int)(cxx_unif() * d_j_length);
       dim_j_star.erase(dim_j_star.begin() + removed_dim_idx);
       
       std::vector<double> new_tess(tess_j_rows * (d_j_length - 1));
@@ -378,7 +394,7 @@ extern "C" {
     } else if (p < 0.6 || (p < 0.8 && tess_j_rows == 1)) {
       modification = "AC";
       for (int i = 0; i < d_j_length; ++i) {
-        new_val = mu[i] + norm_rand() * sd[i];
+        new_val = mu[i] + cxx_norm() * sd[i];
         if (metric[i] == 1) {
           if (i == members.size()-1 || members[i+1] != members[i]) {
             new_val = period_shift(new_val, M_PI);
@@ -389,7 +405,7 @@ extern "C" {
       
     } else if (p < 0.8 && tess_j_rows > 1) {
       modification = "RC";
-      int removed_row_idx = floor(unif_rand() * tess_j_rows);
+      int removed_row_idx = (int)(cxx_unif() * tess_j_rows);
       std::vector<double> new_tess;
       new_tess.reserve((tess_j_rows - 1) * d_j_length);
       for(int c = 0; c < d_j_length; ++c){
@@ -402,9 +418,9 @@ extern "C" {
       tess_j_star = new_tess;
       
     } else if (p < 0.9 || d_j_length == numCovariates) {
-      int centre_to_change_idx = floor(unif_rand() * tess_j_rows);
+      int centre_to_change_idx = (int)(cxx_unif() * tess_j_rows);
       for (int c = 0; c < d_j_length; ++c) {
-        new_val = mu[c] + norm_rand() * sd[c];
+        new_val = mu[c] + cxx_norm() * sd[c];
         if (metric[c] == 1) {
           if (c == members.size()-1 || members[c+1] != members[c]) {
             new_val = period_shift(new_val, M_PI);
@@ -415,15 +431,15 @@ extern "C" {
       
     } else {
       modification = "Swap";
-      int dim_to_change_idx = floor(unif_rand() * d_j_length);
+      int dim_to_change_idx = (int)(cxx_unif() * d_j_length);
       int new_dim;
       do {
-        new_dim = floor(unif_rand() * numCovariates) + 1;
+        new_dim = (int)(cxx_unif() * numCovariates) + 1;
       } while (in_vector(new_dim, dim_j_star));
       
       dim_j_star[dim_to_change_idx] = new_dim;
       for (int r = 0; r < tess_j_rows; ++r) {
-        new_val = mu[dim_to_change_idx] + norm_rand() * sd[dim_to_change_idx];
+        new_val = mu[dim_to_change_idx] + cxx_norm() * sd[dim_to_change_idx];
         if (metric[dim_to_change_idx] == 1) {
           if (dim_to_change_idx == members.size()-1 || members[dim_to_change_idx+1] != members[dim_to_change_idx]) {
             new_val = period_shift(new_val, M_PI);
@@ -433,8 +449,10 @@ extern "C" {
       }
     }
     
-    // Update R's random number generator state
-    PutRNGstate();
+    // No R RNG state update required — C++ RNG is managed independently.
+    // No external seed API is provided here; the C++ RNG is seeded
+    // from std::random_device at startup for non-deterministic draws.
+    
     
     // --- Pack results into a named list for R ---
     SEXP res_tess_j_star, res_dim_j_star, res_mod, result_list, list_names;
@@ -613,7 +631,7 @@ static std::vector<double> sample_mu_internal(
     double den  = sigmaSquaredMu * n_ij[k] + sigmaSquared;
     double mean = (sigmaSquaredMu * R_ij[k]) / den;
     double sd   = sqrt((sigmaSquared * sigmaSquaredMu) / den);
-    result[k]   = mean + norm_rand() * sd;
+    result[k]   = mean + cxx_norm() * sd;
   }
   return result;
 }
@@ -638,14 +656,14 @@ static ProposalResult propose_internal(
   ProposalResult r;
   r.tess = tess_j; r.nC = nC; r.dim = dim_j; r.mod = "Change";
 
-  double prand = unif_rand();
+  double prand = cxx_unif();
   double new_val;
 
   if ((prand < 0.2 && d_j != p) || (d_j == 1 && d_j != p && prand < 0.4)) {
     // Add Dimension
     r.mod = "AD";
     int new_dim;
-    do { new_dim = (int)(unif_rand() * p) + 1; }
+    do { new_dim = (int)(cxx_unif() * p) + 1; }
     while (in_vector(new_dim, r.dim));
     r.dim.push_back(new_dim);
 
@@ -653,7 +671,7 @@ static ProposalResult propose_internal(
     for (int row = 0; row < nC; row++) {
       for (int col = 0; col < d_j; col++)
         new_tess[row + col * nC] = tess_j[row + col * nC];
-      new_val = mus[new_dim - 1] + norm_rand() * sd[new_dim - 1];
+      new_val = mus[new_dim - 1] + cxx_norm() * sd[new_dim - 1];
       if (metric[new_dim - 1] == 1)
         if (new_dim - 1 == members.size()-1 || members[new_dim] != members[new_dim-1])
           new_val = period_shift(new_val, M_PI);
@@ -664,7 +682,7 @@ static ProposalResult propose_internal(
   } else if (prand < 0.4 && d_j > 1) {
     // Remove Dimension
     r.mod = "RD";
-    int rm_idx = (int)(unif_rand() * d_j);
+    int rm_idx = (int)(cxx_unif() * d_j);
     r.dim.erase(r.dim.begin() + rm_idx);
 
     std::vector<double> new_tess(nC * (d_j - 1));
@@ -686,7 +704,7 @@ static ProposalResult propose_internal(
       // NOTE: mus/sd are indexed by local position i, and metric is checked
       // using i rather than the global covariate index dim_j[i]-1.
       // This mirrors the original propose_tessellation_cpp behaviour exactly.
-      new_val = mus[i] + norm_rand() * sd[i];
+      new_val = mus[i] + cxx_norm() * sd[i];
       if (metric[i] == 1)
         if (i == members.size()-1 || members[i+1] != members[i])
           new_val = period_shift(new_val, M_PI);
@@ -697,7 +715,7 @@ static ProposalResult propose_internal(
   } else if (prand < 0.8 && nC > 1) {
     // Remove Centre
     r.mod = "RC";
-    int rm_row = (int)(unif_rand() * nC);
+    int rm_row = (int)(cxx_unif() * nC);
     std::vector<double> new_tess;
     new_tess.reserve((nC - 1) * d_j);
     for (int col = 0; col < d_j; col++)
@@ -707,9 +725,9 @@ static ProposalResult propose_internal(
 
   } else if (prand < 0.9 || d_j == p) {
     // Change Centre — same local-index convention as propose_tessellation_cpp
-    int ci = (int)(unif_rand() * nC);
+    int ci = (int)(cxx_unif() * nC);
     for (int col = 0; col < d_j; col++) {
-      new_val = mus[col] + norm_rand() * sd[col];
+      new_val = mus[col] + cxx_norm() * sd[col];
       if (metric[col] == 1)
         if (col == members.size()-1 || members[col+1] != members[col])
         //if (col == (int)sphere_index.back())
@@ -720,13 +738,13 @@ static ProposalResult propose_internal(
   } else {
     // Swap Dimension — same local-index convention as propose_tessellation_cpp
     r.mod = "Swap";
-    int swap_idx = (int)(unif_rand() * d_j);
+    int swap_idx = (int)(cxx_unif() * d_j);
     int new_dim;
-    do { new_dim = (int)(unif_rand() * p) + 1; }
+    do { new_dim = (int)(cxx_unif() * p) + 1; }
     while (in_vector(new_dim, r.dim));
     r.dim[swap_idx] = new_dim;
     for (int row = 0; row < nC; row++) {
-      new_val = mus[swap_idx] + norm_rand() * sd[swap_idx];
+      new_val = mus[swap_idx] + cxx_norm() * sd[swap_idx];
       if (metric[swap_idx] == 1)
         if (swap_idx == members.size()-1 || members[swap_idx+1] != members[swap_idx])
           new_val = period_shift(new_val, M_PI);
@@ -825,6 +843,8 @@ extern "C" {
     int* member_ptr = INTEGER(member_sexp);
     std::vector<int> members(member_ptr, member_ptr + p);
 
+    // C++ RNG is independent; do not auto-seed from R here.
+
     // Binary column indices (0-based internally)
     std::vector<int> binaryCols;
     if (!Rf_isNull(binaryCols_sexp)) {
@@ -911,8 +931,7 @@ extern "C" {
     // -------------------------------------------------------------------------
     // 5. MCMC loop
     // -------------------------------------------------------------------------
-    GetRNGstate();
-
+    
     double sigmaSquared = 1.0;
     std::vector<double> lastTessPred(n, 0.0);
     int storageIdx = 0;
@@ -934,7 +953,7 @@ extern "C" {
       }
       double shape = (nu + n) / 2.0;
       double rate  = (nu * lambda + sum_sq) / 2.0;
-      sigmaSquared = 1.0 / rgamma(shape, 1.0 / rate);
+      sigmaSquared = 1.0 / cxx_rgamma(shape, 1.0 / rate);
 
       for (int j = 0; j < m; j++) {
 
@@ -1000,7 +1019,7 @@ extern "C" {
             sigmaSquared, sigSqMu,
             omega, lambdaRate, p,
             prop.mod);
-          accepted = (log(unif_rand()) < acc.logAlpha);
+          accepted = (log(cxx_unif()) < acc.logAlpha);
         }
 
         if (accepted) {
@@ -1107,7 +1126,7 @@ extern "C" {
       }
     } // end iter loop
 
-    PutRNGstate();
+    
 
     // -------------------------------------------------------------------------
     // 6. Build and return named result list
