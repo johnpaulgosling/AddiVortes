@@ -138,11 +138,10 @@ extern "C" {
   // ---------------------------------------------------------------------------
   // This function implements k-nearest neighbors index search to replace FNN::knnx.index
   // The R wrapper function is `knnx.index`.
-  SEXP knnx_index_cpp(SEXP tess_sexp, SEXP query_sexp, SEXP k_sexp, SEXP dim_sexp, SEXP dist_sexp, SEXP member_sexp) {
+  SEXP knnx_index_cpp(SEXP tess_sexp, SEXP query_sexp, SEXP dim_sexp, SEXP dist_sexp, SEXP member_sexp) {
     // --- Unpack arguments ---
     double* p_tess = REAL(tess_sexp);
     double* p_query = REAL(query_sexp);
-    int k = INTEGER(k_sexp)[0];
     int* dim_p = INTEGER(dim_sexp);
     int* member_ptr = INTEGER(member_sexp);
     int* metric_ptr = INTEGER(dist_sexp);
@@ -150,7 +149,7 @@ extern "C" {
     std::vector<int> dim_p_temp(dim_p, dim_p + Rf_length(dim_sexp));
     const std::vector<int> metric(metric_ptr, metric_ptr + Rf_length(dist_sexp));
     const std::vector<int> members(member_ptr, member_ptr + Rf_length(member_sexp));
-    
+
     int tess_rows = Rf_nrows(tess_sexp);
     int tess_cols = Rf_ncols(tess_sexp);
     int query_rows = Rf_nrows(query_sexp);
@@ -164,20 +163,19 @@ extern "C" {
     if (mem_sum != query_cols) {
       Rf_error("Length of metric must match number of columns in query/data matrices");
     }
-    
+
     // Check dimensions match
     if (tess_cols != query_cols) {
       Rf_error("Dimensions of tess and query matrices must match");
     }
-    
-    // Check k is valid
-    if (k <= 0 || k > tess_rows) {
-      Rf_error("k must be positive and not greater than number of reference points");
+
+    if (tess_rows <= 0) {
+      Rf_error("Reference set must contain at least one point");
     }
-    
-    // --- Create result matrix ---
+
+    // --- Create result vector (query_rows x 1) ---
     SEXP result;
-    PROTECT(result = Rf_allocMatrix(INTSXP, query_rows, k));
+    PROTECT(result = Rf_allocMatrix(INTSXP, query_rows, 1));
     int* p_result = INTEGER(result);
 
     std::vector<char> active_dim_mask(query_cols, 0);
@@ -194,41 +192,37 @@ extern "C" {
       }
     }
 
-    double dval;
-
     std::vector<double> q_pt(query_cols);
     std::vector<double> t_pt(query_cols);
+
     for (int q = 0; q < query_rows; q++) {
       for (int d = 0; d < query_cols; d++) {
         q_pt[d] = p_query[q + d * query_rows];
         t_pt[d] = p_query[q + d * query_rows];
       }
 
-    // --- Main Logic: For each query point, find k nearest neighbors ---
-      // Calculate distances to all tessellation points
-      std::vector<std::pair<double, int>> distances(tess_rows);
+      // --- Single linear scan for nearest neighbour ---
+      double best_dval = std::numeric_limits<double>::infinity();
+      int best_idx = -1;
 
       for (int t = 0; t < tess_rows; ++t) {
         for (int i = 0; i < static_cast<int>(active_dim_idx.size()); ++i) {
           const int dind = active_dim_idx[i];
           t_pt[dind] = p_tess[t + dind * tess_rows];
         }
-        dval = calc_distance(q_pt, t_pt, members, metric);
-        distances[t] = std::make_pair(dval, t + 1); // +1 for R 1-based indexing
+        double dval = calc_distance(q_pt, t_pt, members, metric);
+        if (dval < best_dval) {
+          best_dval = dval;
+          best_idx = t + 1; // +1 for R 1-based indexing
+        }
       }
-      
-      // Sort by squared distance to get k nearest neighbors
-      std::partial_sort(distances.begin(), distances.begin() + k, distances.end());
-      
-      // Store the indices of k nearest neighbors
-      for (int i = 0; i < k; ++i) {
-        p_result[q + i * query_rows] = distances[i].second;
-      }
+
+      p_result[q] = best_idx;
     }
-    
+
     UNPROTECT(1);
     return result;
-  }
+}
   
   
   // ---------------------------------------------------------------------------
