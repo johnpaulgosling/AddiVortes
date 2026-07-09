@@ -1,12 +1,12 @@
 pandoc: 3.8.3
-pkgdown: 2.2.0
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   categorical: categorical.html
   introduction: introduction.html
   prediction: prediction.html
   spherical: spherical.html
-last_built: 2026-07-07T16:32Z
+last_built: 2026-07-09T10:13Z
 urls:
   reference: https://johnpaulgosling.github.io/AddiVortes/reference
   article: https://johnpaulgosling.github.io/AddiVortes/articles
