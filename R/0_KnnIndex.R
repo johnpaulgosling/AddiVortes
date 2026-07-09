@@ -16,24 +16,19 @@
 #'
 #' @keywords internal
 #' @noRd
-knnx_index <- function(data, query, k = 1, dim, metric, members) {
+knnx_index <- function(data, query, dim, metric, members) {
   # Input validation
   if (!is.matrix(data)) data <- as.matrix(data)
   if (!is.matrix(query)) query <- as.matrix(query)
   if (ncol(data) != ncol(query)) {
     stop("Number of columns in data and query must match")
   }
-  if (k <= 0 || k > nrow(data)) {
-    stop("k must be positive and not greater than number of reference points")
+  if (nrow(data) <= 0) {
+    stop("data must contain at least one reference point")
   }
 
   # Call C++ implementation
-  result <- .Call("knnx_index_cpp", data, query, as.integer(k), dim, metric, members)
+  result <- .Call("knnx_index_cpp", data, query, dim, metric, members)
 
-  # For k=1, return as vector (to match FNN::knnx.index behavior)
-  if (k == 1) {
-    result <- as.vector(result)
-  }
-
-  return(result)
+  return(as.vector(result))
 }

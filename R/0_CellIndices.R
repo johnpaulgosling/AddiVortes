@@ -39,7 +39,7 @@ cellIndices <- function(x, tess, dim, metric = "E", members) {
     tess <- new_tess
     CellsForGivenTess <- knnx_index(
       tess,
-      x, 1,
+      x,
       dim, metric, members
     )
   }
