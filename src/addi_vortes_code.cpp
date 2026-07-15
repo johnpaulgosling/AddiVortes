@@ -101,6 +101,22 @@ double spherical_distance(std::span<const double> p1, std::span<const double> p2
   return(angle_diff * angle_diff);
 }
 
+// Calculates categorical (Eskin) distance between two vectors
+double categorical_distance(std::span<const double> p1, std::span<const double> p2, std::vector<int>& ncat) {
+  if (p1.size() != p2.size()) {
+    Rf_error("Points have incompatible dimensions.");
+  }
+  if (p1.size() != ncat.size()) {
+    Rf_error("Point dimension does not match stated number of categorical variables.");
+  }
+  double dist = 0;
+  for (int i = 0; i < p1.size(); i++) {
+    if (p1[i] != p2[i])
+      dist += 2/(ncat[i]*ncat[i]);
+  }
+  return(dist);
+}
+
 /* 
 A wrapper for distance calculation; takes two vectors to calculate distance between,
 as well as two more vectors:
@@ -111,7 +127,8 @@ two Spherical, nvals = {4,2} and type = {0, 1}.
 This is easily extensible for additional coordinate types (e.g. categorical).
 */
 double calc_distance(std::vector<double>& vec1, std::vector<double>& vec2,
-    const std::vector<int>& nvals, const std::vector<int>& type) {
+    const std::vector<int>& nvals, const std::vector<int>& type,
+  std::vector<int>& cats) {
     int idx = 0;
     double tot = 0;
     for (int i = 0; i < nvals.size(); i++) {
@@ -125,6 +142,10 @@ double calc_distance(std::vector<double>& vec1, std::vector<double>& vec2,
         if (type[i] == 1) {
             double val = spherical_distance(subvec1, subvec2);
             tot += val;
+        }
+        if (type[i] == 2) {
+          double val = categorical_distance(subvec1, subvec2, cats);
+          tot += val;
         }
         idx += these_vals;
     }
@@ -192,6 +213,27 @@ extern "C" {
       }
     }
 
+    std::vector<int> metric_aug;
+    for (int i = 0; i < metric.size(); i++) {
+      for (int j = 0; j < members[i]; j++) {
+        metric_aug.push_back(metric[i]);
+      }
+    }
+    // If there are raw categorial columns, compute the number of categories per column
+    std::vector<int> ncats;
+    if (in_vector(2, metric)) {
+      for (int i = 0; i < metric_aug.size(); i++) {
+        if (metric_aug[i] == 2) {
+          int max_val = 0;
+          for (int j = 0; j < query_rows; j++) {
+            if (p_query[i * query_rows + j] > max_val)
+            max_val = p_query[i * query_rows + j];
+          }
+          ncats.push_back(max_val);
+        }
+      }
+    }
+
     std::vector<double> q_pt(query_cols);
     std::vector<double> t_pt(query_cols);
 
@@ -210,7 +252,7 @@ extern "C" {
           const int dind = active_dim_idx[i];
           t_pt[dind] = p_tess[t + dind * tess_rows];
         }
-        double dval = calc_distance(q_pt, t_pt, members, metric);
+        double dval = calc_distance(q_pt, t_pt, members, metric, ncats);
         if (dval < best_dval) {
           best_dval = dval;
           best_idx = t + 1; // +1 for R 1-based indexing
@@ -474,13 +516,17 @@ extern "C" {
 // obs_data : n x p  column-major double array
 // centres  : nC x d column-major double array (active dims only)
 // dim1     : d active dimension indices, 1-BASED
+// metric   : size-l array (where l is the number of distinct geometric spaces) of types
+// members  : size-l array with i-th element indicating how many coordinates are of metric type i
+// cats     : When data has categorical variables, indicates how many categories exist per variable
 // Returns  : n vector of 0-based centre indices
 static std::vector<int> knn1_internal(
     const double* obs_data, int n, int p,
     const double* centres, int nC, int d,
     const std::vector<int>& dim1,
     const std::vector<int>& metric,
-    const std::vector<int>& members) {
+    const std::vector<int>& members,
+    std::vector<int>& cats) {
 
   std::vector<int> result(n, 0);
   if (nC == 1) return result;
@@ -498,7 +544,7 @@ static std::vector<int> knn1_internal(
         int g = dim1[di]-1;
         t_pt[g] = centres[c + di * nC];
       }
-      double dist = calc_distance(q_pt, t_pt, members, metric);
+      double dist = calc_distance(q_pt, t_pt, members, metric, cats);
       if (dist < best) { best = dist; best_c = c; }
     }
     result[obs] = best_c;
@@ -633,7 +679,8 @@ static ProposalResult propose_internal(
     int p,
     const double* sd, const double* mus,
     const std::vector<int>& metric,
-    const std::vector<int>& members) {  // 0-based spherical dim indices
+    const std::vector<int>& members,
+    const std::vector<int>& cats) {  // 0-based spherical dim indices
 
   ProposalResult r;
   r.tess = tess_j; r.nC = nC; r.dim = dim_j; r.mod = "Change";
@@ -657,6 +704,11 @@ static ProposalResult propose_internal(
       if (metric[new_dim - 1] == 1)
         if (new_dim - 1 == members.size()-1 || members[new_dim] != members[new_dim-1])
           new_val = period_shift(new_val, M_PI);
+      if (metric[new_dim -1] == 2) {
+        std::vector<int> which_cat = which_elem(2, metric);
+        int which_is_this = which_elem(new_dim - 1, which_cat)[0];
+        new_val = 1 + floor(unif_rand() + cats[which_is_this]);
+      }
       new_tess[row + d_j * nC] = new_val;
     }
     r.tess = new_tess; r.nC = nC;
@@ -690,6 +742,11 @@ static ProposalResult propose_internal(
       if (metric[i] == 1)
         if (i == members.size()-1 || members[i+1] != members[i])
           new_val = period_shift(new_val, M_PI);
+      if (metric[i] == 2) {
+        std::vector<int> which_cat = which_elem(2, metric);
+        int which_is_this = which_elem(i, which_cat)[0];
+        new_val = 1 + floor(unif_rand() + cats[which_is_this]);
+      }
       r.tess.insert(r.tess.begin() + (i * (nC + 1)) + nC, new_val);
     }
     r.nC = nC + 1;
@@ -714,6 +771,11 @@ static ProposalResult propose_internal(
         if (col == members.size()-1 || members[col+1] != members[col])
         //if (col == (int)sphere_index.back())
           new_val = period_shift(new_val, M_PI);
+      if (metric[col] == 2) {
+        std::vector<int> which_cat = which_elem(2, metric);
+        int which_is_this = which_elem(col, which_cat)[0];
+        new_val = 1 + floor(unif_rand() + cats[which_is_this]);
+      }
       r.tess[ci + col * nC] = new_val;
     }
 
@@ -730,6 +792,11 @@ static ProposalResult propose_internal(
       if (metric[swap_idx] == 1)
         if (swap_idx == members.size()-1 || members[swap_idx+1] != members[swap_idx])
           new_val = period_shift(new_val, M_PI);
+      if (metric[swap_idx] == 2) {
+        std::vector<int> which_cat = which_elem(2, metric);
+        int which_is_this = which_elem(swap_idx, which_cat)[0];
+        new_val = 1 + floor(unif_rand() + cats[which_is_this]);
+      }
       r.tess[row + swap_idx * nC] = new_val;
     }
   }
@@ -845,6 +912,21 @@ extern "C" {
       i += how_many;
     }
 
+    // If there are raw categorical columns, compute the number of categories per column
+    std::vector<int> ncats;
+    if (in_vector(2, metric_red)) {
+      for (int i = 0; i < metric.size(); i++) {
+        if (metric[i] == 2) {
+          int max_val = 0;
+          for (int j = 0; j < n; j++) {
+            if (xScaled[i * n + j] > max_val)
+              max_val = xScaled[i * n + j];
+          }
+          ncats.push_back(max_val);
+        }
+      }
+    }
+
     // -------------------------------------------------------------------------
     // 2. Unpack initial tessellation state from R lists
     // -------------------------------------------------------------------------
@@ -881,7 +963,7 @@ extern "C" {
       curIdx[j] = knn1_internal(
         xScaled, n, p,
         tess[j].data(), tess_nC[j], tess_d[j], dim_j[j],
-        metric_red, member_red);
+        metric_red, member_red, ncats);
       for (int obs = 0; obs < n; obs++)
         sumAllTess[obs] += pred[j][curIdx[j][obs]];
     }
@@ -955,7 +1037,7 @@ extern "C" {
         // Propose new tessellation
         ProposalResult prop = propose_internal(
           tess[j], tess_nC[j], tess_d[j], dim_j[j],
-          p, sd, mus, metric, members);
+          p, sd, mus, metric, members, ncats);
 
         // Clamp binary columns to [0, catScaling] in the proposal
         if (!binaryCols.empty()) {
@@ -977,7 +1059,7 @@ extern "C" {
         std::vector<int> idxStar = knn1_internal(
           xScaled, n, p,
           prop.tess.data(), prop.nC, (int)prop.dim.size(), prop.dim,
-          metric_red, member_red);
+          metric_red, member_red, ncats);
 
         // Aggregate residuals for old and new tessellations
         std::vector<double> R_old, R_new;

@@ -89,6 +89,7 @@ covariateStructure_internal <- function(data, structure, membership = NULL, one.
                                 "specified as categorical but has neither",
                                 "levels nor is a character."))
         reduced_data[,i] <- as.factor(reduced_data[,i])
+        if (!one.hot) reduced_data[,i] <- as.numeric(reduced_data[,i])
       }
     }
   }

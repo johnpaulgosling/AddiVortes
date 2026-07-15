@@ -341,14 +341,14 @@ predict.AddiVortes <- function(object, newdata,
     encResult <- encodeCategories_internal(newdata, encoding = object$catEncoding)
     newdata <- encResult$encoded
   } else {
-    if (!is.matrix(newdata)) {
-      stop("`newdata` must be a matrix.")
-    }
+    # if (!is.matrix(newdata)) {
+    #   stop("`newdata` must be a matrix.")
+    # }
     if (ncol(newdata) != length(object$xCentres)) {
       stop("Number of columns in `newdata` does not match the original training data.")
     }
-    san_data <- covariateStructure_internal(newdata, object$metric, object$members)
-    newdata <- san_data$data
+    san_data <- covariateStructure_internal(newdata, object$metric, object$members, one.hot = FALSE)
+    newdata <- as.matrix(san_data$data)
   }
 
   posteriorTessSamples <- object$posteriorTess
