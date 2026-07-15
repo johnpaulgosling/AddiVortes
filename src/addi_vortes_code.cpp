@@ -111,6 +111,12 @@ double categorical_distance(std::span<const double> p1, std::span<const double> 
   }
   double dist = 0;
   for (int i = 0; i < p1.size(); i++) {
+    if (floor(p1[i]) != p1[i]) {
+      Rf_error("Not all coordinates in p1 are integer.");
+    }
+    if (floor(p2[i]) != p2[i]) {
+      Rf_error("Not all coordinates in p2 are integer.");
+    }
     if (p1[i] != p2[i])
       dist += 2/(ncat[i]*ncat[i]);
   }
@@ -760,13 +766,13 @@ static ProposalResult propose_internal(
       // NOTE: mus/sd are indexed by local position i, and metric is checked
       // using i rather than the global covariate index dim_j[i]-1.
       // This mirrors the original propose_tessellation_cpp behaviour exactly.
-      new_val = mus[i] + norm_rand() * sd[i];
-      if (metric[i] == 1)
-        if (i == members.size()-1 || members[i+1] != members[i])
+      new_val = mus[dim_j[i]-1] + norm_rand() * sd[dim_j[i]-1];
+      if (metric[dim_j[i]-1] == 1)
+        if (dim_j[i] == members.size() || members[dim_j[i]] != members[dim_j[i]-1])
           new_val = period_shift(new_val, M_PI);
-      if (metric[i] == 2) {
+      if (metric[dim_j[i]-1] == 2) {
         std::vector<int> which_cat = which_elem(2, metric);
-        int which_is_this = which_elem(i, which_cat)[0];
+        int which_is_this = which_elem(dim_j[i]-1, which_cat)[0];
         new_val = 1 + floor(unif_rand() * cats[which_is_this]);
       }
       r.tess.insert(r.tess.begin() + (i * (nC + 1)) + nC, new_val);
@@ -788,14 +794,14 @@ static ProposalResult propose_internal(
     // Change Centre — same local-index convention as propose_tessellation_cpp
     int ci = (int)(unif_rand() * nC);
     for (int col = 0; col < d_j; col++) {
-      new_val = mus[col] + norm_rand() * sd[col];
-      if (metric[col] == 1)
-        if (col == members.size()-1 || members[col+1] != members[col])
+      new_val = mus[dim_j[col]-1] + norm_rand() * sd[dim_j[col]-1];
+      if (metric[dim_j[col]-1] == 1)
+        if (dim_j[col] == members.size() || members[dim_j[col]] != members[dim_j[col]-1])
         //if (col == (int)sphere_index.back())
           new_val = period_shift(new_val, M_PI);
-      if (metric[col] == 2) {
+      if (metric[dim_j[col]-1] == 2) {
         std::vector<int> which_cat = which_elem(2, metric);
-        int which_is_this = which_elem(col, which_cat)[0];
+        int which_is_this = which_elem(dim_j[col]-1, which_cat)[0];
         new_val = 1 + floor(unif_rand() * cats[which_is_this]);
       }
       r.tess[ci + col * nC] = new_val;
@@ -810,13 +816,13 @@ static ProposalResult propose_internal(
     while (in_vector(new_dim, r.dim));
     r.dim[swap_idx] = new_dim;
     for (int row = 0; row < nC; row++) {
-      new_val = mus[swap_idx] + norm_rand() * sd[swap_idx];
-      if (metric[swap_idx] == 1)
-        if (swap_idx == members.size()-1 || members[swap_idx+1] != members[swap_idx])
+      new_val = mus[new_dim-1] + norm_rand() * sd[new_dim-1];
+      if (metric[new_dim-1] == 1)
+        if (dim_j[new_dim] == members.size() || members[new_dim] != members[new_dim-1])
           new_val = period_shift(new_val, M_PI);
-      if (metric[swap_idx] == 2) {
+      if (metric[new_dim-1] == 2) {
         std::vector<int> which_cat = which_elem(2, metric);
-        int which_is_this = which_elem(swap_idx, which_cat)[0];
+        int which_is_this = which_elem(new_dim-1, which_cat)[0];
         new_val = 1 + floor(unif_rand() * cats[which_is_this]);
       }
       r.tess[row + swap_idx * nC] = new_val;

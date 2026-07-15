@@ -264,7 +264,7 @@ AddiVortes <- function(y, x, m = 200,
   } else {
     for (i in seq_along(tess)) {
       if (metric[dim[[i]]] == 2) {
-        tess[[i]][1,1] <- sample(xScaled[,dim[[i]]], 1)
+        tess[[i]][1,1] <- sample(unique(xScaled[,dim[[i]]]), 1)
       }
     }
   }
