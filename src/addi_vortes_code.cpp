@@ -345,7 +345,7 @@ extern "C" {
   // This function proposes a new tessellation based on the current one,
   // modifying it according to a set of rules and a random number generator.
   // The R wrapper function is `proposeTessellation`.
-  SEXP propose_tessellation_cpp(SEXP tess_j_sexp, SEXP dim_j_sexp, SEXP sd_sexp, SEXP mu_sexp, SEXP num_cov_sexp, SEXP metric_sexp, SEXP member_sexp) {
+  SEXP propose_tessellation_cpp(SEXP tess_j_sexp, SEXP dim_j_sexp, SEXP sd_sexp, SEXP mu_sexp, SEXP num_cov_sexp, SEXP metric_sexp, SEXP member_sexp, SEXP cats_sexp) {
     
     // --- Unpack arguments ---
     double* p_tess_j = REAL(tess_j_sexp);
@@ -355,9 +355,11 @@ extern "C" {
     int numCovariates = INTEGER(num_cov_sexp)[0];
     int* metric_ptr = INTEGER(metric_sexp);
     int* member_ptr = INTEGER(member_sexp);
+    int* cats_ptr = INTEGER(cats_sexp);
 
     std::vector<int> metric(metric_ptr, metric_ptr + Rf_length(metric_sexp));
     std::vector<int> members(member_ptr, member_ptr + Rf_length(member_sexp));
+    std::vector<int> cats(cats_ptr, cats_ptr + Rf_length(cats_sexp));
     
     int tess_j_rows = Rf_nrows(tess_j_sexp);
     int d_j_length = Rf_length(dim_j_sexp);
@@ -396,6 +398,11 @@ extern "C" {
             new_val = period_shift(new_val, M_PI);
           }
         }
+        if (metric[new_dim -1] == 2) {
+          std::vector<int> which_cat = which_elem(2, metric);
+          int which_is_this = which_elem(new_dim - 1, which_cat)[0];
+          new_val = 1 + floor(unif_rand() * cats[which_is_this]);
+        }
         new_tess[r + d_j_length * tess_j_rows] = new_val;
       }
       tess_j_star = new_tess;
@@ -426,6 +433,11 @@ extern "C" {
             new_val = period_shift(new_val, M_PI);
           }
         }
+        if (metric[i] == 2) {
+          std::vector<int> which_cat = which_elem(2, metric);
+          int which_is_this = which_elem(i, which_cat)[0];
+          new_val = 1 + floor(unif_rand() * cats[which_is_this]);
+        }
         tess_j_star.insert(tess_j_star.begin() + (i * (tess_j_rows + 1)) + tess_j_rows, new_val);
       }
       
@@ -452,6 +464,11 @@ extern "C" {
             new_val = period_shift(new_val, M_PI);
           }
         }
+        if (metric[c] == 2) {
+          std::vector<int> which_cat = which_elem(2, metric);
+          int which_is_this = which_elem(c, which_cat)[0];
+          new_val = 1 + floor(unif_rand() * cats[which_is_this]);
+        }
         tess_j_star[centre_to_change_idx + c * tess_j_rows] = new_val;
       }
       
@@ -470,6 +487,11 @@ extern "C" {
           if (dim_to_change_idx == members.size()-1 || members[dim_to_change_idx+1] != members[dim_to_change_idx]) {
             new_val = period_shift(new_val, M_PI);
           }
+        }
+        if (metric[dim_to_change_idx] == 2) {
+          std::vector<int> which_cat = which_elem(2, metric);
+          int which_is_this = which_elem(dim_to_change_idx, which_cat)[0];
+          new_val = 1 + floor(unif_rand() * cats[which_is_this]);
         }
         tess_j_star[r + dim_to_change_idx * tess_j_rows] = new_val;
       }
@@ -707,7 +729,7 @@ static ProposalResult propose_internal(
       if (metric[new_dim -1] == 2) {
         std::vector<int> which_cat = which_elem(2, metric);
         int which_is_this = which_elem(new_dim - 1, which_cat)[0];
-        new_val = 1 + floor(unif_rand() + cats[which_is_this]);
+        new_val = 1 + floor(unif_rand() * cats[which_is_this]);
       }
       new_tess[row + d_j * nC] = new_val;
     }
@@ -745,7 +767,7 @@ static ProposalResult propose_internal(
       if (metric[i] == 2) {
         std::vector<int> which_cat = which_elem(2, metric);
         int which_is_this = which_elem(i, which_cat)[0];
-        new_val = 1 + floor(unif_rand() + cats[which_is_this]);
+        new_val = 1 + floor(unif_rand() * cats[which_is_this]);
       }
       r.tess.insert(r.tess.begin() + (i * (nC + 1)) + nC, new_val);
     }
@@ -774,7 +796,7 @@ static ProposalResult propose_internal(
       if (metric[col] == 2) {
         std::vector<int> which_cat = which_elem(2, metric);
         int which_is_this = which_elem(col, which_cat)[0];
-        new_val = 1 + floor(unif_rand() + cats[which_is_this]);
+        new_val = 1 + floor(unif_rand() * cats[which_is_this]);
       }
       r.tess[ci + col * nC] = new_val;
     }
@@ -795,7 +817,7 @@ static ProposalResult propose_internal(
       if (metric[swap_idx] == 2) {
         std::vector<int> which_cat = which_elem(2, metric);
         int which_is_this = which_elem(swap_idx, which_cat)[0];
-        new_val = 1 + floor(unif_rand() + cats[which_is_this]);
+        new_val = 1 + floor(unif_rand() * cats[which_is_this]);
       }
       r.tess[row + swap_idx * nC] = new_val;
     }
