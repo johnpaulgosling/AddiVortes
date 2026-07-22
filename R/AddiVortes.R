@@ -190,7 +190,7 @@ AddiVortes <- function(y, x, m = 200,
     binaryCols <- catEncoding$encodedBinaryCols
     xScaled[, binaryCols] <- x[, binaryCols]
   }
-  mus <- rep(0, nrow(x))
+  mus <- rep(0, ncol(x))
   mus[metric != 0] <- xCentres[metric != 0]
   
   #### Handling NULL sigma choice and ensuring it's vectorised

@@ -46,6 +46,9 @@ covariateStructure_internal <- function(data, structure, membership = NULL, one.
     if (length(structure) == 1) structure <- rep(structure, length(membership))
     else structure <- c(structure, rep(structure[1], length(membership)-length(structure)))
   }
+  if (any(!structure %in% c("E","S","C"))) {
+    structure <- c("E", "S", "C")[structure+1]
+  }
   ## A fiddle to ensure that categorical variables live at the end of the list.
   if (any(structure == "C")) {
     new_structure <- character(0)
@@ -89,8 +92,8 @@ covariateStructure_internal <- function(data, structure, membership = NULL, one.
                                 "specified as categorical but has neither",
                                 "levels nor is a character."))
         reduced_data[,i] <- as.factor(reduced_data[,i])
-        if (!one.hot) reduced_data[,i] <- as.numeric(reduced_data[,i])
       }
+      if (!one.hot) reduced_data[,i] <- as.numeric(reduced_data[,i])
     }
   }
   if (any(structure == "S")) {

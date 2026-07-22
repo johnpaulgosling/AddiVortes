@@ -433,15 +433,15 @@ extern "C" {
     } else if (p < 0.6 || (p < 0.8 && tess_j_rows == 1)) {
       modification = "AC";
       for (int i = 0; i < d_j_length; ++i) {
-        new_val = mu[i] + norm_rand() * sd[i];
-        if (metric[i] == 1) {
-          if (i == members.size()-1 || members[i+1] != members[i]) {
+        new_val = mu[p_dim_j[i]-1] + norm_rand() * sd[p_dim_j[i]-1];
+        if (metric[p_dim_j[i]-1] == 1) {
+          if (p_dim_j[i] == members.size() || members[p_dim_j[i]] != members[p_dim_j[i]-1]) {
             new_val = period_shift(new_val, M_PI);
           }
         }
-        if (metric[i] == 2) {
+        if (metric[p_dim_j[i]-1] == 2) {
           std::vector<int> which_cat = which_elem(2, metric);
-          int which_is_this = which_elem(i, which_cat)[0];
+          int which_is_this = which_elem(p_dim_j[i]-1, which_cat)[0];
           new_val = 1 + floor(unif_rand() * cats[which_is_this]);
         }
         tess_j_star.insert(tess_j_star.begin() + (i * (tess_j_rows + 1)) + tess_j_rows, new_val);
@@ -464,15 +464,15 @@ extern "C" {
     } else if (p < 0.9 || d_j_length == numCovariates) {
       int centre_to_change_idx = floor(unif_rand() * tess_j_rows);
       for (int c = 0; c < d_j_length; ++c) {
-        new_val = mu[c] + norm_rand() * sd[c];
-        if (metric[c] == 1) {
-          if (c == members.size()-1 || members[c+1] != members[c]) {
+        new_val = mu[p_dim_j[c]-1] + norm_rand() * sd[p_dim_j[c]-1];
+        if (metric[p_dim_j[c]-1] == 1) {
+          if (p_dim_j[c] == members.size() || members[p_dim_j[c]] != members[p_dim_j[c]-1]) {
             new_val = period_shift(new_val, M_PI);
           }
         }
-        if (metric[c] == 2) {
+        if (metric[p_dim_j[c]-1] == 2) {
           std::vector<int> which_cat = which_elem(2, metric);
-          int which_is_this = which_elem(c, which_cat)[0];
+          int which_is_this = which_elem(p_dim_j[c]-1, which_cat)[0];
           new_val = 1 + floor(unif_rand() * cats[which_is_this]);
         }
         tess_j_star[centre_to_change_idx + c * tess_j_rows] = new_val;
@@ -488,15 +488,15 @@ extern "C" {
       
       dim_j_star[dim_to_change_idx] = new_dim;
       for (int r = 0; r < tess_j_rows; ++r) {
-        new_val = mu[dim_to_change_idx] + norm_rand() * sd[dim_to_change_idx];
-        if (metric[dim_to_change_idx] == 1) {
-          if (dim_to_change_idx == members.size()-1 || members[dim_to_change_idx+1] != members[dim_to_change_idx]) {
+        new_val = mu[new_dim-1] + norm_rand() * sd[new_dim-1];
+        if (metric[new_dim-1] == 1) {
+          if (p_dim_j[new_dim] == members.size() || members[new_dim] != members[new_dim-1]) {
             new_val = period_shift(new_val, M_PI);
           }
         }
-        if (metric[dim_to_change_idx] == 2) {
+        if (metric[new_dim-1] == 2) {
           std::vector<int> which_cat = which_elem(2, metric);
-          int which_is_this = which_elem(dim_to_change_idx, which_cat)[0];
+          int which_is_this = which_elem(new_dim-1, which_cat)[0];
           new_val = 1 + floor(unif_rand() * cats[which_is_this]);
         }
         tess_j_star[r + dim_to_change_idx * tess_j_rows] = new_val;
@@ -763,9 +763,6 @@ static ProposalResult propose_internal(
     r.mod = "AC";
     r.tess = tess_j;
     for (int i = 0; i < d_j; i++) {
-      // NOTE: mus/sd are indexed by local position i, and metric is checked
-      // using i rather than the global covariate index dim_j[i]-1.
-      // This mirrors the original propose_tessellation_cpp behaviour exactly.
       new_val = mus[dim_j[i]-1] + norm_rand() * sd[dim_j[i]-1];
       if (metric[dim_j[i]-1] == 1)
         if (dim_j[i] == members.size() || members[dim_j[i]] != members[dim_j[i]-1])
@@ -791,7 +788,7 @@ static ProposalResult propose_internal(
     r.tess = new_tess; r.nC = nC - 1;
 
   } else if (prand < 0.9 || d_j == p) {
-    // Change Centre — same local-index convention as propose_tessellation_cpp
+    // Change Centre
     int ci = (int)(unif_rand() * nC);
     for (int col = 0; col < d_j; col++) {
       new_val = mus[dim_j[col]-1] + norm_rand() * sd[dim_j[col]-1];
@@ -808,7 +805,7 @@ static ProposalResult propose_internal(
     }
 
   } else {
-    // Swap Dimension — same local-index convention as propose_tessellation_cpp
+    // Swap Dimension
     r.mod = "Swap";
     int swap_idx = (int)(unif_rand() * d_j);
     int new_dim;
