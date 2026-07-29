@@ -1,5 +1,22 @@
 # AddiVortes News
 
+## AddiVortes 0.6.7
+
+* `AddiVortes` can now calculate distances between categorical covariates
+  without needing to apply one-hot encoding, by specifying `cat.onehot = FALSE`
+  in the main `AddiVortes()` function. The distance calculated when one-hot
+  encoding is not used is Eskin distance (Eskin et al., 2002); other measures
+  may be added to the framework in the future.
+  
+* A bug in the C code, where indices were not referenced correctly in distance
+  calculations, has been fixed in `add_vortes_mcmc_cpp()`: distance calculations
+  across multiple different covariate types and dimensions now agrees with the
+  expected values.
+
+* Due to the development of the package, the `propose_tessellation_cpp()` helper
+  function is no longer used; to avoid code duplication, it has been removed from
+  this version.
+
 ## AddiVortes 0.6.6
 
 * Fixed out-of-sample prediction so that cell assignments match the in-sample

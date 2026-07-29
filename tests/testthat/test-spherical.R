@@ -108,7 +108,7 @@ test_that("in-sample and predicted values agree on the training data", {
   # force covariateStructure_internal to reorder covariates.
   expect_lt(consistency(cbind(a = lat, b = lon), "E"), 1e-8)
   expect_lt(consistency(cbind(lat = lat, lon = lon), "S"), 1e-8)
-  #expect_lt(consistency(cbind(lon = lon, lat = lat), "S"), 1e-8)
+  expect_lt(consistency(cbind(lon = lon, lat = lat), "S"), 1e-8)
   expect_lt(consistency(cbind(e = lat, lat = lat, lon = lon), c("E", "S", "S")), 1e-8)
   expect_lt(consistency(cbind(lat = lat, lon = lon, e = lon), c("S", "S", "E")), 1e-8)
 })

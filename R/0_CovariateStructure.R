@@ -110,7 +110,7 @@ covariateStructure_internal <- function(data, structure, membership = NULL, one.
         mem_cols <- which(membership == mem)
         new_order <- c(which(param_extent <= pi), which(param_extent > pi))
         reduced_data[, mem_cols] <- sphere_data[, new_order, drop = FALSE]
-        names(reduced_data)[mem_cols] <- names(sphere_data)[new_order]
+        colnames(reduced_data)[mem_cols] <- colnames(sphere_data)[new_order]
       }
     }
   }

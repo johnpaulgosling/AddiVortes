@@ -142,19 +142,21 @@ AddiVortes <- function(y, x, m = 200,
                old_metric == "Categorical"] <- 2
   old_metric <- as.integer(old_metric)
   old_members <- if(is.null(members)) NULL else as.integer(members)
-  
-  encResult <- encodeCategories_internal(x,
-                                         catScaling = catScaling)
-  catEncoding <- encResult$encoding
-  covariateSummary <- formatCovariateSummary_internal(x, 
-                                                      metric, 
-                                                      catEncoding, cat.onehot)
+
   san_data <- covariateStructure_internal(x,
                                           metric, members, cat.onehot)
-  x <- san_data$data
+  encResult <- encodeCategories_internal(san_data$data, catScaling = catScaling)
+  catEncoding <- encResult$encoding
+  covariateSummary <- formatCovariateSummary_internal(x,
+                                                       metric,
+                                                       catEncoding,
+                                                       cat.onehot)
+  if (cat.onehot)
+    x <- encResult$encoded
+  else
+    x <- as.matrix(san_data$data)
+  
   members <- as.integer(san_data$membership)
-  if (cat.onehot) x <- encResult$encoded
-  else x <- as.matrix(x)
   
   metric <- san_data$structure
   metric[metric == "E"] <- 0
