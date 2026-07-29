@@ -39,6 +39,7 @@ AddiVortes(
   metric = "E",
   members = NULL,
   catScaling = 1,
+  cat.onehot = TRUE,
   showProgress = interactive()
 )
 ```
@@ -124,6 +125,10 @@ AddiVortes(
   less weight. Binary indicator columns are named `<colname>_<level>`
   (e.g. a column `grp` with levels `"A"`, `"B"`, `"C"` produces columns
   `grp_B` and `grp_C`, with `"A"` as the reference level).
+
+- cat.onehot:
+
+  Should categorical covariates be one-hot encoded? Default `TRUE`.
 
 - showProgress:
 
