@@ -101,6 +101,28 @@ double spherical_distance(std::span<const double> p1, std::span<const double> p2
   return(angle_diff * angle_diff);
 }
 
+// Calculates categorical (Eskin) distance between two vectors
+double categorical_distance(std::span<const double> p1, std::span<const double> p2, std::vector<int>& ncat) {
+  if (p1.size() != p2.size()) {
+    Rf_error("Points have incompatible dimensions.");
+  }
+  if (p1.size() != ncat.size()) {
+    Rf_error("Point dimension does not match stated number of categorical variables.");
+  }
+  double dist = 0;
+  for (int i = 0; i < p1.size(); i++) {
+    if (floor(p1[i]) != p1[i]) {
+      Rf_error("Not all coordinates in p1 are integer.");
+    }
+    if (floor(p2[i]) != p2[i]) {
+      Rf_error("Not all coordinates in p2 are integer.");
+    }
+    if (p1[i] != p2[i])
+      dist += 2/(ncat[i]*ncat[i]);
+  }
+  return(dist);
+}
+
 /* 
 A wrapper for distance calculation; takes two vectors to calculate distance between,
 as well as two more vectors:
@@ -111,7 +133,8 @@ two Spherical, nvals = {4,2} and type = {0, 1}.
 This is easily extensible for additional coordinate types (e.g. categorical).
 */
 double calc_distance(std::vector<double>& vec1, std::vector<double>& vec2,
-    const std::vector<int>& nvals, const std::vector<int>& type) {
+    const std::vector<int>& nvals, const std::vector<int>& type,
+  std::vector<int>& cats) {
     int idx = 0;
     double tot = 0;
     for (int i = 0; i < nvals.size(); i++) {
@@ -125,6 +148,10 @@ double calc_distance(std::vector<double>& vec1, std::vector<double>& vec2,
         if (type[i] == 1) {
             double val = spherical_distance(subvec1, subvec2);
             tot += val;
+        }
+        if (type[i] == 2) {
+          double val = categorical_distance(subvec1, subvec2, cats);
+          tot += val;
         }
         idx += these_vals;
     }
@@ -192,6 +219,27 @@ extern "C" {
       }
     }
 
+    std::vector<int> metric_aug;
+    for (int i = 0; i < metric.size(); i++) {
+      for (int j = 0; j < members[i]; j++) {
+        metric_aug.push_back(metric[i]);
+      }
+    }
+    // If there are raw categorial columns, compute the number of categories per column
+    std::vector<int> ncats;
+    if (in_vector(2, metric)) {
+      for (int i = 0; i < metric_aug.size(); i++) {
+        if (metric_aug[i] == 2) {
+          int max_val = 0;
+          for (int j = 0; j < query_rows; j++) {
+            if (p_query[i * query_rows + j] > max_val)
+            max_val = p_query[i * query_rows + j];
+          }
+          ncats.push_back(max_val);
+        }
+      }
+    }
+
     std::vector<double> q_pt(query_cols);
     std::vector<double> t_pt(query_cols);
 
@@ -210,7 +258,7 @@ extern "C" {
           const int dind = active_dim_idx[i];
           t_pt[dind] = p_tess[t + dind * tess_rows];
         }
-        double dval = calc_distance(q_pt, t_pt, members, metric);
+        double dval = calc_distance(q_pt, t_pt, members, metric, ncats);
         if (dval < best_dval) {
           best_dval = dval;
           best_idx = t + 1; // +1 for R 1-based indexing
@@ -296,174 +344,6 @@ extern "C" {
     return result_list;
   }
   
-  
-  // ---------------------------------------------------------------------------
-  // 2. propose_tessellation_cpp
-  // ---------------------------------------------------------------------------
-  // This function proposes a new tessellation based on the current one,
-  // modifying it according to a set of rules and a random number generator.
-  // The R wrapper function is `proposeTessellation`.
-  SEXP propose_tessellation_cpp(SEXP tess_j_sexp, SEXP dim_j_sexp, SEXP sd_sexp, SEXP mu_sexp, SEXP num_cov_sexp, SEXP metric_sexp, SEXP member_sexp) {
-    
-    // --- Unpack arguments ---
-    double* p_tess_j = REAL(tess_j_sexp);
-    int* p_dim_j = INTEGER(dim_j_sexp);
-    double* sd = REAL(sd_sexp);
-    double* mu = REAL(mu_sexp);
-    int numCovariates = INTEGER(num_cov_sexp)[0];
-    int* metric_ptr = INTEGER(metric_sexp);
-    int* member_ptr = INTEGER(member_sexp);
-
-    std::vector<int> metric(metric_ptr, metric_ptr + Rf_length(metric_sexp));
-    std::vector<int> members(member_ptr, member_ptr + Rf_length(member_sexp));
-    
-    int tess_j_rows = Rf_nrows(tess_j_sexp);
-    int d_j_length = Rf_length(dim_j_sexp);
-    
-    // Get R's random number generator state
-    GetRNGstate();
-    
-    // --- Create C++ copies for manipulation ---
-    std::vector<int> dim_j_star(p_dim_j, p_dim_j + d_j_length);
-    std::vector<double> tess_j_star(p_tess_j, p_tess_j + (tess_j_rows * d_j_length));
-    std::string modification = "Change";
-
-    double new_val = 0.0;
-    
-    double p = unif_rand();
-    
-    // --- Main Logic ---
-    // Add Dimension (AD): ensure we don't try to add a dimension when all covariates are already selected
-    if ((p < 0.2 && d_j_length != numCovariates) || (d_j_length == 1 && d_j_length != numCovariates && p < 0.4)) {
-      modification = "AD";
-      int new_dim;
-      do {
-        new_dim = floor(unif_rand() * numCovariates) + 1;
-      } while (in_vector(new_dim, dim_j_star));
-      
-      dim_j_star.push_back(new_dim);
-      
-      std::vector<double> new_tess(tess_j_rows * (d_j_length + 1));
-      for (int r = 0; r < tess_j_rows; ++r) {
-        for (int c = 0; c < d_j_length; ++c) {
-          new_tess[r + c * tess_j_rows] = tess_j_star[r + c * tess_j_rows];
-        }
-        new_val = mu[new_dim-1] + norm_rand() * sd[new_dim-1];
-        if (metric[new_dim-1] == 1) {
-          if (new_dim - 1 == members.size()-1 || members[new_dim] != members[new_dim-1]) {
-            new_val = period_shift(new_val, M_PI);
-          }
-        }
-        new_tess[r + d_j_length * tess_j_rows] = new_val;
-      }
-      tess_j_star = new_tess;
-      
-    } else if (p < 0.4 && d_j_length > 1) {
-      modification = "RD";
-      int removed_dim_idx = floor(unif_rand() * d_j_length);
-      dim_j_star.erase(dim_j_star.begin() + removed_dim_idx);
-      
-      std::vector<double> new_tess(tess_j_rows * (d_j_length - 1));
-      int current_col = 0;
-      for (int c = 0; c < d_j_length; ++c) {
-        if (c != removed_dim_idx) {
-          for (int r = 0; r < tess_j_rows; ++r) {
-            new_tess[r + current_col * tess_j_rows] = tess_j_star[r + c * tess_j_rows];
-          }
-          current_col++;
-        }
-      }
-      tess_j_star = new_tess;
-      
-    } else if (p < 0.6 || (p < 0.8 && tess_j_rows == 1)) {
-      modification = "AC";
-      for (int i = 0; i < d_j_length; ++i) {
-        new_val = mu[i] + norm_rand() * sd[i];
-        if (metric[i] == 1) {
-          if (i == members.size()-1 || members[i+1] != members[i]) {
-            new_val = period_shift(new_val, M_PI);
-          }
-        }
-        tess_j_star.insert(tess_j_star.begin() + (i * (tess_j_rows + 1)) + tess_j_rows, new_val);
-      }
-      
-    } else if (p < 0.8 && tess_j_rows > 1) {
-      modification = "RC";
-      int removed_row_idx = floor(unif_rand() * tess_j_rows);
-      std::vector<double> new_tess;
-      new_tess.reserve((tess_j_rows - 1) * d_j_length);
-      for(int c = 0; c < d_j_length; ++c){
-        for(int r = 0; r < tess_j_rows; ++r){
-          if(r != removed_row_idx) {
-            new_tess.push_back(tess_j_star[r + c * tess_j_rows]);
-          }
-        }
-      }
-      tess_j_star = new_tess;
-      
-    } else if (p < 0.9 || d_j_length == numCovariates) {
-      int centre_to_change_idx = floor(unif_rand() * tess_j_rows);
-      for (int c = 0; c < d_j_length; ++c) {
-        new_val = mu[c] + norm_rand() * sd[c];
-        if (metric[c] == 1) {
-          if (c == members.size()-1 || members[c+1] != members[c]) {
-            new_val = period_shift(new_val, M_PI);
-          }
-        }
-        tess_j_star[centre_to_change_idx + c * tess_j_rows] = new_val;
-      }
-      
-    } else {
-      modification = "Swap";
-      int dim_to_change_idx = floor(unif_rand() * d_j_length);
-      int new_dim;
-      do {
-        new_dim = floor(unif_rand() * numCovariates) + 1;
-      } while (in_vector(new_dim, dim_j_star));
-      
-      dim_j_star[dim_to_change_idx] = new_dim;
-      for (int r = 0; r < tess_j_rows; ++r) {
-        new_val = mu[dim_to_change_idx] + norm_rand() * sd[dim_to_change_idx];
-        if (metric[dim_to_change_idx] == 1) {
-          if (dim_to_change_idx == members.size()-1 || members[dim_to_change_idx+1] != members[dim_to_change_idx]) {
-            new_val = period_shift(new_val, M_PI);
-          }
-        }
-        tess_j_star[r + dim_to_change_idx * tess_j_rows] = new_val;
-      }
-    }
-    
-    // Update R's random number generator state
-    PutRNGstate();
-    
-    // --- Pack results into a named list for R ---
-    SEXP res_tess_j_star, res_dim_j_star, res_mod, result_list, list_names;
-    
-    int new_rows = tess_j_star.size() / dim_j_star.size();
-    PROTECT(res_tess_j_star = Rf_allocMatrix(REALSXP, new_rows, dim_j_star.size()));
-    memcpy(REAL(res_tess_j_star), tess_j_star.data(), tess_j_star.size() * sizeof(double));
-    
-    PROTECT(res_dim_j_star = Rf_allocVector(INTSXP, dim_j_star.size()));
-    memcpy(INTEGER(res_dim_j_star), dim_j_star.data(), dim_j_star.size() * sizeof(int));
-    
-    PROTECT(res_mod = Rf_allocVector(STRSXP, 1));
-    SET_STRING_ELT(res_mod, 0, Rf_mkChar(modification.c_str()));
-    
-    PROTECT(result_list = Rf_allocVector(VECSXP, 3));
-    SET_VECTOR_ELT(result_list, 0, res_tess_j_star);
-    SET_VECTOR_ELT(result_list, 1, res_dim_j_star);
-    SET_VECTOR_ELT(result_list, 2, res_mod);
-    
-    PROTECT(list_names = Rf_allocVector(STRSXP, 3));
-    SET_STRING_ELT(list_names, 0, Rf_mkChar("tess_j_star"));
-    SET_STRING_ELT(list_names, 1, Rf_mkChar("dim_j_star"));
-    SET_STRING_ELT(list_names, 2, Rf_mkChar("Modification"));
-    Rf_setAttrib(result_list, R_NamesSymbol, list_names);
-    
-    UNPROTECT(5); // 3 result vectors + list + names
-    return result_list;
-  }
-  
 } // extern "C"
 
 // =============================================================================
@@ -474,13 +354,17 @@ extern "C" {
 // obs_data : n x p  column-major double array
 // centres  : nC x d column-major double array (active dims only)
 // dim1     : d active dimension indices, 1-BASED
+// metric   : size-l array (where l is the number of distinct geometric spaces) of types
+// members  : size-l array with i-th element indicating how many coordinates are of metric type i
+// cats     : When data has categorical variables, indicates how many categories exist per variable
 // Returns  : n vector of 0-based centre indices
 static std::vector<int> knn1_internal(
     const double* obs_data, int n, int p,
     const double* centres, int nC, int d,
     const std::vector<int>& dim1,
     const std::vector<int>& metric,
-    const std::vector<int>& members) {
+    const std::vector<int>& members,
+    std::vector<int>& cats) {
 
   std::vector<int> result(n, 0);
   if (nC == 1) return result;
@@ -498,7 +382,7 @@ static std::vector<int> knn1_internal(
         int g = dim1[di]-1;
         t_pt[g] = centres[c + di * nC];
       }
-      double dist = calc_distance(q_pt, t_pt, members, metric);
+      double dist = calc_distance(q_pt, t_pt, members, metric, cats);
       if (dist < best) { best = dist; best_c = c; }
     }
     result[obs] = best_c;
@@ -633,7 +517,8 @@ static ProposalResult propose_internal(
     int p,
     const double* sd, const double* mus,
     const std::vector<int>& metric,
-    const std::vector<int>& members) {  // 0-based spherical dim indices
+    const std::vector<int>& members,
+    const std::vector<int>& cats) {  // 0-based spherical dim indices
 
   ProposalResult r;
   r.tess = tess_j; r.nC = nC; r.dim = dim_j; r.mod = "Change";
@@ -657,6 +542,11 @@ static ProposalResult propose_internal(
       if (metric[new_dim - 1] == 1)
         if (new_dim - 1 == members.size()-1 || members[new_dim] != members[new_dim-1])
           new_val = period_shift(new_val, M_PI);
+      if (metric[new_dim -1] == 2) {
+        std::vector<int> which_cat = which_elem(2, metric);
+        int which_is_this = which_elem(new_dim - 1, which_cat)[0];
+        new_val = 1 + floor(unif_rand() * cats[which_is_this]);
+      }
       new_tess[row + d_j * nC] = new_val;
     }
     r.tess = new_tess; r.nC = nC;
@@ -683,13 +573,15 @@ static ProposalResult propose_internal(
     r.mod = "AC";
     r.tess = tess_j;
     for (int i = 0; i < d_j; i++) {
-      // NOTE: mus/sd are indexed by local position i, and metric is checked
-      // using i rather than the global covariate index dim_j[i]-1.
-      // This mirrors the original propose_tessellation_cpp behaviour exactly.
-      new_val = mus[i] + norm_rand() * sd[i];
-      if (metric[i] == 1)
-        if (i == members.size()-1 || members[i+1] != members[i])
+      new_val = mus[dim_j[i]-1] + norm_rand() * sd[dim_j[i]-1];
+      if (metric[dim_j[i]-1] == 1)
+        if (dim_j[i] == members.size() || members[dim_j[i]] != members[dim_j[i]-1])
           new_val = period_shift(new_val, M_PI);
+      if (metric[dim_j[i]-1] == 2) {
+        std::vector<int> which_cat = which_elem(2, metric);
+        int which_is_this = which_elem(dim_j[i]-1, which_cat)[0];
+        new_val = 1 + floor(unif_rand() * cats[which_is_this]);
+      }
       r.tess.insert(r.tess.begin() + (i * (nC + 1)) + nC, new_val);
     }
     r.nC = nC + 1;
@@ -706,19 +598,24 @@ static ProposalResult propose_internal(
     r.tess = new_tess; r.nC = nC - 1;
 
   } else if (prand < 0.9 || d_j == p) {
-    // Change Centre — same local-index convention as propose_tessellation_cpp
+    // Change Centre
     int ci = (int)(unif_rand() * nC);
     for (int col = 0; col < d_j; col++) {
-      new_val = mus[col] + norm_rand() * sd[col];
-      if (metric[col] == 1)
-        if (col == members.size()-1 || members[col+1] != members[col])
+      new_val = mus[dim_j[col]-1] + norm_rand() * sd[dim_j[col]-1];
+      if (metric[dim_j[col]-1] == 1)
+        if (dim_j[col] == members.size() || members[dim_j[col]] != members[dim_j[col]-1])
         //if (col == (int)sphere_index.back())
           new_val = period_shift(new_val, M_PI);
+      if (metric[dim_j[col]-1] == 2) {
+        std::vector<int> which_cat = which_elem(2, metric);
+        int which_is_this = which_elem(dim_j[col]-1, which_cat)[0];
+        new_val = 1 + floor(unif_rand() * cats[which_is_this]);
+      }
       r.tess[ci + col * nC] = new_val;
     }
 
   } else {
-    // Swap Dimension — same local-index convention as propose_tessellation_cpp
+    // Swap Dimension
     r.mod = "Swap";
     int swap_idx = (int)(unif_rand() * d_j);
     int new_dim;
@@ -726,10 +623,15 @@ static ProposalResult propose_internal(
     while (in_vector(new_dim, r.dim));
     r.dim[swap_idx] = new_dim;
     for (int row = 0; row < nC; row++) {
-      new_val = mus[swap_idx] + norm_rand() * sd[swap_idx];
-      if (metric[swap_idx] == 1)
-        if (swap_idx == members.size()-1 || members[swap_idx+1] != members[swap_idx])
+      new_val = mus[new_dim-1] + norm_rand() * sd[new_dim-1];
+      if (metric[new_dim-1] == 1)
+        if (dim_j[new_dim] == members.size() || members[new_dim] != members[new_dim-1])
           new_val = period_shift(new_val, M_PI);
+      if (metric[new_dim-1] == 2) {
+        std::vector<int> which_cat = which_elem(2, metric);
+        int which_is_this = which_elem(new_dim-1, which_cat)[0];
+        new_val = 1 + floor(unif_rand() * cats[which_is_this]);
+      }
       r.tess[row + swap_idx * nC] = new_val;
     }
   }
@@ -845,6 +747,21 @@ extern "C" {
       i += how_many;
     }
 
+    // If there are raw categorical columns, compute the number of categories per column
+    std::vector<int> ncats;
+    if (in_vector(2, metric_red)) {
+      for (int i = 0; i < metric.size(); i++) {
+        if (metric[i] == 2) {
+          int max_val = 0;
+          for (int j = 0; j < n; j++) {
+            if (xScaled[i * n + j] > max_val)
+              max_val = xScaled[i * n + j];
+          }
+          ncats.push_back(max_val);
+        }
+      }
+    }
+
     // -------------------------------------------------------------------------
     // 2. Unpack initial tessellation state from R lists
     // -------------------------------------------------------------------------
@@ -881,7 +798,7 @@ extern "C" {
       curIdx[j] = knn1_internal(
         xScaled, n, p,
         tess[j].data(), tess_nC[j], tess_d[j], dim_j[j],
-        metric_red, member_red);
+        metric_red, member_red, ncats);
       for (int obs = 0; obs < n; obs++)
         sumAllTess[obs] += pred[j][curIdx[j][obs]];
     }
@@ -955,7 +872,7 @@ extern "C" {
         // Propose new tessellation
         ProposalResult prop = propose_internal(
           tess[j], tess_nC[j], tess_d[j], dim_j[j],
-          p, sd, mus, metric, members);
+          p, sd, mus, metric, members, ncats);
 
         // Clamp binary columns to [0, catScaling] in the proposal
         if (!binaryCols.empty()) {
@@ -977,7 +894,7 @@ extern "C" {
         std::vector<int> idxStar = knn1_internal(
           xScaled, n, p,
           prop.tess.data(), prop.nC, (int)prop.dim.size(), prop.dim,
-          metric_red, member_red);
+          metric_red, member_red, ncats);
 
         // Aggregate residuals for old and new tessellations
         std::vector<double> R_old, R_new;

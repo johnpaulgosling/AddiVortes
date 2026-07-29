@@ -50,6 +50,7 @@
 #'   \code{<colname>_<level>} (e.g. a column \code{grp} with levels \code{"A"},
 #'   \code{"B"}, \code{"C"} produces columns \code{grp_B} and \code{grp_C}, with
 #'   \code{"A"} as the reference level).
+#' @param cat.onehot Should categorical covariates be one-hot encoded? Default `TRUE`.
 #' @param showProgress Logical; if TRUE, progress bars and messages are shown during fitting.
 #'
 #' @return An AddiVortes object containing the posterior samples of the
@@ -108,6 +109,7 @@ AddiVortes <- function(y, x, m = 200,
                        metric = "E",
                        members = NULL,
                        catScaling = 1,
+                       cat.onehot = TRUE,
                        showProgress = interactive()) {
   # Force evaluation of Omega using the *original* x before categorical encoding
   # replaces x with the encoded matrix. Without this, R's lazy evaluation would
@@ -140,23 +142,26 @@ AddiVortes <- function(y, x, m = 200,
                old_metric == "Categorical"] <- 2
   old_metric <- as.integer(old_metric)
   old_members <- if(is.null(members)) NULL else as.integer(members)
-  
+
   san_data <- covariateStructure_internal(x,
-                                          metric, members)
-  x <- san_data$data
-  members <- as.integer(san_data$membership)
-  
-  encResult <- encodeCategories_internal(x,
-                                         catScaling = catScaling)
+                                          metric, members, cat.onehot)
+  encResult <- encodeCategories_internal(san_data$data, catScaling = catScaling)
   catEncoding <- encResult$encoding
-  covariateSummary <- formatCovariateSummary_internal(x, 
-                                                      metric, 
-                                                      catEncoding)
-  x <- encResult$encoded
+  covariateSummary <- formatCovariateSummary_internal(x,
+                                                       metric,
+                                                       catEncoding,
+                                                       cat.onehot)
+  if (cat.onehot)
+    x <- encResult$encoded
+  else
+    x <- as.matrix(san_data$data)
+  
+  members <- as.integer(san_data$membership)
   
   metric <- san_data$structure
   metric[metric == "E"] <- 0
   metric[metric == "S"] <- 1
+  metric[metric == "C"] <- 2
   metric <- as.integer(metric)
   if (1 %in% metric) {
     sphere_ranges <- list()
@@ -183,11 +188,11 @@ AddiVortes <- function(y, x, m = 200,
   xScaled[, metric != 0] <- x[, metric != 0]
   # Binary columns from categorical encoding keep their {0, catScaling} values
   # rather than being further scaled, so they directly control distance weight
-  if (!is.null(catEncoding)) {
+  if (cat.onehot && !is.null(catEncoding)) {
     binaryCols <- catEncoding$encodedBinaryCols
     xScaled[, binaryCols] <- x[, binaryCols]
   }
-  mus <- rep(0, nrow(x))
+  mus <- rep(0, ncol(x))
   mus[metric != 0] <- xCentres[metric != 0]
   
   #### Handling NULL sigma choice and ensuring it's vectorised
@@ -246,7 +251,7 @@ AddiVortes <- function(y, x, m = 200,
   ## Initialization always produces single-dimension tessellations, so dim[[i]] is
   ## a scalar. Guard against any future multi-column initial states by iterating
   ## over all active dims.
-  if (!is.null(catEncoding) && length(catEncoding$encodedBinaryCols) > 0) {
+  if (cat.onehot && !is.null(catEncoding) && length(catEncoding$encodedBinaryCols) > 0) {
     binaryColsInit <- catEncoding$encodedBinaryCols
     cs <- catEncoding$catScaling
     for (i in seq_along(tess)) {
@@ -256,6 +261,12 @@ AddiVortes <- function(y, x, m = 200,
         for (lp in local_bin_pos) {
           tess[[i]][, lp] <- runif(nrow(tess[[i]]), 0, cs)
         }
+      }
+    }
+  } else {
+    for (i in seq_along(tess)) {
+      if (metric[dim[[i]]] == 2) {
+        tess[[i]][1,1] <- sample(unique(xScaled[,dim[[i]]]), 1)
       }
     }
   }
@@ -299,13 +310,13 @@ AddiVortes <- function(y, x, m = 200,
   init_pred <- lapply(pred, function(p_j) as.double(p_j))
   
   # Binary column indices for categorical clamping (NULL when not applicable)
-  binaryCols_r <- if (!is.null(catEncoding) && 
+  binaryCols_r <- if (cat.onehot && !is.null(catEncoding) && 
                       length(catEncoding$encodedBinaryCols) > 0) {
     as.integer(catEncoding$encodedBinaryCols)
   } else {
     NULL
   }
-  catScaling_r <- if (!is.null(catEncoding)) catEncoding$catScaling else 0.0
+  catScaling_r <- if (cat.onehot && !is.null(catEncoding)) catEncoding$catScaling else 0.0
   
   # Progress message
   if (showProgress) {
@@ -373,6 +384,10 @@ AddiVortes <- function(y, x, m = 200,
   }
   
   # Create and return the AddiVortes object
+  if (cat.onehot)
+    this_enc <- catEncoding
+  else
+    this_enc <- NULL
   new_AddiVortes(
     posteriorTess = outputPosteriorTess,
     posteriorDim = outputPosteriorDim,
@@ -387,7 +402,7 @@ AddiVortes <- function(y, x, m = 200,
     members = old_members,
     metric_aug = metric,
     member_aug = members,
-    catEncoding = catEncoding,
+    catEncoding = this_enc,
     traceStats = traceStats
   )
 }
@@ -412,7 +427,8 @@ countCovariateTypes_internal <- function(x, metric) {
   )
 }
 
-formatCovariateSummary_internal <- function(x, metric, catEncoding = NULL) {
+formatCovariateSummary_internal <- function(x, metric, catEncoding = NULL,
+                                            coh = TRUE) {
   counts <- countCovariateTypes_internal(x, metric)
   parts <- character(0)
   
@@ -432,7 +448,7 @@ formatCovariateSummary_internal <- function(x, metric, catEncoding = NULL) {
   
   lines <- c(sprintf("Covariate summary: %s.", paste(parts, collapse = ", ")))
   
-  if (counts$categorical > 0) {
+  if (counts$categorical > 0 && coh) {
     if (!is.null(catEncoding) && !is.null(catEncoding$encodedBinaryCols)) {
       binary_cols <- length(catEncoding$encodedBinaryCols)
       lines <- c(

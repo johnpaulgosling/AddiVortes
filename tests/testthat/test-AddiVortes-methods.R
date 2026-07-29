@@ -178,11 +178,6 @@ test_that("predict.AddiVortes requires matrix newdata", {
     predict(obj, newdata = c(1, 2, 3, 4, 5)),
     "must be a matrix"
   )
-
-  expect_error(
-    predict(obj, newdata = data.frame(a = 1:5, b = 1:5)),
-    "must be a matrix"
-  )
 })
 
 test_that("predict.AddiVortes checks newdata dimensions", {

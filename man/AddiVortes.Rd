@@ -21,6 +21,7 @@ AddiVortes(
   metric = "E",
   members = NULL,
   catScaling = 1,
+  cat.onehot = TRUE,
   showProgress = interactive()
 )
 }
@@ -70,6 +71,8 @@ decrease below 1 to give them less weight. Binary indicator columns are named
 \code{<colname>_<level>} (e.g. a column \code{grp} with levels \code{"A"},
 \code{"B"}, \code{"C"} produces columns \code{grp_B} and \code{grp_C}, with
 \code{"A"} as the reference level).}
+
+\item{cat.onehot}{Should categorical covariates be one-hot encoded? Default \code{TRUE}.}
 
 \item{showProgress}{Logical; if TRUE, progress bars and messages are shown during fitting.}
 }
