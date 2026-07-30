@@ -127,7 +127,7 @@ fit_sph <- AddiVortes(
 ``` r
 
 cat("In-sample RMSE (spherical metric):", round(fit_sph$inSampleRmse, 3), "\n")
-#> In-sample RMSE (spherical metric): 1.166
+#> In-sample RMSE (spherical metric): 1.198
 ```
 
 For comparison, we fit an identical model using the default
@@ -151,7 +151,7 @@ fit_euc <- AddiVortes(
 ``` r
 
 cat("In-sample RMSE (Euclidean metric):", round(fit_euc$inSampleRmse, 3), "\n")
-#> In-sample RMSE (Euclidean metric): 1.31
+#> In-sample RMSE (Euclidean metric): 1.386
 ```
 
 ### 5. Out-of-Sample Evaluation
@@ -186,9 +186,9 @@ rmse_sph <- sqrt(mean((y_test - preds_sph)^2))
 rmse_euc <- sqrt(mean((y_test - preds_euc)^2))
 
 cat("Test RMSE — spherical metric:", round(rmse_sph, 3), "\n")
-#> Test RMSE — spherical metric: 2.244
+#> Test RMSE — spherical metric: 2.192
 cat("Test RMSE — Euclidean metric:", round(rmse_euc, 3), "\n")
-#> Test RMSE — Euclidean metric: 2.204
+#> Test RMSE — Euclidean metric: 2.095
 ```
 
 ### 6. Visualising Predictions
@@ -316,9 +316,9 @@ rmse_prime_sph <- sqrt(mean((y_prime_test - preds_prime_sph)^2))
 rmse_prime_euc <- sqrt(mean((y_prime_test - preds_prime_euc)^2))
 
 cat("Test RMSE — spherical metric:", round(rmse_prime_sph, 3), "\n")
-#> Test RMSE — spherical metric: 3.674
+#> Test RMSE — spherical metric: 3.762
 cat("Test RMSE — Euclidean metric:", round(rmse_prime_euc, 3), "\n")
-#> Test RMSE — Euclidean metric: 4.125
+#> Test RMSE — Euclidean metric: 3.837
 
 y_prime_range <- range(c(y_prime_test, preds_prime_sph, preds_prime_euc))
 
