@@ -632,7 +632,7 @@ static ProposalResult propose_internal(
     for (int row = 0; row < nC; row++) {
       new_val = mus[new_dim-1] + norm_rand() * sd[new_dim-1];
       if (metric[new_dim-1] == 1)
-        if (dim_j[new_dim] == members.size() || members[new_dim] != members[new_dim-1])
+        if (new_dim == (int)members.size() || members[new_dim] != members[new_dim-1])
           new_val = period_shift(new_val, M_PI);
       if (metric[new_dim-1] == 2) {
         std::vector<int> which_cat = which_elem(2, metric);

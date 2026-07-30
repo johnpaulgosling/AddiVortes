@@ -1,5 +1,15 @@
 # AddiVortes News
 
+## AddiVortes 0.6.9
+
+* Fixed a heap-buffer-overflow in `propose_internal()` when proposing a
+  Swap Dimension move on spherical covariates. The period-shift check
+  indexed the tessellation's active-dimension vector by the newly drawn
+  covariate index rather than testing that covariate against `members`,
+  reading past the end of the vector whenever the tessellation used fewer
+  dimensions than covariates. This caused AddressSanitizer aborts when
+  rebuilding the spherical vignette under CRAN's SAN checks.
+
 ## AddiVortes 0.6.8
 
 * Corrected three Metropolis-Hastings structural-move bugs in
