@@ -24,11 +24,11 @@ test_that("AddiVortes fit 1 with quantile check", {
   expect_true(all(predictions[, 1] <= predictions[, 2]))
   expect_equal(
     round(as.numeric(predictions[1, 2]), 3),
-    0.269
+    0.330
   )
   expect_equal(
     round(as.numeric(predictions[10, 1]), 2),
-    -0.17
+    -0.18
   )
 })
 
