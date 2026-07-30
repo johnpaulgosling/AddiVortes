@@ -1,5 +1,19 @@
 # AddiVortes News
 
+## AddiVortes 0.6.8
+
+* Corrected three Metropolis-Hastings structural-move bugs in
+  `log_acceptance_components()`:
+  - add-centre no longer applies an extra `1/(b+1)` penalty that cancelled
+    against set multiplicity and thinned the cell-count prior;
+  - add/remove-dimension no longer double-count the uniform covariate pick
+    already present in the set prior;
+  - all six Appendix B boundary proposal adjustments are now applied (the
+    three reverse `x2` partners had been missing).
+* With these corrections, the default `LambdaRate = 25` matches the stated
+  Poisson prior (~26 cells per tessellation). Previously the thinned ratio
+  produced about 5 cells at that default.
+
 ## AddiVortes 0.6.7
 
 * `AddiVortes` can now calculate distances between categorical covariates

@@ -448,38 +448,45 @@ static AcceptanceComponents log_acceptance_components(
   double acc = log_lik;
 
   if (mod == "AD") {
-    double log_ts_tr = 2.0 * log((double)(p - d_new + 1))
+    // Count-prior ratio only: the uniform covariate pick cancels the set prior.
+    double log_ts_tr = log((double)(p - d_new + 1))
                      - log((double)d_new - 1)
-                     - log((double)d_new)
                      + log(omega)
                      - log(p - omega);
     acc += log_ts_tr;
     if (d_new == 2) {
       acc += - log(2);
     }
+    if (d_new == p) {
+      acc += log(2);
+    }
   } else if (mod == "RD") {
-    double log_ts_tr = log((double)d_new + 1)
-                     + log((double)d_new)
-                     - 2.0 * log((double)(p - d_new))
+    double log_ts_tr = log((double)d_new)
+                     - log((double)(p - d_new))
                      + log(p - omega)
                      - log(omega);
     acc += log_ts_tr;
     if (d_new == (p - 1)) {
       acc += - log(2);
     }
+    if (d_new == 1) {
+      acc += log(2);
+    }
   } else if (mod == "AC") {
+    // Cell-count prior ratio only: which-centre-to-delete cancels set multiplicity.
     double log_ts_tr = log(lambdaRate)
-                     - log((double)nC_new)
                      - log((double)nC_new - 1);
     acc += log_ts_tr + 0.5 * log(sigmaSquared);
     if (nC_new == 2) {
       acc += - log(2);
     }
   } else if (mod == "RC") {
-    double log_ts_tr = log((double)nC_new + 1)
-                     + log((double)nC_new)
+    double log_ts_tr = log((double)nC_new)
                      - log(lambdaRate);
     acc += log_ts_tr - 0.5 * log(sigmaSquared);
+    if (nC_new == 1) {
+      acc += log(2);
+    }
   }
   // "Change" and "Swap": log(TessStructure * TransitionRatio) = 0
 
