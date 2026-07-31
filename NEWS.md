@@ -9,6 +9,9 @@
   reading past the end of the vector whenever the tessellation used fewer
   dimensions than covariates. This caused AddressSanitizer aborts when
   rebuilding the spherical vignette under CRAN's SAN checks.
+* Removed an unused local variable in `log_acceptance_components()` that
+  triggered a significant compiler warning (`-Wunused-variable`) and caused
+  CRAN's "checking whether package can be installed" WARNING.
 
 ## AddiVortes 0.6.8
 

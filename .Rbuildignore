@@ -14,3 +14,6 @@
 ^codecov\.yml$
 ^\.lintr$
 ^\.lintr\.R$
+^.*\.tar\.gz$
+^.*\.Rcheck$
+^audit$

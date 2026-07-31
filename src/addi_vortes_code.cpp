@@ -442,9 +442,6 @@ static AcceptanceComponents log_acceptance_components(
     R_new, n_new, sigmaSquared, sigmaSquaredMu);
   double log_lik = new_log_lik - old_log_lik;
 
-  const double prob_eps = 1e-10;
-  double prob = std::min(1.0 - prob_eps, std::max(0.0, omega / p));
-
   double acc = log_lik;
 
   if (mod == "AD") {
