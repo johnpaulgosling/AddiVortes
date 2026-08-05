@@ -17,10 +17,9 @@ Description: Implements the Bayesian Additive Voronoi Tessellation
     This package provides a flexible alternative to BART (Bayesian Additive 
     Regression Trees) using Voronoi tessellations instead of trees. Users can 
     fit Bayesian regression models (estimating the associated posterior 
-    distributions and make predictions. It is particularly useful for spatial
+    distributions and make predictions). It is particularly useful for spatial
     data analysis, machine learning regression, complex function approximation 
-    and Bayesian modeling where the underlying structure is unknown. The method 
-    is well-suited to capturing spatial patterns and non-linear relationships.
+    and Bayesian modeling where the underlying structure is unknown.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
