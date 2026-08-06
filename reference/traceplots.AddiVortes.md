@@ -1,4 +1,4 @@
-# Trace Plot Diagnostics for AddiVortes
+# Trace Plot Method for AddiVortes
 
 Displays four MCMC trace plots for a fitted `AddiVortes` object: the
 average number of centres per tessellation, the standard deviation of
