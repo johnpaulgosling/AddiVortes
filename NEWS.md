@@ -2,6 +2,11 @@
 
 ## AddiVortes 0.7.1
 
+* Updated the categorical covariates vignette to document Eskin distance
+  (`cat.onehot = FALSE`), give guidance on choosing one-hot versus Eskin, and
+  compare the two approaches on a synthetic example. Andy Iskauskas added as a
+  vignette author. The `cat.onehot` help text and fit-time covariate summary now
+  mention Eskin distance as well.
 * Fit and predict hot paths adopt several lessons from the Rust `addivortes`
   engine while preserving the sampled chain bit-for-bit on the fixed-seed
   Friedman and existing golden tests:

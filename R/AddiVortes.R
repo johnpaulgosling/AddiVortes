@@ -9,16 +9,18 @@
 #' the RMSE value for the test samples.
 #'
 #' The function can handle multiple types of covariates, including continuous, 
-#' spherical and categorical. Categorical covariates are automatically detected 
-#' and one-hot encoded, with the first level of each categorical variable used 
-#' as the reference category. The `catScaling` parameter allows control over 
-#' the weight of categorical differences in distance calculations. For spherical
-#' covariates, the function assumes that the final spherical dimension 
-#' corresponds to the polar angle, which has a range of 0 to 2*pi. The `metric` 
-#' parameter can be used to specify the type of each covariate (Euclidean, 
-#' Spherical, or Categorical), and the `members` parameter can indicate
-#' membership of covariates into different subspaces when using multiple spheres 
-#' in covariate space. 
+#' spherical and categorical. Categorical covariates are automatically detected.
+#' By default (`cat.onehot = TRUE`) they are one-hot encoded, with the first
+#' level of each categorical variable used as the reference category; the
+#' `catScaling` parameter then controls the weight of categorical differences in
+#' distance calculations. Setting `cat.onehot = FALSE` instead keeps each
+#' categorical covariate as a single integer-coded column and uses Eskin
+#' distance (Eskin et al., 2002). For spherical covariates, the function assumes
+#' that the final spherical dimension corresponds to the polar angle, which has
+#' a range of 0 to 2*pi. The `metric` parameter can be used to specify the type
+#' of each covariate (Euclidean, Spherical, or Categorical), and the `members`
+#' parameter can indicate membership of covariates into different subspaces when
+#' using multiple spheres in covariate space. 
 #'
 #' @param y A vector of the output values.
 #' @param x A matrix or data frame of the covariates. Character and factor columns
@@ -50,7 +52,14 @@
 #'   \code{<colname>_<level>} (e.g. a column \code{grp} with levels \code{"A"},
 #'   \code{"B"}, \code{"C"} produces columns \code{grp_B} and \code{grp_C}, with
 #'   \code{"A"} as the reference level).
-#' @param cat.onehot Should categorical covariates be one-hot encoded? Default `TRUE`.
+#' @param cat.onehot Should categorical covariates be one-hot encoded? Default
+#'   `TRUE`. When `TRUE`, each categorical covariate with *d* levels is expanded
+#'   to *d* − 1 binary indicators and distances are Euclidean (weighted by
+#'   \code{catScaling}). When `FALSE`, categories are kept as a single
+#'   integer-coded column and mismatches use Eskin distance (Eskin et al., 2002),
+#'   with squared cost \eqn{2 / d^2} when levels differ and 0 when they match;
+#'   \code{catScaling} is then ignored. See the categorical covariates vignette
+#'   for a comparison and guidance on which to use.
 #' @param showProgress Logical; if TRUE, a progress bar is shown during fitting.
 #'
 #' @return An AddiVortes object containing the posterior samples of the
@@ -448,28 +457,39 @@ formatCovariateSummary_internal <- function(x, metric, catEncoding = NULL,
   
   lines <- c(sprintf("Covariate summary: %s.", paste(parts, collapse = ", ")))
   
-  if (counts$categorical > 0 && coh) {
-    if (!is.null(catEncoding) && !is.null(catEncoding$encodedBinaryCols)) {
-      binary_cols <- length(catEncoding$encodedBinaryCols)
-      lines <- c(
-        lines,
-        sprintf(
-          paste0(
-            "Categorical covariates are expanded to %d one-hot encoded ",
-            "binary column%s, with the first level of each categorical ",
-            "variable used as the reference category."
-          ),
-          binary_cols,
-          if (binary_cols == 1L) "" else "s"
+  if (counts$categorical > 0) {
+    if (coh) {
+      if (!is.null(catEncoding) && !is.null(catEncoding$encodedBinaryCols)) {
+        binary_cols <- length(catEncoding$encodedBinaryCols)
+        lines <- c(
+          lines,
+          sprintf(
+            paste0(
+              "Categorical covariates are expanded to %d one-hot encoded ",
+              "binary column%s, with the first level of each categorical ",
+              "variable used as the reference category."
+            ),
+            binary_cols,
+            if (binary_cols == 1L) "" else "s"
+          )
         )
-      )
+      } else {
+        lines <- c(
+          lines,
+          paste0(
+            "Categorical covariates are expanded to one-hot encoded binary ",
+            "columns, with the first level of each categorical variable used ",
+            "as the reference category."
+          )
+        )
+      }
     } else {
       lines <- c(
         lines,
         paste0(
-          "Categorical covariates are expanded to one-hot encoded binary ",
-          "columns, with the first level of each categorical variable used ",
-          "as the reference category."
+          "Categorical covariates use Eskin distance (cat.onehot = FALSE): ",
+          "each stays as one integer-coded column, with mismatch cost 2/d^2 ",
+          "for a variable with d levels."
         )
       )
     }

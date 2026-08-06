@@ -72,7 +72,14 @@ decrease below 1 to give them less weight. Binary indicator columns are named
 \code{"B"}, \code{"C"} produces columns \code{grp_B} and \code{grp_C}, with
 \code{"A"} as the reference level).}
 
-\item{cat.onehot}{Should categorical covariates be one-hot encoded? Default \code{TRUE}.}
+\item{cat.onehot}{Should categorical covariates be one-hot encoded? Default
+\code{TRUE}. When \code{TRUE}, each categorical covariate with \emph{d} levels is expanded
+to \emph{d} − 1 binary indicators and distances are Euclidean (weighted by
+\code{catScaling}). When \code{FALSE}, categories are kept as a single
+integer-coded column and mismatches use Eskin distance (Eskin et al., 2002),
+with squared cost \eqn{2 / d^2} when levels differ and 0 when they match;
+\code{catScaling} is then ignored. See the categorical covariates vignette
+for a comparison and guidance on which to use.}
 
 \item{showProgress}{Logical; if TRUE, a progress bar is shown during fitting.}
 }
@@ -90,16 +97,18 @@ Alongside fitting details and the posterior sample, the function returns
 the RMSE value for the test samples.
 
 The function can handle multiple types of covariates, including continuous,
-spherical and categorical. Categorical covariates are automatically detected
-and one-hot encoded, with the first level of each categorical variable used
-as the reference category. The \code{catScaling} parameter allows control over
-the weight of categorical differences in distance calculations. For spherical
-covariates, the function assumes that the final spherical dimension
-corresponds to the polar angle, which has a range of 0 to 2*pi. The \code{metric}
-parameter can be used to specify the type of each covariate (Euclidean,
-Spherical, or Categorical), and the \code{members} parameter can indicate
-membership of covariates into different subspaces when using multiple spheres
-in covariate space.
+spherical and categorical. Categorical covariates are automatically detected.
+By default (\code{cat.onehot = TRUE}) they are one-hot encoded, with the first
+level of each categorical variable used as the reference category; the
+\code{catScaling} parameter then controls the weight of categorical differences in
+distance calculations. Setting \code{cat.onehot = FALSE} instead keeps each
+categorical covariate as a single integer-coded column and uses Eskin
+distance (Eskin et al., 2002). For spherical covariates, the function assumes
+that the final spherical dimension corresponds to the polar angle, which has
+a range of 0 to 2*pi. The \code{metric} parameter can be used to specify the type
+of each covariate (Euclidean, Spherical, or Categorical), and the \code{members}
+parameter can indicate membership of covariates into different subspaces when
+using multiple spheres in covariate space.
 }
 \examples{
 \donttest{
