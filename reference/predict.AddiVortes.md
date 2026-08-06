@@ -15,8 +15,6 @@ predict(
   quantiles = c(0.025, 0.975),
   interval = c("credible", "prediction"),
   showProgress = interactive(),
-  parallel = TRUE,
-  cores = NULL,
   ...
 )
 ```
@@ -56,16 +54,6 @@ predict(
 
   Logical; if TRUE, a progress bar is shown during prediction.
 
-- parallel:
-
-  Logical; if TRUE (default), predictions are computed in parallel.
-
-- cores:
-
-  The number of CPU cores to use for parallel processing. If NULL
-  (default), it defaults to one less than the total number of available
-  cores.
-
 - ...:
 
   Further arguments passed to or from other methods (currently unused).
@@ -81,6 +69,9 @@ observation in `newdata` and each column to a quantile.
 This function relies on the internal helper function
 `applyScaling_internal` being available in the environment, which is
 used by the main `AddiVortes` function.
+
+Predictions traverse all retained draws and tessellations in a single
+C++ call, avoiding repeated R/C++ boundary crossings per tessellation.
 
 When `interval = "prediction"` and `type = "quantile"`, the function
 samples additional Gaussian noise with variance equal to the sampled

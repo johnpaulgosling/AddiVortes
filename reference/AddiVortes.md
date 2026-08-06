@@ -132,7 +132,7 @@ AddiVortes(
 
 - showProgress:
 
-  Logical; if TRUE, progress bars and messages are shown during fitting.
+  Logical; if TRUE, a progress bar is shown during fitting.
 
 ## Value
 
