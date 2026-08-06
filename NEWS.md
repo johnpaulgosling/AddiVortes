@@ -1,12 +1,5 @@
 # AddiVortes News
 
-## AddiVortes 0.7.2
-
-* Resolved the conflicting `traceplots` documentation topics by documenting
-  trace plot creation only as the `traceplots.AddiVortes` class method, matching
-  the other AddiVortes S3 methods. The S3 generic remains for dispatch so
-  `traceplots(fit)` continues to work.
-
 ## AddiVortes 0.7.1
 
 * Fit and predict hot paths adopt several lessons from the Rust `addivortes`
@@ -24,6 +17,10 @@
     maps, no per-proposal `which_elem` allocations).
 * Added a fixed-seed Friedman benchmark test that locks in-sample and test
   RMSE and reports fit/predict timings.
+* Resolved the conflicting `traceplots` documentation topics by documenting
+  trace plot creation only as the `traceplots.AddiVortes` class method, matching
+  the other AddiVortes S3 methods. The S3 generic remains for dispatch so
+  `traceplots(fit)` continues to work.
 
 ## AddiVortes 0.7.0
 
