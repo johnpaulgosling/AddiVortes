@@ -687,6 +687,11 @@ static ProposalResult propose_internal(
       }
     } else if (metric[global0] == 2) {
       const int ci = cat_index_of_col[global0];
+      if (ci < 0 || ci >= static_cast<int>(cats.size())) {
+        Rf_error("Categorical column %d has no Eskin level count; "
+                 "check membership grouping for categorical covariates.",
+                 global0 + 1);
+      }
       v = 1.0 + floor(unif_rand() * cats[ci]);
     }
     return v;

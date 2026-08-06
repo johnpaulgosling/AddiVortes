@@ -130,6 +130,32 @@ test_that("covariate summary helper reports counts and categorical encoding", {
   )
 })
 
+test_that("covariate summary helper reports Eskin distance when cat.onehot is FALSE", {
+  x <- data.frame(
+    cont = c(1, 2, 3),
+    grp = factor(c("A", "B", "C"))
+  )
+
+  summary_lines <- AddiVortes:::formatCovariateSummary_internal(
+    x,
+    metric = c("E", "E"),
+    catEncoding = NULL,
+    coh = FALSE
+  )
+
+  expect_equal(
+    summary_lines,
+    c(
+      "Covariate summary: 1 continuous, 1 categorical.",
+      paste0(
+        "Categorical covariates use Eskin distance (cat.onehot = FALSE): ",
+        "each stays as one integer-coded column, with mismatch cost 2/d^2 ",
+        "for a variable with d levels."
+      )
+    )
+  )
+})
+
 test_that("AddiVortes startup output reports categorical encoding", {
   skip_on_cran()
   withr::local_seed(123)

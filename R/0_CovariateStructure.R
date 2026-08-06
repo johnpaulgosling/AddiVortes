@@ -75,37 +75,55 @@ covariateStructure_internal <- function(data, structure, membership = NULL, one.
     membership <- new_member
     structure <- new_structure
   }
-  reduced_data <- data[,seq_along(membership),drop=FALSE]
+  reduced_data <- data[, seq_along(membership), drop = FALSE]
   for (i in seq_along(structure)) {
     struct <- structure[i]
     if (struct == "E") {
-      has_lev <- is.factor(reduced_data[,i]) || is.character(reduced_data[,i])
+      has_lev <- is.factor(reduced_data[, i]) || is.character(reduced_data[, i])
       if (has_lev) {
         struct <- structure[i] <- "C"
       }
     }
     if (struct == "C") {
-      has_lev <- is.factor(reduced_data[,i])
+      has_lev <- is.factor(reduced_data[, i])
       if (!has_lev) {
-        is_chr <- is.character(reduced_data[,i])
-        if (!is_chr) stop(paste("Covariate", names(reduced_data)[i],
-                                "specified as categorical but has neither",
-                                "levels nor is a character."))
-        reduced_data[,i] <- as.factor(reduced_data[,i])
+        is_chr <- is.character(reduced_data[, i])
+        if (!is_chr) {
+          stop(paste(
+            "Covariate", names(reduced_data)[i],
+            "specified as categorical but has neither",
+            "levels nor is a character."
+          ))
+        }
+        reduced_data[, i] <- as.factor(reduced_data[, i])
       }
-      if (!one.hot) reduced_data[,i] <- as.numeric(reduced_data[,i])
+      if (!one.hot) reduced_data[, i] <- as.numeric(reduced_data[, i])
     }
   }
+
+  ## Auto-detection may flip Euclidean columns to categorical without updating
+  ## membership. Rebuild membership so Euclidean (and spherical) groups are
+  ## preserved, while each categorical column gets its own group. Mixed E/C
+  ## columns must not share a membership id: the C++ distance reduction uses
+  ## the first column's metric for a whole membership block.
+  membership <- rebuildMembership_internal(structure, membership)
+
   if (any(structure == "S")) {
     members <- membership[structure == "S"]
     for (mem in unique(members)) {
-      sphere_data <- reduced_data[,which(membership == mem)]
-      has_lev <- sapply(seq_len(ncol(sphere_data)), function(idx) is.factor(sphere_data[,idx]))
-      if(any(has_lev)) stop("Covariate(s) specified as spherical have factors.")
+      sphere_data <- reduced_data[, which(membership == mem), drop = FALSE]
+      has_lev <- sapply(
+        seq_len(ncol(sphere_data)),
+        function(idx) is.factor(sphere_data[, idx])
+      )
+      if (any(has_lev)) stop("Covariate(s) specified as spherical have factors.")
       param_extent <- apply(apply(sphere_data, 2, range), 2, diff)
-      if (sum(param_extent > pi) > 1)
-        stop(paste("More than one spherical parameter in membership group",
-                                                 mem, "has range >pi."))
+      if (sum(param_extent > pi) > 1) {
+        stop(paste(
+          "More than one spherical parameter in membership group",
+          mem, "has range >pi."
+        ))
+      }
       if (sum(param_extent > pi) == 1) {
         mem_cols <- which(membership == mem)
         new_order <- c(which(param_extent <= pi), which(param_extent > pi))
@@ -115,17 +133,22 @@ covariateStructure_internal <- function(data, structure, membership = NULL, one.
     }
   }
   m_order <- order(membership)
-  structure <- structure[order(membership)]
-  membership <- membership[order(membership)]
+  reduced_data <- reduced_data[, m_order, drop = FALSE]
+  structure <- structure[m_order]
+  membership <- membership[m_order]
   ## If categoricals are going to be one-hot-encoded, then want to pre-emptively
   # expand the structure and membership
   if (one.hot && any(structure == "C")) {
-    n_onehot <- sum(sapply(seq_along(reduced_data)[structure == "C"], function(i) length(levels(reduced_data[,i]))-1))
+    n_onehot <- sum(sapply(
+      seq_along(reduced_data)[structure == "C"],
+      function(i) length(levels(reduced_data[, i])) - 1
+    ))
     membership <- membership[structure != "C"]
-    if (length(membership) == 0)
+    if (length(membership) == 0) {
       membership <- rep(1, n_onehot)
-    else
-      membership <- c(membership, rep(max(membership)+1, n_onehot))
+    } else {
+      membership <- c(membership, rep(max(membership) + 1, n_onehot))
+    }
     structure <- c(structure[structure != "C"], rep("C", n_onehot))
     structure[structure == "C"] <- "E"
   }
@@ -134,4 +157,40 @@ covariateStructure_internal <- function(data, structure, membership = NULL, one.
     structure = structure,
     membership = membership
   ))
+}
+
+#' Rebuild membership ids after structure auto-detection.
+#'
+#' @param structure Character vector of "E", "S", "C".
+#' @param membership Integer/numeric membership ids aligned with \code{structure}.
+#' @return Integer membership vector with Euclidean and spherical groups
+#'   preserved and each categorical column in its own group.
+#' @keywords internal
+#' @noRd
+rebuildMembership_internal <- function(structure, membership) {
+  n <- length(structure)
+  if (n == 0) {
+    return(integer(0))
+  }
+  membership <- as.integer(membership)
+  new_membership <- integer(n)
+  next_id <- 1L
+
+  assign_preserved_groups <- function(idx) {
+    if (length(idx) == 0) {
+      return()
+    }
+    for (g in unique(membership[idx])) {
+      new_membership[idx[membership[idx] == g]] <<- next_id
+      next_id <<- next_id + 1L
+    }
+  }
+
+  assign_preserved_groups(which(structure == "E"))
+  assign_preserved_groups(which(structure == "S"))
+  for (i in which(structure == "C")) {
+    new_membership[i] <- next_id
+    next_id <- next_id + 1L
+  }
+  new_membership
 }

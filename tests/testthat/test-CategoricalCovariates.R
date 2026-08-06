@@ -81,8 +81,13 @@ test_that("AddiVortes fits with both a d=2 and a d=3 categorical covariate", {
   # Total encoded columns: 2 + 1 + 2 = 5
   expect_equal(length(fit$xCentres), 5L)
 
-  # catColIndices: columns 2 and 4 in the original data frame
-  expect_equal(sort(fit$catEncoding$catColIndices), c(2L, 4L))
+  # Categorical columns are moved to the end for membership grouping, so
+  # catColIndices refer to the reordered frame (x1, x2, cat2, cat3).
+  expect_equal(sort(fit$catEncoding$catColIndices), c(3L, 4L))
+  expect_equal(
+    fit$catEncoding$origColNames,
+    c("x1", "x2", "cat2", "cat3")
+  )
 })
 
 test_that("predict works after fitting with categorical covariates", {
@@ -199,6 +204,56 @@ test_that("unseen categories at predict time map to the reference level (all zer
   expect_true(all(enc[1, binary_cols] == 0))
   # Row 2: "low" -> cat3_low = 1 (non-reference), cat3_mid = 0
   expect_equal(unname(enc[2, binary_cols]), c(1, 0))
+})
+
+test_that("covariateStructure assigns distinct membership for auto-detected categories", {
+  x <- data.frame(
+    age = rnorm(10),
+    income = runif(10),
+    region = factor(sample(c("East", "North", "South", "West"), 10, replace = TRUE)),
+    product = factor(sample(c("Basic", "Deluxe", "Premium"), 10, replace = TRUE))
+  )
+
+  san <- AddiVortes:::covariateStructure_internal(
+    x, structure = rep("E", 4), membership = NULL, one.hot = FALSE
+  )
+
+  expect_equal(san$structure, c("E", "E", "C", "C"))
+  # Euclidean columns share a group; each categorical has its own group
+  expect_equal(san$membership[1], san$membership[2])
+  expect_true(san$membership[3] != san$membership[1])
+  expect_true(san$membership[4] != san$membership[1])
+  expect_true(san$membership[3] != san$membership[4])
+  expect_equal(colnames(san$data), c("age", "income", "region", "product"))
+})
+
+test_that("AddiVortes fits with Eskin distance when cat.onehot is FALSE", {
+  skip_on_cran()
+  withr::local_seed(87)
+  n <- 40
+  x <- data.frame(
+    x1 = rnorm(n),
+    x2 = runif(n),
+    cat2 = factor(sample(c("A", "B"), n, replace = TRUE)),
+    cat3 = factor(sample(c("low", "mid", "high"), n, replace = TRUE),
+                  levels = c("high", "low", "mid"))
+  )
+  y <- rnorm(n)
+
+  fit <- AddiVortes(y, x,
+    m = 5, totalMCMCIter = 30, mcmcBurnIn = 10,
+    cat.onehot = FALSE, showProgress = FALSE
+  )
+
+  expect_true(is.finite(fit$inSampleRmse))
+  # No one-hot expansion: still 4 covariate columns
+  expect_equal(length(fit$xCentres), 4L)
+  expect_null(fit$catEncoding)
+
+  x_new <- x[1:5, ]
+  preds <- predict(fit, x_new, showProgress = FALSE)
+  expect_equal(length(preds), 5L)
+  expect_true(all(is.finite(preds)))
 })
 
 test_that("categorical-only covariates (no numeric columns) work", {
@@ -324,8 +379,9 @@ test_that("catEncoding stores correct origNCols and origColNames", {
   )
 
   expect_equal(fit$catEncoding$origNCols, 3L)
-  expect_equal(fit$catEncoding$origColNames, c("x1", "grp", "x2"))
-  # grp (d=3) -> 2 binary cols; total encoded = 1 + 2 + 1 = 4
+  # Categorical columns are moved to the end before encoding
+  expect_equal(fit$catEncoding$origColNames, c("x1", "x2", "grp"))
+  # grp (d=3) -> 2 binary cols; total encoded = 1 + 1 + 2 = 4
   expect_equal(length(fit$xCentres), 4L)
 })
 
