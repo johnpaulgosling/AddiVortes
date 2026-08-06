@@ -282,6 +282,42 @@ test_that("In- and out-of-sample predict methods match", {
   expect_equal(preds_in_sample, preds_out_of_sample)
 })
 
+test_that("compiled ensemble predict matches the per-tessellation R reference", {
+  skip_on_cran()
+  withr::local_seed(99)
+  X <- matrix(rnorm(80), 16, 5)
+  Y <- rnorm(16)
+  fit <- AddiVortes(Y, X, m = 5, totalMCMCIter = 40, mcmcBurnIn = 10,
+                    showProgress = FALSE)
+  X_new <- matrix(rnorm(40), 8, 5)
+
+  preds_cpp <- predict(fit, X_new, showProgress = FALSE)
+
+  xNewScaled <- applyScaling_internal(X_new, fit$xCentres, fit$xRanges)
+  metricAug <- rep(fit$metric_red, fit$member_red)
+  xNewScaled[, metricAug != 0] <- X_new[, metricAug != 0]
+  nObs <- nrow(xNewScaled)
+  m <- length(fit$posteriorTess[[1]])
+  pred_mat <- matrix(0, nObs, length(fit$posteriorTess))
+  for (s in seq_along(fit$posteriorTess)) {
+    draw_pred <- numeric(nObs)
+    for (j in seq_len(m)) {
+      idx <- cellIndices(
+        xNewScaled,
+        fit$posteriorTess[[s]][[j]],
+        fit$posteriorDim[[s]][[j]],
+        fit$metric_red,
+        fit$member_red
+      )
+      draw_pred <- draw_pred + fit$posteriorPred[[s]][[j]][idx]
+    }
+    pred_mat[, s] <- draw_pred
+  }
+  preds_ref <- rowMeans(pred_mat) * fit$yRange + fit$yCentre
+
+  expect_equal(preds_cpp, preds_ref)
+})
+
 # --- Tests for plot.AddiVortes() ---
 
 test_that("plot.AddiVortes requires AddiVortes object", {

@@ -1077,4 +1077,144 @@ extern "C" {
     return result;
   }
 
+  // ---------------------------------------------------------------------------
+  // 3. addi_vortes_predict_cpp
+  // ---------------------------------------------------------------------------
+  // Predict from a fitted ensemble in a single R↔C++ crossing. Traverses all
+  // retained draws and all tessellations in compiled code, returning one
+  // n x numSamples prediction matrix (scaled response space, no noise).
+  //
+  // Arguments
+  //   xNew_sexp           n x p double matrix of scaled covariates (column-major)
+  //   posteriorTess_sexp  list[numSamples] of list[m] of matrices (nC_j x d_j)
+  //   posteriorDim_sexp   list[numSamples] of list[m] of integer vectors (1-based)
+  //   posteriorPred_sexp  list[numSamples] of list[m] of double vectors (mu values)
+  //   metric_sexp         reduced metric types (0=Euclidean, 1=Spherical, 2=Categorical)
+  //   member_sexp         reduced membership counts matching metric_sexp
+  //   showProgress_sexp   logical — whether to print draw-level progress
+  //
+  // Returns
+  //   n x numSamples double matrix of additive ensemble predictions
+  SEXP addi_vortes_predict_cpp(
+      SEXP xNew_sexp,
+      SEXP posteriorTess_sexp,
+      SEXP posteriorDim_sexp,
+      SEXP posteriorPred_sexp,
+      SEXP metric_sexp,
+      SEXP member_sexp,
+      SEXP showProgress_sexp) {
+
+    const double* xNew = REAL(xNew_sexp);
+    int n = Rf_nrows(xNew_sexp);
+    int p = Rf_ncols(xNew_sexp);
+    int numSamples = Rf_length(posteriorTess_sexp);
+    bool showProgress = LOGICAL(showProgress_sexp)[0];
+
+    if (numSamples == 0) {
+      SEXP empty = PROTECT(Rf_allocMatrix(REALSXP, n, 0));
+      UNPROTECT(1);
+      return empty;
+    }
+
+    int m = Rf_length(VECTOR_ELT(posteriorTess_sexp, 0));
+
+    int* metric_ptr = INTEGER(metric_sexp);
+    int* member_ptr = INTEGER(member_sexp);
+    int nMetric = Rf_length(metric_sexp);
+    if (nMetric != Rf_length(member_sexp)) {
+      Rf_error("metric and member vectors must have the same length");
+    }
+    std::vector<int> metric(metric_ptr, metric_ptr + nMetric);
+    std::vector<int> members(member_ptr, member_ptr + nMetric);
+
+    int mem_sum = 0;
+    for (int i = 0; i < nMetric; i++) mem_sum += members[i];
+    if (mem_sum != p) {
+      Rf_error("Sum of member counts must match number of columns in newdata");
+    }
+
+    // Category counts for raw categorical covariates, derived from newdata so
+    // behaviour matches the previous knnx_index / cellIndices predict path.
+    std::vector<int> metric_aug;
+    metric_aug.reserve(p);
+    for (int i = 0; i < nMetric; i++) {
+      for (int j = 0; j < members[i]; j++) {
+        metric_aug.push_back(metric[i]);
+      }
+    }
+    std::vector<int> ncats;
+    if (in_vector(2, metric)) {
+      for (int i = 0; i < p; i++) {
+        if (metric_aug[i] == 2) {
+          int max_val = 0;
+          for (int j = 0; j < n; j++) {
+            if (xNew[i * n + j] > max_val)
+              max_val = static_cast<int>(xNew[i * n + j]);
+          }
+          ncats.push_back(max_val);
+        }
+      }
+    }
+
+    SEXP outPredMatrix = PROTECT(Rf_allocMatrix(REALSXP, n, numSamples));
+    double* p_out = REAL(outPredMatrix);
+
+    int progressStep = std::max(1, numSamples / 10);
+
+    for (int s = 0; s < numSamples; s++) {
+      if (showProgress && ((s + 1) % progressStep == 0 || s + 1 == numSamples)) {
+        Rprintf("  Draw %d / %d\n", s + 1, numSamples);
+        R_FlushConsole();
+      }
+
+      SEXP sampleTess = VECTOR_ELT(posteriorTess_sexp, s);
+      SEXP sampleDim  = VECTOR_ELT(posteriorDim_sexp, s);
+      SEXP samplePred = VECTOR_ELT(posteriorPred_sexp, s);
+
+      if (Rf_length(sampleTess) != m ||
+          Rf_length(sampleDim) != m ||
+          Rf_length(samplePred) != m) {
+        Rf_error("Posterior sample %d has inconsistent tessellation counts", s + 1);
+      }
+
+      std::vector<double> drawPred(n, 0.0);
+
+      for (int j = 0; j < m; j++) {
+        SEXP tess_j = VECTOR_ELT(sampleTess, j);
+        SEXP dim_j  = VECTOR_ELT(sampleDim, j);
+        SEXP pred_j = VECTOR_ELT(samplePred, j);
+
+        int nC = Rf_nrows(tess_j);
+        int d  = Rf_ncols(tess_j);
+        if (Rf_length(dim_j) != d) {
+          Rf_error("Tessellation %d in sample %d has mismatched dim length",
+                   j + 1, s + 1);
+        }
+        if (Rf_length(pred_j) != nC) {
+          Rf_error("Tessellation %d in sample %d has mismatched pred length",
+                   j + 1, s + 1);
+        }
+
+        int* pd = INTEGER(dim_j);
+        std::vector<int> dim1(pd, pd + d);
+        const double* centres = REAL(tess_j);
+        const double* mu = REAL(pred_j);
+
+        std::vector<int> idx = knn1_internal(
+          xNew, n, p,
+          centres, nC, d, dim1,
+          metric, members, ncats);
+
+        for (int obs = 0; obs < n; obs++)
+          drawPred[obs] += mu[idx[obs]];
+      }
+
+      for (int obs = 0; obs < n; obs++)
+        p_out[obs + s * n] = drawPred[obs];
+    }
+
+    UNPROTECT(1);
+    return outPredMatrix;
+  }
+
 } // extern "C" (second block)
