@@ -1,5 +1,23 @@
 # AddiVortes News
 
+## AddiVortes 0.7.1
+
+* Fit and predict hot paths adopt several lessons from the Rust `addivortes`
+  engine while preserving the sampled chain bit-for-bit on the fixed-seed
+  Friedman and existing golden tests:
+  - incremental cell reassignment with cached winning distance keys for
+    add/remove/change-centre moves;
+  - active-dimension-only Euclidean nearest-centre search, with a specialised
+    all-Euclidean fast path;
+  - row-major packing of the covariate matrix for the nearest-neighbour loop;
+  - preallocated MCMC scratch buffers and deferred packaging of posterior
+    draws into R lists;
+  - flattened posterior traversal in `predict()`;
+  - tighter helpers (binary-column masks, precomputed categorical column
+    maps, no per-proposal `which_elem` allocations).
+* Added a fixed-seed Friedman benchmark test that locks in-sample and test
+  RMSE and reports fit/predict timings.
+
 ## AddiVortes 0.7.0
 
 * `predict()` now evaluates the full posterior ensemble in a single C++ call
