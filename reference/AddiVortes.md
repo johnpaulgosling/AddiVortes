@@ -9,15 +9,18 @@ the RMSE value for the test samples.
 
 The function can handle multiple types of covariates, including
 continuous, spherical and categorical. Categorical covariates are
-automatically detected and one-hot encoded, with the first level of each
-categorical variable used as the reference category. The `catScaling`
-parameter allows control over the weight of categorical differences in
-distance calculations. For spherical covariates, the function assumes
-that the final spherical dimension corresponds to the polar angle, which
-has a range of 0 to 2\*pi. The `metric` parameter can be used to specify
-the type of each covariate (Euclidean, Spherical, or Categorical), and
-the `members` parameter can indicate membership of covariates into
-different subspaces when using multiple spheres in covariate space.
+automatically detected. By default (`cat.onehot = TRUE`) they are
+one-hot encoded, with the first level of each categorical variable used
+as the reference category; the `catScaling` parameter then controls the
+weight of categorical differences in distance calculations. Setting
+`cat.onehot = FALSE` instead keeps each categorical covariate as a
+single integer-coded column and uses Eskin distance (Eskin et al.,
+2002). For spherical covariates, the function assumes that the final
+spherical dimension corresponds to the polar angle, which has a range of
+0 to 2\*pi. The `metric` parameter can be used to specify the type of
+each covariate (Euclidean, Spherical, or Categorical), and the `members`
+parameter can indicate membership of covariates into different subspaces
+when using multiple spheres in covariate space.
 
 ## Usage
 
@@ -128,7 +131,14 @@ AddiVortes(
 
 - cat.onehot:
 
-  Should categorical covariates be one-hot encoded? Default `TRUE`.
+  Should categorical covariates be one-hot encoded? Default `TRUE`. When
+  `TRUE`, each categorical covariate with *d* levels is expanded to *d*
+  − 1 binary indicators and distances are Euclidean (weighted by
+  `catScaling`). When `FALSE`, categories are kept as a single
+  integer-coded column and mismatches use Eskin distance (Eskin et al.,
+  2002), with squared cost \\2 / d^2\\ when levels differ and 0 when
+  they match; `catScaling` is then ignored. See the categorical
+  covariates vignette for a comparison and guidance on which to use.
 
 - showProgress:
 

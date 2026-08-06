@@ -60,7 +60,7 @@
 
       <h1>Using Categorical Covariates with AddiVortes</h1>
                         <h4 data-toc-skip class="author">John Paul
-Gosling and Adam Stone</h4>
+Gosling, Adam Stone, and Andy Iskauskas</h4>
             
             <h4 data-toc-skip class="date">2026-08-06</h4>
       
@@ -74,10 +74,22 @@ Gosling and Adam Stone</h4>
 <strong>categorical covariates</strong> — variables that take a discrete
 set of named levels, such as region, product type, or treatment group.
 Because Voronoi tessellations require numerical distances between
-points, categorical variables must first be converted to numbers.
-<code>AddiVortes</code> does this automatically using <strong>one-hot
-encoding</strong>, and this vignette explains the encoding in
-detail.</p>
+points, categorical variables need a distance measure.
+<code>AddiVortes</code> offers two approaches, controlled by the
+<code>cat.onehot</code> argument:</p>
+<ul>
+<li>
+<strong>One-hot encoding</strong> (<code>cat.onehot = TRUE</code>,
+the default): each categorical variable is expanded into binary
+indicator columns, and distances are Euclidean.</li>
+<li>
+<strong>Eskin distance</strong> (<code>cat.onehot = FALSE</code>):
+categories are kept as a single integer-coded column, and mismatches use
+the Eskin et al. (2002) distance.</li>
+</ul>
+<p>Both approaches are applied automatically to any column in
+<code>x</code> that is of type <code>character</code> or
+<code>factor</code>. You do not need to pre-process your data.</p>
 <div class="section level3">
 <h3 id="what-is-one-hot-encoding">1. What is One-Hot Encoding?<a class="anchor" aria-label="anchor" href="#what-is-one-hot-encoding"></a>
 </h3>
@@ -129,9 +141,6 @@ convention, the first level in alphabetical order), and the remaining
 represented by all zeros. Using <em>d − 1</em> rather than <em>d</em>
 columns avoids perfect collinearity while retaining full information
 about group membership.</p>
-<p><code>AddiVortes</code> applies this encoding automatically to any
-column in <code>x</code> that is of type <code>character</code> or
-<code>factor</code>. You do not need to pre-process your data.</p>
 </div>
 <div class="section level3">
 <h3 id="the-catscaling-parameter">2. The <code>catScaling</code> Parameter<a class="anchor" aria-label="anchor" href="#the-catscaling-parameter"></a>
@@ -158,14 +167,114 @@ column <code>region</code> with levels <code>"East"</code>,
 <code>"North"</code>, <code>"South"</code>, <code>"West"</code> produces
 columns <code>region_North</code>, <code>region_South</code>,
 <code>region_West</code> (with <code>"East"</code> as reference).</p>
+<p><code>catScaling</code> only applies when
+<code>cat.onehot = TRUE</code>. With Eskin distance it has no
+effect.</p>
 </div>
 <div class="section level3">
-<h3 id="a-synthetic-example">3. A Synthetic Example<a class="anchor" aria-label="anchor" href="#a-synthetic-example"></a>
+<h3 id="eskin-distance-cat-onehot-false">3. Eskin Distance (<code>cat.onehot = FALSE</code>)<a class="anchor" aria-label="anchor" href="#eskin-distance-cat-onehot-false"></a>
+</h3>
+<p>Instead of expanding categories into binary columns, you can keep
+each categorical covariate as a single integer-coded column and measure
+mismatches with <strong>Eskin distance</strong> (Eskin et al., 2002).
+Set <code>cat.onehot = FALSE</code> when calling
+<code><a href="../reference/AddiVortes.html">AddiVortes()</a></code>:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit_eskin</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AddiVortes.html">AddiVortes</a></span><span class="op">(</span></span>
+<span>  y <span class="op">=</span> <span class="va">y_train</span>,</span>
+<span>  x <span class="op">=</span> <span class="va">x_train</span>,</span>
+<span>  cat.onehot <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  showProgress <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>For a categorical variable with <em>d</em> levels, the squared Eskin
+contribution between two observations is:</p>
+<ul>
+<li>
+<strong>0</strong> if the category levels match;</li>
+<li>
+<strong>2 / <em>d</em>²</strong> if the category levels differ.</li>
+</ul>
+<p>So a mismatch on a binary covariate (<em>d</em> = 2) costs 2/4 = 0.5,
+while a mismatch on a four-level covariate costs 2/16 = 0.125.
+High-cardinality categories therefore contribute less to the overall
+distance when they disagree, which reflects the idea that a random
+mismatch is more likely when there are many levels.</p>
+<p>Because the covariate is not expanded, the model dimension stays the
+same as the number of original columns. That can be attractive when
+categories have many levels and one-hot encoding would create a large
+number of binary columns.</p>
+</div>
+<div class="section level3">
+<h3 id="choosing-between-one-hot-and-eskin">4. Choosing Between One-Hot and Eskin<a class="anchor" aria-label="anchor" href="#choosing-between-one-hot-and-eskin"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th></th>
+<th>One-hot (<code>cat.onehot = TRUE</code>)</th>
+<th>Eskin (<code>cat.onehot = FALSE</code>)</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Representation</td>
+<td>
+<em>d</em> − 1 binary columns per categorical variable</td>
+<td>One integer-coded column per categorical variable</td>
+</tr>
+<tr class="even">
+<td>Distance</td>
+<td>Euclidean on the binary indicators</td>
+<td>Eskin: mismatch cost 2/<em>d</em>²</td>
+</tr>
+<tr class="odd">
+<td>Weighting</td>
+<td>Controlled by <code>catScaling</code>
+</td>
+<td>Built into the 2/<em>d</em>² formula; <code>catScaling</code>
+ignored</td>
+</tr>
+<tr class="even">
+<td>High cardinality</td>
+<td>Creates many columns</td>
+<td>Keeps one column; mismatches are down-weighted</td>
+</tr>
+<tr class="odd">
+<td>Prediction metadata</td>
+<td>Encoding stored in <code>fit$catEncoding</code>
+</td>
+<td>Categories converted to numeric codes on the fly</td>
+</tr>
+<tr class="even">
+<td>Unseen levels</td>
+<td>Treated as the reference level</td>
+<td>Prefer factors with a fixed level set so codes stay consistent</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Practical guidance:</strong></p>
+<ul>
+<li>Use <strong>one-hot</strong> (the default) when you want an
+explicit, tunable weight for categorical differences, or when there are
+few levels per variable.</li>
+<li>Use <strong>Eskin</strong> when categories have many levels, when
+you want to avoid expanding the covariate dimension, or when you prefer
+a mismatch cost that shrinks with cardinality.</li>
+<li>For Eskin fits, supply categorical covariates as
+<code>factor</code>s with a consistent level set in training and
+prediction data so integer codes align.</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="a-synthetic-example">5. A Synthetic Example<a class="anchor" aria-label="anchor" href="#a-synthetic-example"></a>
 </h3>
 <p>We create a dataset of 400 observations with two continuous
 covariates and two categorical covariates. The response variable depends
 on all four:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://johnpaulgosling.github.io/AddiVortes/">AddiVortes</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
@@ -193,17 +302,16 @@ on all four:</p>
 <span>  <span class="va">product_effect</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, sd <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
 <p>Note that <code>region</code> has 4 levels and <code>product</code>
-has 3 levels. When passed to <code>AddiVortes</code> as character
-columns, they will be encoded as 3 and 2 binary columns respectively —
-for a total of 5 extra columns alongside the 2 continuous
-covariates.</p>
+has 3 levels. With one-hot encoding they become 3 and 2 binary columns
+respectively — for a total of 5 extra columns alongside the 2 continuous
+covariates. With Eskin distance they remain 2 categorical columns.</p>
 </div>
 <div class="section level3">
-<h3 id="inspecting-the-encoding">4. Inspecting the Encoding<a class="anchor" aria-label="anchor" href="#inspecting-the-encoding"></a>
+<h3 id="inspecting-the-encoding">6. Inspecting the Encoding<a class="anchor" aria-label="anchor" href="#inspecting-the-encoding"></a>
 </h3>
 <p>We can call the internal encoding function directly to see exactly
-what the encoded matrix looks like before fitting the model.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+what the one-hot encoded matrix looks like before fitting the model.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Show the first few rows of x before encoding</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">x</span>, <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        age   income region product</span></span>
@@ -212,7 +320,7 @@ what the encoded matrix looks like before fitting the model.</p>
 <span><span class="co">#&gt; 3 55.58708 32.12721  North Premium</span></span>
 <span><span class="co">#&gt; 4 40.70508 24.69937   East Premium</span></span>
 <span><span class="co">#&gt; 5 41.29288 46.27963   East   Basic</span></span></code></pre></div>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Manually inspect the encoding applied by AddiVortes</span></span>
 <span><span class="va">enc_result</span> <span class="op">&lt;-</span> <span class="fu">AddiVortes</span><span class="fu">:::</span><span class="fu">encodeCategories_internal</span><span class="op">(</span><span class="va">x</span>, catScaling <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">enc_result</span><span class="op">$</span><span class="va">encoded</span>, <span class="fl">5</span><span class="op">)</span></span>
@@ -239,12 +347,13 @@ When <code>catScaling = 1</code> all indicator columns and the
 continuous columns span a comparable range inside the model.</p>
 </div>
 <div class="section level3">
-<h3 id="fitting-the-model">5. Fitting the Model<a class="anchor" aria-label="anchor" href="#fitting-the-model"></a>
+<h3 id="fitting-the-model-one-hot">7. Fitting the Model (One-Hot)<a class="anchor" aria-label="anchor" href="#fitting-the-model-one-hot"></a>
 </h3>
 <p>Fitting the model is identical to the standard workflow — simply pass
 the data frame with character or factor columns directly.
-<code>AddiVortes</code> handles the encoding internally.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code>AddiVortes</code> handles the encoding internally
+(<code>cat.onehot = TRUE</code> is the default).</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Split into training and test sets</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span><span class="va">train_idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">300</span><span class="op">)</span></span>
@@ -261,9 +370,10 @@ the data frame with character or factor columns directly.
 <span>  totalMCMCIter <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>  mcmcBurnIn <span class="op">=</span> <span class="fl">100</span>,</span>
 <span>  catScaling <span class="op">=</span> <span class="fl">1</span>, <span class="co"># default: binary columns span [0, 1]</span></span>
+<span>  cat.onehot <span class="op">=</span> <span class="cn">TRUE</span>, <span class="co"># default: one-hot encoding</span></span>
 <span>  showProgress <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"In-sample RMSE:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">inSampleRmse</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; In-sample RMSE: 2.206</span></span>
 <span></span>
@@ -288,18 +398,18 @@ is automatically used when making predictions, so new data passed to
 levels.</p>
 </div>
 <div class="section level3">
-<h3 id="making-predictions">6. Making Predictions<a class="anchor" aria-label="anchor" href="#making-predictions"></a>
+<h3 id="making-predictions">8. Making Predictions<a class="anchor" aria-label="anchor" href="#making-predictions"></a>
 </h3>
 <p>Predictions on new data work in the usual way. If the new data
 contains the same categorical levels as the training data, the encoding
 is applied consistently.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">preds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">x_test</span>, showProgress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">preds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">x_test</span>, showProgress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rmse_test</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">y_test</span> <span class="op">-</span> <span class="va">preds</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Test RMSE:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">rmse_test</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Test RMSE: 3.085</span></span></code></pre></div>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Colour observations by product category</span></span>
 <span><span class="va">prod_cols</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Basic"</span> <span class="op">=</span> <span class="st">"steelblue"</span>, <span class="st">"Premium"</span> <span class="op">=</span> <span class="st">"darkorange"</span>, <span class="st">"Deluxe"</span> <span class="op">=</span> <span class="st">"darkgreen"</span><span class="op">)</span></span>
 <span><span class="va">point_cols</span> <span class="op">&lt;-</span> <span class="va">prod_cols</span><span class="op">[</span><span class="va">x_test</span><span class="op">$</span><span class="va">product</span><span class="op">]</span></span>
@@ -319,14 +429,15 @@ is applied consistently.</p>
 <p><img src="categorical_files/figure-html/plot_predictions-1.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level3">
-<h3 id="handling-unseen-category-levels">7. Handling Unseen Category Levels<a class="anchor" aria-label="anchor" href="#handling-unseen-category-levels"></a>
+<h3 id="handling-unseen-category-levels">9. Handling Unseen Category Levels<a class="anchor" aria-label="anchor" href="#handling-unseen-category-levels"></a>
 </h3>
-<p>At prediction time, if a new observation contains a category level
-that was not seen during training, <code>AddiVortes</code> treats it as
-the <strong>reference level</strong> (all binary indicators set to
-zero). This is a sensible default: the model cannot infer anything about
-a previously unseen level and falls back to the baseline.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<p>At prediction time under one-hot encoding, if a new observation
+contains a category level that was not seen during training,
+<code>AddiVortes</code> treats it as the <strong>reference
+level</strong> (all binary indicators set to zero). This is a sensible
+default: the model cannot infer anything about a previously unseen level
+and falls back to the baseline.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create a test point with an unseen product level "Luxury"</span></span>
 <span><span class="va">x_new</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  age <span class="op">=</span> <span class="fl">45</span>,</span>
@@ -335,9 +446,9 @@ a previously unseen level and falls back to the baseline.</p>
 <span>  product <span class="op">=</span> <span class="st">"Luxury"</span>, <span class="co"># unseen level</span></span>
 <span>  stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pred_new</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">x_new</span>, showProgress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pred_new</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">x_new</span>, showProgress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span></span>
 <span>  <span class="st">"Prediction for unseen category 'Luxury' (treated as 'Basic'):"</span>,</span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">pred_new</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span></span>
@@ -345,14 +456,14 @@ a previously unseen level and falls back to the baseline.</p>
 <span><span class="co">#&gt; Prediction for unseen category 'Luxury' (treated as 'Basic'): 25.954</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="effect-of-catscaling">8. Effect of <code>catScaling</code><a class="anchor" aria-label="anchor" href="#effect-of-catscaling"></a>
+<h3 id="effect-of-catscaling">10. Effect of <code>catScaling</code><a class="anchor" aria-label="anchor" href="#effect-of-catscaling"></a>
 </h3>
 <p>The <code>catScaling</code> parameter controls how much influence
-categorical differences have in the distance calculations. Here we fit
-two models — one with <code>catScaling = 1</code> (equal weight) and one
-with <code>catScaling = 2</code> (double weight for categorical
-differences) — and compare their test RMSEs.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+categorical differences have in the distance calculations under one-hot
+encoding. Here we fit two models — one with <code>catScaling = 1</code>
+(equal weight) and one with <code>catScaling = 2</code> (double weight
+for categorical differences) — and compare their test RMSEs.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_cs2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AddiVortes.html">AddiVortes</a></span><span class="op">(</span></span>
 <span>  y <span class="op">=</span> <span class="va">y_train</span>,</span>
 <span>  x <span class="op">=</span> <span class="va">x_train</span>,</span>
@@ -360,11 +471,12 @@ differences) — and compare their test RMSEs.</p>
 <span>  totalMCMCIter <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>  mcmcBurnIn <span class="op">=</span> <span class="fl">100</span>,</span>
 <span>  catScaling <span class="op">=</span> <span class="fl">2</span>, <span class="co"># give categorical differences twice as much weight</span></span>
+<span>  cat.onehot <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  showProgress <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">preds_cs2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_cs2</span>, <span class="va">x_test</span>, showProgress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">preds_cs2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_cs2</span>, <span class="va">x_test</span>, showProgress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Test RMSE (catScaling = 1):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">rmse_test</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Test RMSE (catScaling = 1): 3.085</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Test RMSE (catScaling = 2):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">y_test</span> <span class="op">-</span> <span class="va">preds_cs2</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
@@ -375,31 +487,103 @@ so increasing <code>catScaling</code> may help the model focus more on
 categorical group membership.</p>
 </div>
 <div class="section level3">
-<h3 id="summary-of-key-points">9. Summary of Key Points<a class="anchor" aria-label="anchor" href="#summary-of-key-points"></a>
+<h3 id="comparing-one-hot-and-eskin-distances">11. Comparing One-Hot and Eskin Distances<a class="anchor" aria-label="anchor" href="#comparing-one-hot-and-eskin-distances"></a>
+</h3>
+<p>We now fit the same training data with Eskin distance and compare
+test RMSE with the default one-hot model. For a fair comparison we keep
+<code>m</code>, MCMC length, and burn-in identical.</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Use factors with fixed levels so integer codes stay aligned at prediction</span></span>
+<span><span class="va">x_train_f</span> <span class="op">&lt;-</span> <span class="va">x_train</span></span>
+<span><span class="va">x_test_f</span> <span class="op">&lt;-</span> <span class="va">x_test</span></span>
+<span><span class="va">x_train_f</span><span class="op">$</span><span class="va">region</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">x_train</span><span class="op">$</span><span class="va">region</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"East"</span>, <span class="st">"North"</span>, <span class="st">"South"</span>, <span class="st">"West"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">x_train_f</span><span class="op">$</span><span class="va">product</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">x_train</span><span class="op">$</span><span class="va">product</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Basic"</span>, <span class="st">"Deluxe"</span>, <span class="st">"Premium"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">x_test_f</span><span class="op">$</span><span class="va">region</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">x_test</span><span class="op">$</span><span class="va">region</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">x_train_f</span><span class="op">$</span><span class="va">region</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">x_test_f</span><span class="op">$</span><span class="va">product</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">x_test</span><span class="op">$</span><span class="va">product</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">x_train_f</span><span class="op">$</span><span class="va">product</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">fit_eskin</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/AddiVortes.html">AddiVortes</a></span><span class="op">(</span></span>
+<span>  y <span class="op">=</span> <span class="va">y_train</span>,</span>
+<span>  x <span class="op">=</span> <span class="va">x_train_f</span>,</span>
+<span>  m <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  totalMCMCIter <span class="op">=</span> <span class="fl">500</span>,</span>
+<span>  mcmcBurnIn <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  cat.onehot <span class="op">=</span> <span class="cn">FALSE</span>, <span class="co"># Eskin distance on integer-coded categories</span></span>
+<span>  showProgress <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">preds_eskin</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_eskin</span>, <span class="va">x_test_f</span>, showProgress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">rmse_eskin</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">y_test</span> <span class="op">-</span> <span class="va">preds_eskin</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Test RMSE (one-hot, catScaling = 1):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">rmse_test</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Test RMSE (one-hot, catScaling = 1): 3.085</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Test RMSE (Eskin):                   "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">rmse_eskin</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Test RMSE (Eskin):                    3.107</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"In-sample RMSE (one-hot):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">inSampleRmse</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; In-sample RMSE (one-hot): 2.206</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"In-sample RMSE (Eskin):  "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">fit_eskin</span><span class="op">$</span><span class="va">inSampleRmse</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; In-sample RMSE (Eskin):   2.129</span></span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">y_test</span>, <span class="va">preds</span>,</span>
+<span>  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/adjustcolor.html" class="external-link">adjustcolor</a></span><span class="op">(</span><span class="st">"steelblue"</span>, alpha.f <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span>, pch <span class="op">=</span> <span class="fl">19</span>, cex <span class="op">=</span> <span class="fl">0.8</span>,</span>
+<span>  xlab <span class="op">=</span> <span class="st">"Observed values"</span>,</span>
+<span>  ylab <span class="op">=</span> <span class="st">"Predicted values"</span>,</span>
+<span>  main <span class="op">=</span> <span class="st">"One-hot vs Eskin: predicted vs observed"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/points.html" class="external-link">points</a></span><span class="op">(</span><span class="va">y_test</span>, <span class="va">preds_eskin</span>,</span>
+<span>  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/adjustcolor.html" class="external-link">adjustcolor</a></span><span class="op">(</span><span class="st">"darkorange"</span>, alpha.f <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span>, pch <span class="op">=</span> <span class="fl">17</span>, cex <span class="op">=</span> <span class="fl">0.8</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, lwd <span class="op">=</span> <span class="fl">2</span>, lty <span class="op">=</span> <span class="fl">2</span>, col <span class="op">=</span> <span class="st">"grey40"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topleft"</span>,</span>
+<span>  legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"One-hot"</span>, <span class="st">"Eskin"</span><span class="op">)</span>,</span>
+<span>  col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"steelblue"</span>, <span class="st">"darkorange"</span><span class="op">)</span>,</span>
+<span>  pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">19</span>, <span class="fl">17</span><span class="op">)</span>, bty <span class="op">=</span> <span class="st">"n"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><img src="categorical_files/figure-html/plot_eskin_comparison-1.png" class="r-plt" alt="" width="672" style="display: block; margin: auto;"></p>
+<p>Neither method is universally better: one-hot gives a flexible
+Euclidean embedding whose weight you can tune with
+<code>catScaling</code>, while Eskin keeps the original dimension and
+scales mismatch cost by cardinality. On a given problem, comparing the
+two on a held-out set (as above) is a practical way to choose.</p>
+</div>
+<div class="section level3">
+<h3 id="summary-of-key-points">12. Summary of Key Points<a class="anchor" aria-label="anchor" href="#summary-of-key-points"></a>
 </h3>
 <ul>
 <li>Pass <code>character</code> or <code>factor</code> columns directly
-in the covariate data frame; <code>AddiVortes</code> encodes them
+in the covariate data frame; <code>AddiVortes</code> detects them
 automatically.</li>
 <li>
-<strong>One-hot encoding</strong>: a categorical variable with
-<em>d</em> levels is converted to <em>d − 1</em> binary (0/1) indicator
-columns.</li>
-<li>The <strong>reference level</strong> is the alphabetically first
-level; all its indicators are zero.</li>
+<strong>One-hot encoding</strong> (<code>cat.onehot = TRUE</code>,
+default): a categorical variable with <em>d</em> levels is converted to
+<em>d − 1</em> binary (0/1) indicator columns.</li>
+<li>
+<strong>Eskin distance</strong> (<code>cat.onehot = FALSE</code>):
+categories stay as one integer-coded column; a mismatch costs
+2/<em>d</em>² (Eskin et al., 2002).</li>
+<li>The <strong>reference level</strong> under one-hot is the
+alphabetically first level; all its indicators are zero.</li>
 <li>Indicator columns are named
 <code>&lt;original_column&gt;_&lt;level&gt;</code>
 (e.g. <code>product_Premium</code>).</li>
 <li>
 <strong><code>catScaling</code></strong> (default 1) controls the
-weight given to categorical differences relative to continuous
-differences. Increase it to give categories more influence; decrease it
-to give them less.</li>
-<li>The encoding metadata is stored in <code>fit$catEncoding</code> and
-applied automatically to new data in <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>.</li>
-<li>Unseen category levels at prediction time are treated as the
-reference level.</li>
+weight given to categorical differences under one-hot encoding. It is
+ignored when <code>cat.onehot = FALSE</code>.</li>
+<li>One-hot encoding metadata is stored in <code>fit$catEncoding</code>
+and applied automatically to new data in <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>.</li>
+<li>Unseen category levels at prediction time under one-hot encoding are
+treated as the reference level.</li>
+<li>For Eskin fits, prefer <code>factor</code> covariates with a fixed
+level set shared by training and prediction data.</li>
 </ul>
+</div>
+<div class="section level3">
+<h3 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h3>
+<p>Eskin, E., Arnold, A., Prerau, M., Portnoy, L. and Stolfo, S. (2002).
+A geometric framework for unsupervised anomaly detection. In
+<em>Applications of Data Mining in Computer Security</em>, pp. 77–101.
+Springer.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

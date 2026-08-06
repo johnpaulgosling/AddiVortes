@@ -257,7 +257,7 @@ fit_sph_new <- AddiVortes(
   showProgress = FALSE
 )
 #> Error in `covariateStructure_internal()`:
-#> ! More than one spherical parameter in membership group 2 has range >pi.
+#> ! More than one spherical parameter in membership group 1 has range >pi.
 ```
 
 To recitfy this, we provide `AddiVortes` with an additional argument,
