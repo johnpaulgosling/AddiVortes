@@ -252,10 +252,7 @@ summary.AddiVortes <- function(object, ...) {
 #'   accounts only for uncertainty in the mean (similar to `lm`'s confidence interval).
 #'   The alternative `"prediction"` also includes the model's error variance,
 #'   producing wider intervals (similar to `lm`'s prediction interval).
-#' @param showProgress Logical; if TRUE, progress is shown during prediction.
-#' @param parallel Logical; retained for backwards compatibility. Ignored:
-#'   prediction now runs as a single compiled call over the full ensemble.
-#' @param cores Ignored; retained for backwards compatibility.
+#' @param showProgress Logical; if TRUE, a progress bar is shown during prediction.
 #' @param ... Further arguments passed to or from other methods (currently
 #' unused).
 #'
@@ -318,8 +315,6 @@ predict.AddiVortes <- function(object, newdata,
                                quantiles = c(0.025, 0.975),
                                interval = c("credible", "prediction"),
                                showProgress = interactive(),
-                               parallel = TRUE,
-                               cores = NULL,
                                ...) {
   type <- match.arg(type)
   interval <- match.arg(interval)
@@ -428,7 +423,7 @@ predict.AddiVortes <- function(object, newdata,
     }
   }
 
-  if (showProgress) cat("\nPrediction generation completed.\n\n")
+  if (showProgress) cat("Done.\n\n")
 
   # --- Unscale and summarise predictions ---
   if (type == "response") {

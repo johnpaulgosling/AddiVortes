@@ -11,8 +11,6 @@
   quantiles = c(0.025, 0.975),
   interval = c("credible", "prediction"),
   showProgress = interactive(),
-  parallel = TRUE,
-  cores = NULL,
   ...
 )
 }
@@ -35,12 +33,7 @@ accounts only for uncertainty in the mean (similar to \code{lm}'s confidence int
 The alternative \code{"prediction"} also includes the model's error variance,
 producing wider intervals (similar to \code{lm}'s prediction interval).}
 
-\item{showProgress}{Logical; if TRUE, progress is shown during prediction.}
-
-\item{parallel}{Logical; retained for backwards compatibility. Ignored:
-prediction now runs as a single compiled call over the full ensemble.}
-
-\item{cores}{Ignored; retained for backwards compatibility.}
+\item{showProgress}{Logical; if TRUE, a progress bar is shown during prediction.}
 
 \item{...}{Further arguments passed to or from other methods (currently
 unused).}

@@ -156,6 +156,31 @@ test_that("AddiVortes startup output reports categorical encoding", {
   )
 })
 
+test_that("fit and predict show single-line progress bars", {
+  skip_on_cran()
+  withr::local_seed(21)
+  X <- matrix(rnorm(40), 8, 5)
+  Y <- rnorm(8)
+
+  fit_out <- capture.output(
+    fit <- AddiVortes(Y, X, m = 2, totalMCMCIter = 20, mcmcBurnIn = 5,
+                      showProgress = TRUE)
+  )
+  fit_text <- paste(fit_out, collapse = "\n")
+  expect_match(fit_text, "MCMC \\[")
+  expect_match(fit_text, "100%")
+  expect_match(fit_text, "Done\\.")
+
+  pred_out <- capture.output(
+    preds <- predict(fit, X, showProgress = TRUE)
+  )
+  pred_text <- paste(pred_out, collapse = "\n")
+  expect_match(pred_text, "Predict \\[")
+  expect_match(pred_text, "100%")
+  expect_match(pred_text, "Done\\.")
+  expect_length(preds, 8)
+})
+
 # --- Tests for predict.AddiVortes() ---
 
 test_that("predict.AddiVortes requires AddiVortes object", {

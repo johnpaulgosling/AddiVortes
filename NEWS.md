@@ -8,10 +8,12 @@
   hundreds of thousands of times per `predict()`), which dominated runtime;
   the compiled traversal removes that overhead with no change to the
   prediction algorithm.
-* The `parallel` and `cores` arguments to `predict()` are retained for
-  backwards compatibility but are ignored.
-* Removed the `parallel` and `pbapply` package dependencies, which were only
-  used by the old R-side prediction loop.
+* Removed the `parallel` and `cores` arguments from `predict()`, along with
+  the `parallel` and `pbapply` package dependencies that only served the old
+  R-side prediction loop.
+* Fit and predict now share a single-line C++ progress bar (percentage and
+  step counts) when `showProgress = TRUE`, instead of sparse multi-line
+  status prints.
 
 ## AddiVortes 0.6.9
 
