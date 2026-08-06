@@ -597,24 +597,7 @@ plotBurnInTrace_internal <- function(trace_data, y, ylab, main, col, legend_digi
   }
 }
 
-#' @title Trace Plot Diagnostics
-#'
-#' @description
-#' Creates trace plots for MCMC diagnostics of a fitted model.
-#'
-#' @param x A fitted model object.
-#' @param ... Further arguments passed to methods.
-#'
-#' @return
-#' This function is called for its side effect of creating plots and returns
-#' `NULL` invisibly.
-#'
-#' @export
-traceplots <- function(x, ...) {
-  UseMethod("traceplots")
-}
-
-#' @title Trace Plot Diagnostics for AddiVortes
+#' @title Trace Plot Method for AddiVortes
 #'
 #' @description
 #' Displays four MCMC trace plots for a fitted `AddiVortes` object:
@@ -646,6 +629,9 @@ traceplots <- function(x, ...) {
 #'
 #' @importFrom graphics plot abline legend par text
 #' @importFrom stats sd
+#' @name traceplots.AddiVortes
+#' @aliases traceplots
+#' @usage \method{traceplots}{AddiVortes}(x, ask = FALSE, ...)
 #' @export
 #' @method traceplots AddiVortes
 #'
@@ -713,6 +699,14 @@ traceplots.AddiVortes <- function(x, ask = FALSE, ...) {
   )
 
   invisible(NULL)
+}
+
+# S3 generic for dispatch; documented only via the AddiVortes method.
+#' @export
+#' @rdname traceplots.AddiVortes
+#' @usage NULL
+traceplots <- function(x, ...) {
+  UseMethod("traceplots")
 }
 
 #' @title Plot Method for AddiVortes
