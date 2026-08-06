@@ -95,7 +95,7 @@ test_that("in-sample and predicted values agree on the training data", {
       m = 15, totalMCMCIter = 200, mcmcBurnIn = 60,
       metric = metric, showProgress = FALSE
     )
-    preds <- predict(fit, as.matrix(x), showProgress = FALSE, parallel = FALSE)
+    preds <- predict(fit, as.matrix(x), showProgress = FALSE)
     reRmse <- sqrt(mean((y - preds)^2))
     abs(fit$inSampleRmse - reRmse)
   }

@@ -74,7 +74,7 @@ decrease below 1 to give them less weight. Binary indicator columns are named
 
 \item{cat.onehot}{Should categorical covariates be one-hot encoded? Default \code{TRUE}.}
 
-\item{showProgress}{Logical; if TRUE, progress bars and messages are shown during fitting.}
+\item{showProgress}{Logical; if TRUE, a progress bar is shown during fitting.}
 }
 \value{
 An AddiVortes object containing the posterior samples of the

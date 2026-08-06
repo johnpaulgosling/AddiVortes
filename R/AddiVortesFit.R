@@ -253,9 +253,6 @@ summary.AddiVortes <- function(object, ...) {
 #'   The alternative `"prediction"` also includes the model's error variance,
 #'   producing wider intervals (similar to `lm`'s prediction interval).
 #' @param showProgress Logical; if TRUE, a progress bar is shown during prediction.
-#' @param parallel Logical; if TRUE (default), predictions are computed in parallel.
-#' @param cores The number of CPU cores to use for parallel processing. If NULL (default),
-#'  it defaults to one less than the total number of available cores.
 #' @param ... Further arguments passed to or from other methods (currently
 #' unused).
 #'
@@ -268,6 +265,9 @@ summary.AddiVortes <- function(object, ...) {
 #' This function relies on the internal helper function `applyScaling_internal`
 #' being available in the environment, which is used by the main
 #' `AddiVortes` function.
+#'
+#' Predictions traverse all retained draws and tessellations in a single C++
+#' call, avoiding repeated R/C++ boundary crossings per tessellation.
 #'
 #' When `interval = "prediction"` and `type = "quantile"`, the function samples
 #' additional Gaussian noise with variance equal to the sampled sigma squared
@@ -307,9 +307,7 @@ summary.AddiVortes <- function(object, ...) {
 #' mean(pred_pred[, 2] - pred_pred[, 1]) > mean(pred_conf[, 2] - pred_conf[, 1])
 #' }
 #'
-#' @importFrom parallel makeCluster stopCluster parLapply detectCores
-#' @importFrom pbapply pblapply
-#' @importFrom stats rnorm
+#' @importFrom stats rnorm quantile
 #' @export
 #' @method predict AddiVortes
 predict.AddiVortes <- function(object, newdata,
@@ -317,8 +315,6 @@ predict.AddiVortes <- function(object, newdata,
                                quantiles = c(0.025, 0.975),
                                interval = c("credible", "prediction"),
                                showProgress = interactive(),
-                               parallel = TRUE,
-                               cores = NULL,
                                ...) {
   type <- match.arg(type)
   interval <- match.arg(interval)
@@ -394,31 +390,7 @@ predict.AddiVortes <- function(object, newdata,
     xNewScaled[, binaryCols] <- newdata[, binaryCols]
   }
 
-  mTessellations <- length(posteriorTessSamples[[1]])
   nObs <- nrow(xNewScaled)
-
-  # --- Parallel set-up ---
-  # Cap cores at a conservative limit to avoid exceeding system limits
-  # in CI/test environments. Some systems have restrictions like
-  # RLIMIT_NPROC which may limit to ~16-20 processes. We use 1 core
-  # as a safe default.
-  max_cores_safe <- 1
-  if (is.null(cores)) {
-    detected_cores <- parallel::detectCores()
-    if (is.na(detected_cores)) detected_cores <- 1
-    # Use detected - 1, but cap at a safe maximum
-    cores <- max(1, min(detected_cores - 1, max_cores_safe))
-  } else {
-    # User specified cores, but still cap at safe maximum
-    cores <- max(1, min(cores, max_cores_safe))
-  }
-  useParallel <- parallel && (cores > 1)
-  cl <- NULL
-
-  if (useParallel && .Platform$OS.type == "windows") {
-    cl <- parallel::makeCluster(cores)
-    on.exit(parallel::stopCluster(cl), add = TRUE)
-  }
 
   if (showProgress) {
     cat("Generating predictions for ", nrow(newdata),
@@ -426,45 +398,32 @@ predict.AddiVortes <- function(object, newdata,
       " posterior samples...\n",
       sep = ""
     )
-  } else {
-    old_pboptions <- pbapply::pboptions(type = "none")
-    on.exit(pbapply::pboptions(old_pboptions), add = TRUE)
   }
 
-  # --- Parallel prediction loop with progress ---
-  prediction_list <- pbapply::pblapply(
-    X = 1:numStoredSamples,
-    FUN = function(sIdx) {
-      current_tess <- posteriorTessSamples[[sIdx]]
-      current_dim <- posteriorDimSamples[[sIdx]]
-      current_pred <- posteriorPredSamples[[sIdx]]
-
-      # Get predictions for each tessellation in current posterior sample
-      # and accumulate directly to avoid large temporary allocations.
-      model_predictions <- numeric(nObs)
-      for (j in seq_len(mTessellations)) {
-        NewTessIndexes <- cellIndices(xNewScaled, current_tess[[j]], current_dim[[j]],
-                                      object$metric_red, object$member_red)
-        model_predictions <- model_predictions + current_pred[[j]][NewTessIndexes]
-      }
-
-      # Add Gaussian noise for prediction intervals when computing quantiles
-      if (interval == "prediction" && type == "quantile") {
-        current_sigma <- posteriorSigmaSamples[sIdx]
-        # Add noise: sample from N(model_prediction, sigma^2)
-        # Note: sigma is stored as sigma^2 (variance), so we need sqrt for sd
-        model_predictions <- model_predictions + rnorm(nObs, mean = 0, sd = sqrt(current_sigma))
-      }
-
-      model_predictions
-    },
-    cl = if (useParallel) (if (.Platform$OS.type == "windows") cl else cores) else NULL
+  # Single compiled pass over all draws and tessellations
+  newTestDataPredictionsMatrix <- .Call(
+    "addi_vortes_predict_cpp",
+    xNewScaled,
+    posteriorTessSamples,
+    posteriorDimSamples,
+    posteriorPredSamples,
+    as.integer(object$metric_red),
+    as.integer(object$member_red),
+    as.logical(showProgress)
   )
 
-  if (showProgress) cat("\nPrediction generation completed.\n\n")
+  # Add Gaussian noise for prediction intervals when computing quantiles
+  if (interval == "prediction" && type == "quantile") {
+    for (sIdx in seq_len(numStoredSamples)) {
+      current_sigma <- posteriorSigmaSamples[sIdx]
+      # Note: sigma is stored as sigma^2 (variance), so we need sqrt for sd
+      newTestDataPredictionsMatrix[, sIdx] <-
+        newTestDataPredictionsMatrix[, sIdx] +
+        rnorm(nObs, mean = 0, sd = sqrt(current_sigma))
+    }
+  }
 
-  # Combine predictions into a matrix
-  newTestDataPredictionsMatrix <- do.call(cbind, prediction_list)
+  if (showProgress) cat("Done.\n\n")
 
   # --- Unscale and summarise predictions ---
   if (type == "response") {

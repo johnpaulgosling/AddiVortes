@@ -11,8 +11,6 @@
   quantiles = c(0.025, 0.975),
   interval = c("credible", "prediction"),
   showProgress = interactive(),
-  parallel = TRUE,
-  cores = NULL,
   ...
 )
 }
@@ -37,11 +35,6 @@ producing wider intervals (similar to \code{lm}'s prediction interval).}
 
 \item{showProgress}{Logical; if TRUE, a progress bar is shown during prediction.}
 
-\item{parallel}{Logical; if TRUE (default), predictions are computed in parallel.}
-
-\item{cores}{The number of CPU cores to use for parallel processing. If NULL (default),
-it defaults to one less than the total number of available cores.}
-
 \item{...}{Further arguments passed to or from other methods (currently
 unused).}
 }
@@ -59,6 +52,9 @@ Root Mean Squared Error (RMSE) if true outcomes are provided.
 This function relies on the internal helper function \code{applyScaling_internal}
 being available in the environment, which is used by the main
 \code{AddiVortes} function.
+
+Predictions traverse all retained draws and tessellations in a single C++
+call, avoiding repeated R/C++ boundary crossings per tessellation.
 
 When \code{interval = "prediction"} and \code{type = "quantile"}, the function samples
 additional Gaussian noise with variance equal to the sampled sigma squared

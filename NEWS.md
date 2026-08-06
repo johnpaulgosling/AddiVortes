@@ -1,5 +1,20 @@
 # AddiVortes News
 
+## AddiVortes 0.7.0
+
+* `predict()` now evaluates the full posterior ensemble in a single C++ call
+  rather than looping in R over each retained draw and tessellation. The
+  previous path crossed the R/C++ boundary once per tessellation (typically
+  hundreds of thousands of times per `predict()`), which dominated runtime;
+  the compiled traversal removes that overhead with no change to the
+  prediction algorithm.
+* Removed the `parallel` and `cores` arguments from `predict()`, along with
+  the `parallel` and `pbapply` package dependencies that only served the old
+  R-side prediction loop.
+* Fit and predict now share a single-line C++ progress bar (percentage and
+  step counts) when `showProgress = TRUE`, instead of sparse multi-line
+  status prints.
+
 ## AddiVortes 0.6.9
 
 * Fixed a heap-buffer-overflow in `propose_internal()` when proposing a

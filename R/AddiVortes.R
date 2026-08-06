@@ -51,7 +51,7 @@
 #'   \code{"B"}, \code{"C"} produces columns \code{grp_B} and \code{grp_C}, with
 #'   \code{"A"} as the reference level).
 #' @param cat.onehot Should categorical covariates be one-hot encoded? Default `TRUE`.
-#' @param showProgress Logical; if TRUE, progress bars and messages are shown during fitting.
+#' @param showProgress Logical; if TRUE, a progress bar is shown during fitting.
 #'
 #' @return An AddiVortes object containing the posterior samples of the
 #' tessellations, dimensions and predictions, plus per-iteration trace
@@ -364,7 +364,7 @@ AddiVortes <- function(y, x, m = 200,
     as.logical(showProgress)
   )
   
-  if (showProgress) cat("MCMC sampling completed.\n\n")
+  if (showProgress) cat("Done.\n\n")
   
   outputPosteriorTess  <- mcmcResult$posteriorTess
   outputPosteriorDim   <- mcmcResult$posteriorDim

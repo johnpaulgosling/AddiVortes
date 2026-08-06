@@ -17,6 +17,7 @@
 #include <Rinternals.h>
 #include <Rmath.h>        // For dbinom(), dpois(), rgamma()
 #include <R_ext/Random.h> // For unif_rand() and norm_rand()
+#include <R_ext/Utils.h>  // For R_CheckUserInterrupt()
 
 // Check if a value is in a vector
 bool in_vector(int value, const std::vector<int>& vec) {
@@ -388,6 +389,51 @@ static std::vector<int> knn1_internal(
     result[obs] = best_c;
   }
   return result;
+}
+
+// Progress bar for long-running C++ loops. Overwrites a single console line
+// with a labelled bar, percentage, and step counts. Prints a newline when
+// current reaches total.
+static void progress_bar(const char* label, int current, int total,
+                         int width = 40) {
+  if (total <= 0) return;
+  if (current < 0) current = 0;
+  if (current > total) current = total;
+
+  const double frac = static_cast<double>(current) /
+                      static_cast<double>(total);
+  int filled = static_cast<int>(frac * width + 1e-12);
+  if (filled > width) filled = width;
+
+  Rprintf("\r%s [", label);
+  for (int i = 0; i < width; ++i) {
+    Rprintf("%c", i < filled ? '=' : ' ');
+  }
+  Rprintf("] %3.0f%%  %d/%d", 100.0 * frac, current, total);
+  if (current >= total) Rprintf("\n");
+  R_FlushConsole();
+}
+
+// Decide whether to redraw the bar: on the first/last step, or whenever the
+// filled width would change. Also checks for user interrupts.
+static void maybe_progress(const char* label, int current, int total,
+                           int width, int& last_filled, bool showProgress) {
+  if (showProgress) {
+    int filled = 0;
+    if (total > 0) {
+      filled = static_cast<int>(
+        static_cast<double>(current) / static_cast<double>(total) * width +
+        1e-12);
+      if (filled > width) filled = width;
+    }
+    if (current == 1 || current == total || filled != last_filled) {
+      progress_bar(label, current, total, width);
+      last_filled = filled;
+      R_CheckUserInterrupt();
+    }
+  } else if (current == 1 || current % 64 == 0 || current == total) {
+    R_CheckUserInterrupt();
+  }
 }
 
 // Aggregate partial residuals R_j into per-cell sums and counts.
@@ -838,14 +884,13 @@ extern "C" {
     std::vector<double> lastTessPred(n, 0.0);
     int storageIdx = 0;
 
-    int progressStep = std::max(1, totalIter / 10);
+    const int progressWidth = 40;
+    int lastFilled = -1;
 
     for (int iter = 1; iter <= totalIter; iter++) {
 
-      if (showProgress && (iter % progressStep == 0 || iter == totalIter)) {
-        Rprintf("  Iteration %d / %d\n", iter, totalIter);
-        R_FlushConsole();
-      }
+      maybe_progress("MCMC", iter, totalIter, progressWidth,
+                     lastFilled, showProgress);
 
       // Sample sigma squared from inverse-gamma
       double sum_sq = 0.0;
@@ -1075,6 +1120,145 @@ extern "C" {
 
     UNPROTECT(17); // result, listNames, trace stats, and output storage
     return result;
+  }
+
+  // ---------------------------------------------------------------------------
+  // 3. addi_vortes_predict_cpp
+  // ---------------------------------------------------------------------------
+  // Predict from a fitted ensemble in a single R↔C++ crossing. Traverses all
+  // retained draws and all tessellations in compiled code, returning one
+  // n x numSamples prediction matrix (scaled response space, no noise).
+  //
+  // Arguments
+  //   xNew_sexp           n x p double matrix of scaled covariates (column-major)
+  //   posteriorTess_sexp  list[numSamples] of list[m] of matrices (nC_j x d_j)
+  //   posteriorDim_sexp   list[numSamples] of list[m] of integer vectors (1-based)
+  //   posteriorPred_sexp  list[numSamples] of list[m] of double vectors (mu values)
+  //   metric_sexp         reduced metric types (0=Euclidean, 1=Spherical, 2=Categorical)
+  //   member_sexp         reduced membership counts matching metric_sexp
+  //   showProgress_sexp   logical — whether to print draw-level progress
+  //
+  // Returns
+  //   n x numSamples double matrix of additive ensemble predictions
+  SEXP addi_vortes_predict_cpp(
+      SEXP xNew_sexp,
+      SEXP posteriorTess_sexp,
+      SEXP posteriorDim_sexp,
+      SEXP posteriorPred_sexp,
+      SEXP metric_sexp,
+      SEXP member_sexp,
+      SEXP showProgress_sexp) {
+
+    const double* xNew = REAL(xNew_sexp);
+    int n = Rf_nrows(xNew_sexp);
+    int p = Rf_ncols(xNew_sexp);
+    int numSamples = Rf_length(posteriorTess_sexp);
+    bool showProgress = LOGICAL(showProgress_sexp)[0];
+
+    if (numSamples == 0) {
+      SEXP empty = PROTECT(Rf_allocMatrix(REALSXP, n, 0));
+      UNPROTECT(1);
+      return empty;
+    }
+
+    int m = Rf_length(VECTOR_ELT(posteriorTess_sexp, 0));
+
+    int* metric_ptr = INTEGER(metric_sexp);
+    int* member_ptr = INTEGER(member_sexp);
+    int nMetric = Rf_length(metric_sexp);
+    if (nMetric != Rf_length(member_sexp)) {
+      Rf_error("metric and member vectors must have the same length");
+    }
+    std::vector<int> metric(metric_ptr, metric_ptr + nMetric);
+    std::vector<int> members(member_ptr, member_ptr + nMetric);
+
+    int mem_sum = 0;
+    for (int i = 0; i < nMetric; i++) mem_sum += members[i];
+    if (mem_sum != p) {
+      Rf_error("Sum of member counts must match number of columns in newdata");
+    }
+
+    // Category counts for raw categorical covariates, derived from newdata so
+    // behaviour matches the previous knnx_index / cellIndices predict path.
+    std::vector<int> metric_aug;
+    metric_aug.reserve(p);
+    for (int i = 0; i < nMetric; i++) {
+      for (int j = 0; j < members[i]; j++) {
+        metric_aug.push_back(metric[i]);
+      }
+    }
+    std::vector<int> ncats;
+    if (in_vector(2, metric)) {
+      for (int i = 0; i < p; i++) {
+        if (metric_aug[i] == 2) {
+          int max_val = 0;
+          for (int j = 0; j < n; j++) {
+            if (xNew[i * n + j] > max_val)
+              max_val = static_cast<int>(xNew[i * n + j]);
+          }
+          ncats.push_back(max_val);
+        }
+      }
+    }
+
+    SEXP outPredMatrix = PROTECT(Rf_allocMatrix(REALSXP, n, numSamples));
+    double* p_out = REAL(outPredMatrix);
+
+    const int progressWidth = 40;
+    int lastFilled = -1;
+
+    for (int s = 0; s < numSamples; s++) {
+      maybe_progress("Predict", s + 1, numSamples, progressWidth,
+                     lastFilled, showProgress);
+
+      SEXP sampleTess = VECTOR_ELT(posteriorTess_sexp, s);
+      SEXP sampleDim  = VECTOR_ELT(posteriorDim_sexp, s);
+      SEXP samplePred = VECTOR_ELT(posteriorPred_sexp, s);
+
+      if (Rf_length(sampleTess) != m ||
+          Rf_length(sampleDim) != m ||
+          Rf_length(samplePred) != m) {
+        Rf_error("Posterior sample %d has inconsistent tessellation counts", s + 1);
+      }
+
+      std::vector<double> drawPred(n, 0.0);
+
+      for (int j = 0; j < m; j++) {
+        SEXP tess_j = VECTOR_ELT(sampleTess, j);
+        SEXP dim_j  = VECTOR_ELT(sampleDim, j);
+        SEXP pred_j = VECTOR_ELT(samplePred, j);
+
+        int nC = Rf_nrows(tess_j);
+        int d  = Rf_ncols(tess_j);
+        if (Rf_length(dim_j) != d) {
+          Rf_error("Tessellation %d in sample %d has mismatched dim length",
+                   j + 1, s + 1);
+        }
+        if (Rf_length(pred_j) != nC) {
+          Rf_error("Tessellation %d in sample %d has mismatched pred length",
+                   j + 1, s + 1);
+        }
+
+        int* pd = INTEGER(dim_j);
+        std::vector<int> dim1(pd, pd + d);
+        const double* centres = REAL(tess_j);
+        const double* mu = REAL(pred_j);
+
+        std::vector<int> idx = knn1_internal(
+          xNew, n, p,
+          centres, nC, d, dim1,
+          metric, members, ncats);
+
+        for (int obs = 0; obs < n; obs++)
+          drawPred[obs] += mu[idx[obs]];
+      }
+
+      for (int obs = 0; obs < n; obs++)
+        p_out[obs + s * n] = drawPred[obs];
+    }
+
+    UNPROTECT(1);
+    return outPredMatrix;
   }
 
 } // extern "C" (second block)
