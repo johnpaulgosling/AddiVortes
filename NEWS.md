@@ -7,6 +7,10 @@
   compare the two approaches on a synthetic example. Andy Iskauskas added as a
   vignette author. The `cat.onehot` help text and fit-time covariate summary now
   mention Eskin distance as well.
+* Fixed a crash when fitting with `cat.onehot = FALSE` under the default
+  Euclidean `metric`: auto-detected categorical columns no longer keep a shared
+  Euclidean membership id, so Eskin distance and categorical centre proposals
+  receive the correct per-column level counts.
 * Fit and predict hot paths adopt several lessons from the Rust `addivortes`
   engine while preserving the sampled chain bit-for-bit on the fixed-seed
   Friedman and existing golden tests:
