@@ -2,12 +2,13 @@
 
 ## Overview
 
-AddiVortes implements the **Bayesian Additive Voronoi Tessellation** model for machine learning regression and non-parametric statistical modelling. This R package provides a flexible alternative to **BART (Bayesian Additive Regression Trees)**, using Voronoi tessellations instead of trees for spatial partitioning.
+AddiVortes implements the **Bayesian Additive Voronoi Tessellation** model for machine learning regression, classification and non-parametric statistical modelling. This R package provides a flexible alternative to **BART (Bayesian Additive Regression Trees)**, using Voronoi tessellations instead of trees for spatial partitioning.
 
 ## Key Features
 
 - **Machine Learning Regression**: Advanced Bayesian regression modelling for complex datasets
-- **Alternative to BART**: Uses Voronoi tessellations instead of trees for more flexible spatial modeling
+- **Classification**: Binary and multi-category probit models, chosen automatically from the response
+- **Alternative to BART**: Uses Voronoi tessellations instead of trees for more flexible spatial modelling
 - **Spatial Data Analysis**: Excellent for geographic and spatial datasets
 - **Non-parametric Modelling**: No assumptions about functional form
 - **Bayesian Framework**: Full posterior inference with uncertainty quantification
@@ -18,6 +19,7 @@ AddiVortes implements the **Bayesian Additive Voronoi Tessellation** model for m
 AddiVortes is particularly well-suited for:
 
 - **Spatial regression** and geographic data analysis
+- **Binary and multi-category classification** with posterior class probabilities
 - **Machine learning** tasks requiring interpretable models
 - **Non-parametric regression** where the functional form is unknown
 - **Bayesian modelling** with uncertainty quantification
@@ -41,17 +43,20 @@ library(AddiVortes)
 # X <- your_predictors
 # y <- your_response
 
-# Fit the AddiVortes model
-# model <- AddiVortes(X, y)
+# Fit the AddiVortes model (regression or classification, from y)
+# model <- AddiVortes(y, X)
 
 # Make predictions
 # predictions <- predict(model, newdata = X_test)
+# For classification, type = "response" gives probabilities
+# and type = "class" gives labels
 ```
 
 ## Documentation
 
 - [Getting Started Guide](https://johnpaulgosling.github.io/AddiVortes/articles/introduction.html)
 - [Prediction Examples](https://johnpaulgosling.github.io/AddiVortes/articles/prediction.html)
+- [Classification](https://johnpaulgosling.github.io/AddiVortes/articles/classification.html)
 - [Function Reference](https://johnpaulgosling.github.io/AddiVortes/reference/)
 
 ## Comparison with BART

@@ -860,6 +860,92 @@ struct FlatPosterior {
   std::vector<int> d;
 };
 
+// Sample from N(0,1) truncated to (a, +Inf). Inverse CDF when a is moderate;
+// Robert (1995) exponential rejection in the far right tail.
+static double rtnorm_std_left(double a) {
+  if (a < 0.5) {
+    double fa = pnorm(a, 0.0, 1.0, 1, 0);
+    double u = fa + unif_rand() * (1.0 - fa);
+    if (u >= 1.0) u = 1.0 - 1e-16;
+    if (u <= fa) u = 0.5 * (fa + 1.0);
+    return qnorm(u, 0.0, 1.0, 1, 0);
+  }
+  const double alpha = 0.5 * (a + sqrt(a * a + 4.0));
+  for (int it = 0; it < 10000; ++it) {
+    const double z = a + exp_rand() / alpha;
+    const double rho = exp(-0.5 * (z - alpha) * (z - alpha));
+    if (unif_rand() <= rho) return z;
+  }
+  return a;
+}
+
+// Sample from N(mu, 1) truncated to (lower, upper). Bounds may be infinite.
+static double rtruncated_normal(double mu, double lower, double upper) {
+  if (!(lower < upper)) {
+    return 0.5 * (lower + upper);
+  }
+  const bool left_inf = !std::isfinite(lower);
+  const bool right_inf = !std::isfinite(upper);
+  double z;
+  if (left_inf && right_inf) {
+    z = mu + norm_rand();
+  } else if (right_inf) {
+    z = mu + rtnorm_std_left(lower - mu);
+  } else if (left_inf) {
+    z = mu - rtnorm_std_left(-(upper - mu));
+  } else {
+    const double a = lower - mu;
+    const double b = upper - mu;
+    const double fa = pnorm(a, 0.0, 1.0, 1, 0);
+    const double fb = pnorm(b, 0.0, 1.0, 1, 0);
+    if (fb - fa < 1e-14) {
+      if (mu < lower) return lower;
+      if (mu > upper) return upper;
+      return mu;
+    }
+    double u = fa + unif_rand() * (fb - fa);
+    if (u <= 0.0 || u >= 1.0) u = 0.5 * (fa + fb);
+    z = mu + qnorm(u, 0.0, 1.0, 1, 0);
+  }
+  if (!std::isfinite(z)) {
+    z = std::min(std::max(mu, lower), upper);
+  }
+  if (z < lower) z = lower;
+  if (z > upper) z = upper;
+  return z;
+}
+
+// Gibbs update of independent probit latents given current G and class labels.
+// yClass is 0-based with 0 = reference class. zLatent is column-major n x nLatents.
+static void sample_classification_latents(
+    std::vector<double>& zLatent,
+    const std::vector<std::vector<double>>& gLatent,
+    const int* yClass, int n, int nLatents) {
+  const double inf = std::numeric_limits<double>::infinity();
+  for (int d = 0; d < nLatents; ++d) {
+    for (int obs = 0; obs < n; ++obs) {
+      const int y = yClass[obs];
+      double lower = -inf;
+      double upper = inf;
+      if (y == 0) {
+        upper = 0.0;
+      } else if (y == d + 1) {
+        lower = 0.0;
+        for (int e = 0; e < nLatents; ++e) {
+          if (e != d) {
+            const double zo = zLatent[obs + e * n];
+            if (zo > lower) lower = zo;
+          }
+        }
+      } else {
+        const int c = y - 1;
+        upper = zLatent[obs + c * n];
+      }
+      zLatent[obs + d * n] = rtruncated_normal(gLatent[d][obs], lower, upper);
+    }
+  }
+}
+
 static FlatPosterior flatten_posterior(SEXP posteriorTess_sexp,
                                        SEXP posteriorDim_sexp,
                                        SEXP posteriorPred_sexp) {
@@ -1103,7 +1189,10 @@ extern "C" {
       SEXP init_pred_sexp,
       SEXP binaryCols_sexp,
       SEXP catScaling_sexp,
-      SEXP showProgress_sexp) {
+      SEXP showProgress_sexp,
+      SEXP isClassification_sexp,
+      SEXP yClass_sexp,
+      SEXP nLatents_sexp) {
 
     const double* xScaled = REAL(xScaled_sexp);
     const double* yScaled = REAL(yScaled_sexp);
@@ -1122,6 +1211,17 @@ extern "C" {
     const double* mus = REAL(mus_sexp);
     double catScaling = REAL(catScaling_sexp)[0];
     bool showProgress = LOGICAL(showProgress_sexp)[0];
+    const bool isClassification = LOGICAL(isClassification_sexp)[0];
+    int nLatents = INTEGER(nLatents_sexp)[0];
+    if (nLatents < 1 || !isClassification) nLatents = 1;
+    const int mTotal = m * nLatents;
+    const int* yClass = nullptr;
+    if (isClassification) {
+      if (Rf_isNull(yClass_sexp) || Rf_length(yClass_sexp) != n) {
+        Rf_error("Classification MCMC requires an integer class vector of length n");
+      }
+      yClass = INTEGER(yClass_sexp);
+    }
 
     std::vector<int> metric(INTEGER(metric_sexp), INTEGER(metric_sexp) + p);
     std::vector<int> members(INTEGER(member_sexp), INTEGER(member_sexp) + p);
@@ -1174,12 +1274,12 @@ extern "C" {
     std::vector<double> x_row;
     pack_row_major(xScaled, n, p, x_row);
 
-    // Initial state
-    std::vector<std::vector<double>> tess(m);
-    std::vector<int> tess_nC(m), tess_d(m);
-    std::vector<std::vector<int>> dim_j(m);
-    std::vector<std::vector<double>> pred(m);
-    for (int j = 0; j < m; ++j) {
+    // Initial state. m is tessellations per latent; mTotal = m * nLatents.
+    std::vector<std::vector<double>> tess(mTotal);
+    std::vector<int> tess_nC(mTotal), tess_d(mTotal);
+    std::vector<std::vector<int>> dim_j(mTotal);
+    std::vector<std::vector<double>> pred(mTotal);
+    for (int j = 0; j < mTotal; ++j) {
       SEXP t_j = VECTOR_ELT(init_tess_sexp, j);
       int rows = Rf_nrows(t_j), cols = Rf_ncols(t_j);
       tess_nC[j] = rows;
@@ -1193,10 +1293,10 @@ extern "C" {
     }
 
     // Assignment caches (option 1)
-    std::vector<AssignmentCache> caches(m);
+    std::vector<AssignmentCache> caches(mTotal);
     AssignScratch assign_scratch;
     AssignmentCache prop_cache;
-    for (int j = 0; j < m; ++j) {
+    for (int j = 0; j < mTotal; ++j) {
       reassign(x_row.data(), n, p,
                tess[j].data(), tess_nC[j], tess_d[j], dim_j[j],
                AssignmentDelta::FullRecompute, 0, euclidean,
@@ -1204,11 +1304,17 @@ extern "C" {
                AssignmentCache{}, caches[j], assign_scratch);
     }
 
-    std::vector<double> sumAllTess(n, 0.0);
-    for (int j = 0; j < m; ++j) {
-      for (int obs = 0; obs < n; ++obs)
-        sumAllTess[obs] += pred[j][caches[j].assignment[obs]];
+    std::vector<std::vector<double>> gLatent(nLatents, std::vector<double>(n, 0.0));
+    for (int lat = 0; lat < nLatents; ++lat) {
+      const int j0 = lat * m;
+      const int j1 = j0 + m;
+      for (int j = j0; j < j1; ++j) {
+        for (int obs = 0; obs < n; ++obs)
+          gLatent[lat][obs] += pred[j][caches[j].assignment[obs]];
+      }
     }
+
+    std::vector<double> zLatent;
 
     int numSamples = 0;
     if (totalIter > burnIn) numSamples = (totalIter - burnIn) / thinning;
@@ -1238,126 +1344,159 @@ extern "C" {
     const int progressWidth = 40;
     int lastFilled = -1;
 
+    if (isClassification) {
+      zLatent.assign(static_cast<size_t>(n) * nLatents, 0.0);
+      for (int obs = 0; obs < n; ++obs) {
+        const int y = yClass[obs];
+        if (y == 0) {
+          for (int d = 0; d < nLatents; ++d) zLatent[obs + d * n] = -1.0;
+        } else {
+          for (int d = 0; d < nLatents; ++d)
+            zLatent[obs + d * n] = (d + 1 == y) ? 1.0 : 0.0;
+        }
+      }
+    }
+
     for (int iter = 1; iter <= totalIter; ++iter) {
       maybe_progress("MCMC", iter, totalIter, progressWidth, lastFilled, showProgress);
 
-      double sum_sq = 0.0;
-      for (int obs = 0; obs < n; ++obs) {
-        double r = yScaled[obs] - sumAllTess[obs];
-        sum_sq += r * r;
-      }
-      double shape = (nu + n) / 2.0;
-      double rate = (nu * lambda + sum_sq) / 2.0;
-      sigmaSquared = 1.0 / rgamma(shape, 1.0 / rate);
-
-      for (int j = 0; j < m; ++j) {
-        if (j == 0) {
-          for (int obs = 0; obs < n; ++obs)
-            sumAllTess[obs] -= pred[j][caches[j].assignment[obs]];
-        } else {
-          for (int obs = 0; obs < n; ++obs)
-            sumAllTess[obs] += lastTessPred[obs] - pred[j][caches[j].assignment[obs]];
+      if (!isClassification) {
+        double sum_sq = 0.0;
+        for (int obs = 0; obs < n; ++obs) {
+          double r = yScaled[obs] - gLatent[0][obs];
+          sum_sq += r * r;
         }
+        double shape = (nu + n) / 2.0;
+        double rate = (nu * lambda + sum_sq) / 2.0;
+        sigmaSquared = 1.0 / rgamma(shape, 1.0 / rate);
+      } else {
+        sample_classification_latents(zLatent, gLatent, yClass, n, nLatents);
+      }
 
-        for (int obs = 0; obs < n; ++obs)
-          R_j[obs] = yScaled[obs] - sumAllTess[obs];
+      for (int lat = 0; lat < nLatents; ++lat) {
+        std::vector<double>& sumAllTess = gLatent[lat];
+        const double* response = isClassification
+          ? (zLatent.data() + static_cast<size_t>(lat) * n)
+          : yScaled;
+        const int j0 = lat * m;
+        const int j1 = j0 + m;
 
-        ProposalResult prop = propose_internal(
-          tess[j], tess_nC[j], tess_d[j], dim_j[j],
-          p, sd, mus, metric, members, ncats, cat_index_of_col);
+        for (int j = j0; j < j1; ++j) {
+          const int jLocal = j - j0;
+          if (jLocal == 0) {
+            for (int obs = 0; obs < n; ++obs)
+              sumAllTess[obs] -= pred[j][caches[j].assignment[obs]];
+          } else {
+            for (int obs = 0; obs < n; ++obs)
+              sumAllTess[obs] += lastTessPred[obs] - pred[j][caches[j].assignment[obs]];
+          }
 
-        // Clamp binary columns via mask (option 13)
-        if (!Rf_isNull(binaryCols_sexp)) {
-          int d_star = static_cast<int>(prop.dim.size());
-          for (int di = 0; di < d_star; ++di) {
-            int g0 = prop.dim[di] - 1;
-            if (g0 >= 0 && g0 < p && is_binary[g0]) {
-              for (int row = 0; row < prop.nC; ++row) {
-                double v = prop.tess[row + di * prop.nC];
-                if (v < 0.0) v = 0.0;
-                if (v > catScaling) v = catScaling;
-                prop.tess[row + di * prop.nC] = v;
+          for (int obs = 0; obs < n; ++obs)
+            R_j[obs] = response[obs] - sumAllTess[obs];
+
+          ProposalResult prop = propose_internal(
+            tess[j], tess_nC[j], tess_d[j], dim_j[j],
+            p, sd, mus, metric, members, ncats, cat_index_of_col);
+
+          // Clamp binary columns via mask (option 13)
+          if (!Rf_isNull(binaryCols_sexp)) {
+            int d_star = static_cast<int>(prop.dim.size());
+            for (int di = 0; di < d_star; ++di) {
+              int g0 = prop.dim[di] - 1;
+              if (g0 >= 0 && g0 < p && is_binary[g0]) {
+                for (int row = 0; row < prop.nC; ++row) {
+                  double v = prop.tess[row + di * prop.nC];
+                  if (v < 0.0) v = 0.0;
+                  if (v > catScaling) v = catScaling;
+                  prop.tess[row + di * prop.nC] = v;
+                }
               }
             }
           }
-        }
 
-        reassign(x_row.data(), n, p,
-                 prop.tess.data(), prop.nC, static_cast<int>(prop.dim.size()),
-                 prop.dim, prop.delta, prop.touched, euclidean,
-                 metric_red, member_red, ncats,
-                 caches[j], prop_cache, assign_scratch);
+          reassign(x_row.data(), n, p,
+                   prop.tess.data(), prop.nC, static_cast<int>(prop.dim.size()),
+                   prop.dim, prop.delta, prop.touched, euclidean,
+                   metric_red, member_red, ncats,
+                   caches[j], prop_cache, assign_scratch);
 
-        // Option 5: one pass builds both aggregates; reused for MH and mu draw
-        aggregate_residuals_both(R_j,
-          caches[j].assignment, tess_nC[j],
-          prop_cache.assignment, prop.nC,
-          R_old, n_old, R_new, n_new);
+          // Option 5: one pass builds both aggregates; reused for MH and mu draw
+          aggregate_residuals_both(R_j,
+            caches[j].assignment, tess_nC[j],
+            prop_cache.assignment, prop.nC,
+            R_old, n_old, R_new, n_new);
 
-        bool hasEmpty = false;
-        for (int k = 0; k < prop.nC; ++k) {
-          if (n_new[k] == 0) { hasEmpty = true; break; }
-        }
+          bool hasEmpty = false;
+          for (int k = 0; k < prop.nC; ++k) {
+            if (n_new[k] == 0) { hasEmpty = true; break; }
+          }
 
-        bool accepted = false;
-        if (!hasEmpty) {
-          AcceptanceComponents acc = log_acceptance_components(
-            R_old, n_old, R_new, n_new,
-            static_cast<int>(prop.dim.size()), prop.nC,
-            sigmaSquared, sigSqMu, omega, lambdaRate, p, prop.mod);
-          accepted = (log(unif_rand()) < acc.logAlpha);
-        }
+          bool accepted = false;
+          if (!hasEmpty) {
+            AcceptanceComponents acc = log_acceptance_components(
+              R_old, n_old, R_new, n_new,
+              static_cast<int>(prop.dim.size()), prop.nC,
+              sigmaSquared, sigSqMu, omega, lambdaRate, p, prop.mod);
+            accepted = (log(unif_rand()) < acc.logAlpha);
+          }
 
-        if (accepted) {
-          tess[j] = std::move(prop.tess);
-          tess_nC[j] = prop.nC;
-          tess_d[j] = static_cast<int>(prop.dim.size());
-          dim_j[j] = std::move(prop.dim);
-          caches[j] = std::move(prop_cache);
-          sample_mu_into(R_new, n_new, sigSqMu, sigmaSquared, pred[j]);
-          for (int obs = 0; obs < n; ++obs)
-            lastTessPred[obs] = pred[j][caches[j].assignment[obs]];
-        } else {
-          sample_mu_into(R_old, n_old, sigSqMu, sigmaSquared, pred[j]);
-          for (int obs = 0; obs < n; ++obs)
-            lastTessPred[obs] = pred[j][caches[j].assignment[obs]];
-        }
+          if (accepted) {
+            tess[j] = std::move(prop.tess);
+            tess_nC[j] = prop.nC;
+            tess_d[j] = static_cast<int>(prop.dim.size());
+            dim_j[j] = std::move(prop.dim);
+            caches[j] = std::move(prop_cache);
+            sample_mu_into(R_new, n_new, sigSqMu, sigmaSquared, pred[j]);
+            for (int obs = 0; obs < n; ++obs)
+              lastTessPred[obs] = pred[j][caches[j].assignment[obs]];
+          } else {
+            sample_mu_into(R_old, n_old, sigSqMu, sigmaSquared, pred[j]);
+            for (int obs = 0; obs < n; ++obs)
+              lastTessPred[obs] = pred[j][caches[j].assignment[obs]];
+          }
 
-        if (j == m - 1) {
-          for (int obs = 0; obs < n; ++obs)
-            sumAllTess[obs] += lastTessPred[obs];
+          if (jLocal == m - 1) {
+            for (int obs = 0; obs < n; ++obs)
+              sumAllTess[obs] += lastTessPred[obs];
+          }
         }
       }
 
       double meanCenters = 0.0;
       double meanDims = 0.0;
       double retainedLogLikSum = 0.0;
-      for (int j = 0; j < m; ++j) {
+      for (int j = 0; j < mTotal; ++j) {
         meanCenters += tess_nC[j];
         meanDims += tess_d[j];
+
+        const int lat = j / m;
+        const double* response = isClassification
+          ? (zLatent.data() + static_cast<size_t>(lat) * n)
+          : yScaled;
+        const std::vector<double>& sumAllTess = gLatent[lat];
 
         R_old.assign(tess_nC[j], 0.0);
         n_old.assign(tess_nC[j], 0);
         for (int obs = 0; obs < n; ++obs) {
           int cell = caches[j].assignment[obs];
           double tessContribution = pred[j][cell];
-          double r = yScaled[obs] - (sumAllTess[obs] - tessContribution);
+          double r = response[obs] - (sumAllTess[obs] - tessContribution);
           R_old[cell] += r;
           n_old[cell]++;
         }
         retainedLogLikSum += tessellation_log_likelihood_component(
           R_old, n_old, sigmaSquared, sigSqMu);
       }
-      meanCenters /= m;
-      meanDims /= m;
+      meanCenters /= mTotal;
+      meanDims /= mTotal;
 
       double sdCenters = 0.0;
-      if (m > 1) {
-        for (int j = 0; j < m; ++j) {
+      if (mTotal > 1) {
+        for (int j = 0; j < mTotal; ++j) {
           double diff = tess_nC[j] - meanCenters;
           sdCenters += diff * diff;
         }
-        sdCenters = sqrt(sdCenters / (m - 1));
+        sdCenters = sqrt(sdCenters / (mTotal - 1));
       }
 
       int traceIdx = iter - 1;
@@ -1366,16 +1505,16 @@ extern "C" {
       REAL(outTraceAvgCenters)[traceIdx] = meanCenters;
       REAL(outTraceSdCenters)[traceIdx] = sdCenters;
       REAL(outTraceAvgDims)[traceIdx] = meanDims;
-      REAL(outTraceLogLik)[traceIdx] = retainedLogLikSum / m;
+      REAL(outTraceLogLik)[traceIdx] = retainedLogLikSum / mTotal;
 
       if (iter > burnIn && (iter - burnIn) % thinning == 0) {
         for (int obs = 0; obs < n; ++obs)
-          predictionMatrix[obs + storageIdx * n] = sumAllTess[obs];
+          predictionMatrix[obs + storageIdx * n] = gLatent[0][obs];
 
         StoredDraw draw;
         draw.sigma = sigmaSquared;
-        draw.tessellations.resize(m);
-        for (int j = 0; j < m; ++j) {
+        draw.tessellations.resize(mTotal);
+        for (int j = 0; j < mTotal; ++j) {
           StoredTess& st = draw.tessellations[j];
           st.nC = tess_nC[j];
           st.d = tess_d[j];
@@ -1391,7 +1530,7 @@ extern "C" {
     PutRNGstate();
 
     // Pack deferred posterior into R lists (option 8)
-    SEXP packed = PROTECT(pack_posterior_lists(stored, m));
+    SEXP packed = PROTECT(pack_posterior_lists(stored, mTotal));
     SEXP outTess = VECTOR_ELT(packed, 0);
     SEXP outDim = VECTOR_ELT(packed, 1);
     SEXP outPred = VECTOR_ELT(packed, 2);

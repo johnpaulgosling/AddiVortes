@@ -1,14 +1,14 @@
-#' @title Fit an AddiVortes regression model 
+#' @title Fit an AddiVortes regression or classification model
 #'
 #' @description
-#' The AddiVortes model is a Bayesian nonparametric regression model that
-#' uses a tessellation to model the relationship between the covariates and
-#' the output values. The model uses a backfitting algorithm to sample from
-#' the posterior distribution of the output values for each tessellation.
-#' Alongside fitting details and the posterior sample, the function returns 
-#' the RMSE value for the test samples.
+#' The AddiVortes model is a Bayesian nonparametric model that uses additive
+#' Voronoi tessellations to relate covariates to a response. For a numeric
+#' response the model is Gaussian regression. For a classification response
+#' it uses a probit link with Albert-Chib latent variables (binary) or
+#' independent multinomial probit latents (three or more classes). The task is
+#' chosen automatically from `y`.
 #'
-#' The function can handle multiple types of covariates, including continuous, 
+#' The function can handle multiple types of covariates, including continuous,
 #' spherical and categorical. Categorical covariates are automatically detected.
 #' By default (`cat.onehot = TRUE`) they are one-hot encoded, with the first
 #' level of each categorical variable used as the reference category; the
@@ -20,23 +20,38 @@
 #' a range of 0 to 2*pi. The `metric` parameter can be used to specify the type
 #' of each covariate (Euclidean, Spherical, or Categorical), and the `members`
 #' parameter can indicate membership of covariates into different subspaces when
-#' using multiple spheres in covariate space. 
+#' using multiple spheres in covariate space.
 #'
-#' @param y A vector of the output values.
+#' @param y A vector of response values. Numeric `y` is treated as regression,
+#'   except when it has exactly two unique values in `{0, 1}`, which is
+#'   binary classification. Factor, character and logical vectors are treated as
+#'   classification: two levels give a binary probit model and three or more
+#'   levels give a multinomial probit model. The first factor level (or 0 for
+#'   numeric 0/1 responses) is the reference class. Missing values are not
+#'   allowed.
 #' @param x A matrix or data frame of the covariates. Character and factor columns
 #'   are treated as categorical variables and automatically converted to d-1 binary
 #'   indicator variables via one-hot encoding (with the first level as reference).
-#' @param m The number of tessellations.
+#' @param m The number of tessellations. For multinomial classification this is
+#'   the number of tessellations **per latent dimension** (there are \(K-1\)
+#'   latents for \(K\) classes).
 #' @param totalMCMCIter The number of iterations.
 #' @param mcmcBurnIn The number of burn in iterations.
-#' @param nu The degrees of freedom.
-#' @param q The quantile.
-#' @param k The number of centres.
+#' @param nu The degrees of freedom for the inverse-gamma prior on the residual
+#'   variance. Ignored for classification, where the latent residual variance is
+#'   fixed at 1.
+#' @param q The quantile used to set the inverse-gamma prior on the residual
+#'   variance. Ignored for classification.
+#' @param k Prior scale for tessellation output values. For regression,
+#'   \(\sigma_\mu = 0.5/(k\sqrt{m})\) on the scaled response. For classification,
+#'   \(\sigma_\mu = 3/(k\sqrt{m})\) on the latent probit scale.
 #' @param sd The standard deviation used in centre proposals.
 #' @param Omega Omega/(number of covariates) is the prior probability of
 #'   adding a dimension.
 #' @param LambdaRate The rate of the Poisson distribution for the number of centres.
-#' @param InitialSigma The method used to calculate the initial variance.
+#' @param InitialSigma The method used to calculate the initial residual
+#'   variance for regression (`"Linear"` or `"Naive"`). Ignored for
+#'   classification.
 #' @param thinning The thinning rate.
 #' @param metric Either "E" (Euclidean, default), "S" (Spherical), or "C" (Categorical).
 #' @param members If needed, indicates membership of covariates into different
@@ -64,7 +79,23 @@
 #'
 #' @return An AddiVortes object containing the posterior samples of the
 #' tessellations, dimensions and predictions, plus per-iteration trace
-#' statistics used by `traceplots()`.
+#' statistics used by `traceplots()`. Classification fits also store `task`,
+#' `classLevels`, `nLatents` and in-sample accuracy.
+#'
+#' @references
+#' Stone, A. and Gosling, J.P. (2025). AddiVortes: (Bayesian) additive Voronoi
+#' tessellations. *Journal of Computational and Graphical Statistics*.
+#'
+#' Stone, A.J., Ogundimu, E. and Gosling, J.P. (2026). Binary AddiVortes:
+#' (Bayesian) Additive Voronoi Tessellations for Binary Classification with an
+#' application to Predicting Home Mortgage Application Outcomes.
+#'
+#' Albert, J.H. and Chib, S. (1993). Bayesian analysis of binary and
+#' polychotomous response data. *Journal of the American Statistical
+#' Association*, 88(422), 669–679.
+#'
+#' Kindo, B.P., Wang, H. and Peña, E.A. (2016). Multinomial probit Bayesian
+#' additive regression trees. *Stat*, 5(1), 171–181.
 #'
 #' @examples
 #' \donttest{
@@ -102,9 +133,18 @@
 #'
 #' preds <- predict(fit2, x_test, showProgress = FALSE)
 #' test_rmse <- sqrt(mean((y_test - preds)^2))
+#'
+#' # Binary classification is selected automatically from a 0/1 or factor y
+#' set.seed(789)
+#' x_clf <- matrix(runif(80), 40, 2)
+#' y_clf <- factor(ifelse(x_clf[, 1] + x_clf[, 2] > 1, "yes", "no"))
+#' fit_clf <- AddiVortes(y_clf, x_clf, m = 8, totalMCMCIter = 80,
+#'                       mcmcBurnIn = 20, showProgress = FALSE)
+#' p_clf <- predict(fit_clf, x_clf, type = "response", showProgress = FALSE)
+#' cls_clf <- predict(fit_clf, x_clf, type = "class", showProgress = FALSE)
 #' }
 #'
-#' @importFrom stats var lm optim quantile runif rnorm dbinom dpois qnorm uniroot
+#' @importFrom stats var lm optim quantile runif rnorm dbinom dpois qnorm uniroot pnorm
 #' @export
 AddiVortes <- function(y, x, m = 200,
                        totalMCMCIter = 1200,
@@ -126,6 +166,19 @@ AddiVortes <- function(y, x, m = 200,
   # and causing prob = 1 in the dimension acceptance ratio (which produces 0/0 = NaN).
   force(Omega)
   ### Pre-processing data
+
+  if (NROW(x) != length(y)) {
+    stop("'y' must have length equal to the number of rows of 'x'.", call. = FALSE)
+  }
+  xOriginal <- x
+  responseInfo <- infer_response_type_internal(y)
+  task <- responseInfo$task
+  classLevels <- responseInfo$classLevels
+  yClass <- responseInfo$yClass
+  nLatents <- responseInfo$nLatents
+  mPerLatent <- m
+  mTotal <- m * nLatents
+  isClassification <- task != "regression"
 
   #### Encode categorical covariates -------------------------------------------
   if (!is.numeric(catScaling) || length(catScaling) != 1 || catScaling <= 0) {
@@ -183,10 +236,16 @@ AddiVortes <- function(y, x, m = 200,
   }
   
   #### Scaling x and y ---------------------------------------------------------
-  yScalingResult <- scaleData_internal(y)
-  yScaled <- yScalingResult$scaledData # Vector of values
-  yCentre <- yScalingResult$centres
-  yRange <- yScalingResult$ranges
+  if (isClassification) {
+    yScaled <- as.double(rep(0, length(y)))
+    yCentre <- 0
+    yRange <- 1
+  } else {
+    yScalingResult <- scaleData_internal(y)
+    yScaled <- yScalingResult$scaledData # Vector of values
+    yCentre <- yScalingResult$centres
+    yRange <- yScalingResult$ranges
+  }
   
   xScalingResult <- scaleData_internal(x)
   xScaled <- xScalingResult$scaledData # Matrix of values
@@ -235,11 +294,11 @@ AddiVortes <- function(y, x, m = 200,
   # Dimension set (A list of vectors with the covariates included in the tessellations);
   # and Tessellation Set (A list of matrices that give the
   #                       coordinates of the centres in the tessellations)
-  pred <- rep(list(matrix(mean(yScaled) / m)), m)
-  dim <- sapply(1:m, function(ignoredIndex) {
+  pred <- rep(list(matrix(if (isClassification) 0 else mean(yScaled) / m)), mTotal)
+  dim <- sapply(seq_len(mTotal), function(ignoredIndex) {
     list(sample(seq_len(ncol(x)), 1))
   })
-  tess <- sapply(1:m, function(ignoredIndex) {
+  tess <- sapply(seq_len(mTotal), function(ignoredIndex) {
     list(matrix(rnorm(1, 0, sd)))
   })
   ## Make sure that tessellation proposals are within the region, if periodic
@@ -281,34 +340,40 @@ AddiVortes <- function(y, x, m = 200,
   }
   
   #### Set-up MCMC -------------------------------------------------------------
-  # The variance that captures variability around the mean of the scaled y values.
-  SigmaSquaredMu <- (0.5 / (k * sqrt(m)))^2
-  
-  # Finding lambda
-  if (InitialSigma == "Naive") {
-    # Usually used if p is greater then n. Uses std dev of y to predict sigma.
-    SigmaSquaredHat <- var(yScaled)
+  # The variance that captures variability around the mean of the scaled y
+  # values (regression) or the latent probit scale (classification).
+  if (isClassification) {
+    SigmaSquaredMu <- (3 / (k * sqrt(m)))^2
+    lambda <- 1
   } else {
-    # Default method using residual standard deviation from a least-squared linear
-    # regression of y, to predict sigma.
-    multiLinear <- lm(yScaled ~ xScaled)
-    SigmaSquaredHat <- sum(multiLinear$residuals^2) /
-      (length(yScaled) - length(xScaled[1, ]) - 1)
+    SigmaSquaredMu <- (0.5 / (k * sqrt(m)))^2
+
+    # Finding lambda
+    if (InitialSigma == "Naive") {
+      # Usually used if p is greater then n. Uses std dev of y to predict sigma.
+      SigmaSquaredHat <- var(yScaled)
+    } else {
+      # Default method using residual standard deviation from a least-squared linear
+      # regression of y, to predict sigma.
+      multiLinear <- lm(yScaled ~ xScaled)
+      SigmaSquaredHat <- sum(multiLinear$residuals^2) /
+        (length(yScaled) - length(xScaled[1, ]) - 1)
+    }
+    lambda <- optim(
+      par = 1,
+      fittingFunction,
+      method = "Brent",
+      lower = 0.001,
+      upper = 100,
+      q = q, nu = nu,
+      SigmaSquaredHat = SigmaSquaredHat
+    )$par
   }
-  lambda <- optim(
-    par = 1,
-    fittingFunction,
-    method = "Brent",
-    lower = 0.001,
-    upper = 100,
-    q = q, nu = nu,
-    SigmaSquaredHat = SigmaSquaredHat
-  )$par
   
   # Normalise tess, dim and pred to plain R objects before passing to C++.
   # sapply may wrap results in lists or simplify to arrays; ensure each
   # element is a plain double matrix / integer vector / double vector.
-  init_tess <- lapply(seq_len(m), function(j) {
+  init_tess <- lapply(seq_len(mTotal), function(j) {
     t_j <- tess[[j]]
     if (is.list(t_j)) t_j <- t_j[[1]]
     m_j <- as.matrix(t_j)
@@ -338,10 +403,23 @@ AddiVortes <- function(y, x, m = 200,
         " covariates\n",
         sep = ""
     )
-    cat("Model configuration: ", m,
-        " tessellations, ", totalMCMCIter,
+    cat("Model configuration: ", mTotal,
+        " tessellation", if (mTotal == 1L) "" else "s",
+        if (isClassification && nLatents > 1L) {
+          paste0(" (", m, " per latent, ", nLatents, " latents)")
+        } else {
+          ""
+        },
+        ", ", totalMCMCIter,
         " total iterations (", mcmcBurnIn,
-        " burn-in)\n\n",
+        " burn-in)",
+        if (isClassification) {
+          paste0("\nTask: ", task, " classification with classes ",
+                 paste(classLevels, collapse = ", "))
+        } else {
+          ""
+        },
+        "\n\n",
         sep = ""
     )
     cat("Running MCMC...\n")
@@ -370,7 +448,10 @@ AddiVortes <- function(y, x, m = 200,
     init_pred,
     binaryCols_r,
     as.double(catScaling_r),
-    as.logical(showProgress)
+    as.logical(showProgress),
+    as.logical(isClassification),
+    if (isClassification) as.integer(yClass) else NULL,
+    as.integer(nLatents)
   )
   
   if (showProgress) cat("Done.\n\n")
@@ -383,21 +464,25 @@ AddiVortes <- function(y, x, m = 200,
   traceStats           <- mcmcResult$traceStats
   
   posteriorSamples <- ncol(predictionMatrix)
-  
-  # Finding the mean of the prediction over the iterations and then unscaling
-  # the predictions.
-  meanYhat <- if (posteriorSamples > 0) {
-    (rowSums(predictionMatrix) / posteriorSamples) * yRange + yCentre
-  } else {
-    rep(yCentre, length(y))
+
+  inSampleRmse <- NA_real_
+  inSampleAccuracy <- NA_real_
+  inSampleBrier <- NA_real_
+  if (task == "regression") {
+    meanYhat <- if (posteriorSamples > 0) {
+      (rowSums(predictionMatrix) / posteriorSamples) * yRange + yCentre
+    } else {
+      rep(yCentre, length(y))
+    }
+    inSampleRmse <- sqrt(mean((y - meanYhat)^2))
   }
-  
+
   # Create and return the AddiVortes object
   if (cat.onehot)
     this_enc <- catEncoding
   else
     this_enc <- NULL
-  new_AddiVortes(
+  fit <- new_AddiVortes(
     posteriorTess = outputPosteriorTess,
     posteriorDim = outputPosteriorDim,
     posteriorSigma = outputPosteriorSigma,
@@ -406,14 +491,35 @@ AddiVortes <- function(y, x, m = 200,
     xRanges = xRanges,
     yCentre = yCentre,
     yRange = yRange,
-    inSampleRmse = sqrt(mean((y - meanYhat)^2)),
+    inSampleRmse = inSampleRmse,
     metric = old_metric,
     members = old_members,
     metric_aug = metric,
     member_aug = members,
     catEncoding = this_enc,
-    traceStats = traceStats
+    traceStats = traceStats,
+    task = task,
+    classLevels = classLevels,
+    nLatents = nLatents,
+    mPerLatent = mPerLatent,
+    inSampleAccuracy = inSampleAccuracy,
+    inSampleBrier = inSampleBrier
   )
+
+  if (isClassification && posteriorSamples > 0) {
+    in_sample <- predict(fit, xOriginal, type = "response", showProgress = FALSE)
+    if (task == "binary") {
+      y01 <- as.numeric(yClass)
+      pred01 <- as.numeric(in_sample > 0.5)
+      fit$inSampleAccuracy <- mean(pred01 == y01)
+      fit$inSampleBrier <- mean((in_sample - y01)^2)
+    } else {
+      pred_idx <- max.col(in_sample, ties.method = "first")
+      fit$inSampleAccuracy <- mean(pred_idx == (yClass + 1L))
+    }
+  }
+
+  fit
 }
 
 countCovariateTypes_internal <- function(x, metric) {

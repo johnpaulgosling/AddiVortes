@@ -1,5 +1,24 @@
 # AddiVortes News
 
+## AddiVortes 1.0.0
+
+* Added binary and multi-category classification. `AddiVortes()` chooses
+  regression or classification from the response: factor, character and logical
+  vectors are classification (two levels: binary probit; three or more:
+  multinomial probit), numeric 0/1 responses are binary classification, and any
+  other numeric response remains Gaussian regression.
+* Binary classification follows the Albert-Chib latent-variable probit
+  extension of AddiVortes. Multi-category classification uses \(K-1\)
+  independent latent ensembles, with the first class as the reference level.
+  The residual variance is fixed at 1 on the latent scale, and cell means use
+  \(\sigma_\mu = 3/(k\sqrt{m})\).
+* `predict()` gains `type = "class"` and `type = "link"`. For classification,
+  `type = "response"` returns class probabilities and `type = "quantile"`
+  returns credible intervals on those probabilities. Prediction intervals are
+  not used for classification models.
+* Added a classification vignette covering automatic task detection, binary
+  probabilities and intervals, and multi-category probability matrices.
+
 ## AddiVortes 0.7.1
 
 * Updated the categorical covariates vignette to document Eskin distance
