@@ -301,7 +301,8 @@ summary.AddiVortes <- function(object, ...) {
 #'   the mean prediction (class probabilities for classification). `"quantile"`
 #'   returns the quantiles specified by `quantiles`. `"class"` returns predicted
 #'   class labels (classification only). `"link"` returns the latent sum of
-#'   tessellations \eqn{G(x)}{G(x)}.
+#'   tessellations \eqn{G(x)}{G(x)} on the model scale before any response
+#'   unscaling.
 #' @param quantiles A numeric vector of probabilities to
 #'   compute for the predictions when `type = "quantile"`.
 #' @param interval The type of interval calculation. The default `"credible"`
@@ -319,7 +320,8 @@ summary.AddiVortes <- function(object, ...) {
 #' for multinomial classification. If `type = "quantile"`, a matrix of quantiles
 #' (binary/regression) or a named list of such matrices (multinomial). If
 #' `type = "class"`, a factor of predicted labels. If `type = "link"`, the
-#' latent function \eqn{G(x)}{G(x)}.
+#' latent function \eqn{G(x)}{G(x)} on the model scale before response
+#' unscaling.
 #'
 #' @details
 #' This function relies on the internal helper function `applyScaling_internal`
@@ -336,6 +338,10 @@ summary.AddiVortes <- function(object, ...) {
 #' in the scaled space before unscaling predictions. Classification uses a
 #' probit link with residual variance fixed at 1, so prediction intervals are
 #' not defined; use `type = "quantile"` for credible intervals on probabilities.
+#'
+#' For regression, `"response"` unscales predictions back to the original
+#' response units, while `"link"` returns the posterior mean of the latent
+#' scaled function \eqn{G(x)}{G(x)}.
 #'
 #' For binary classification, `"response"` is the posterior mean of
 #' \eqn{\Phi(G^{(s)}(x))}{Phi(G^(s)(x))}. For multinomial classification, class
@@ -511,7 +517,9 @@ predict.AddiVortes <- function(object, newdata,
   if (showProgress) cat("Done.\n\n")
 
   # --- Unscale and summarise predictions ---
-  if (type == "link" || type == "response") {
+  if (type == "link") {
+    predictions <- rowMeans(newTestDataPredictionsMatrix)
+  } else if (type == "response") {
     predictions <- rowMeans(newTestDataPredictionsMatrix) * object$yRange + object$yCentre
   } else if (type == "quantile") {
     quantileYhatNewScaled <- apply(newTestDataPredictionsMatrix, 1, quantile,
@@ -579,6 +587,16 @@ summariseClassificationPredictions_internal <- function(object, G_list, type,
                                   probs = quantiles, na.rm = TRUE))
   }
   quantile_list
+}
+
+binaryObservedResponse_internal <- function(y, class_levels) {
+  if (is.logical(y)) {
+    return(as.numeric(y))
+  }
+  if (is.numeric(y) && all(y %in% c(0, 1))) {
+    return(as.numeric(y))
+  }
+  as.numeric(as.character(y) == class_levels[2])
 }
 
 extractErrorStandardDeviationTrace_internal <- function(x, sigma_trace = NULL,
@@ -957,15 +975,7 @@ plot.AddiVortes <- function(x, x_train, y_train, sigma_trace = NULL,
     y_pred_mean <- predict(x, newdata = x_train, type = "response",
                            showProgress = FALSE)
     if (isTRUE(x$task == "binary")) {
-      y01 <- if (is.numeric(y_train)) {
-        as.numeric(y_train == 1 | y_train == x$classLevels[2])
-      } else {
-        as.numeric(as.character(y_train) == x$classLevels[2] |
-                     y_train == x$classLevels[2])
-      }
-      if (is.logical(y_train)) {
-        y01 <- as.numeric(y_train)
-      }
+      y01 <- binaryObservedResponse_internal(y_train, x$classLevels)
       y_pred_prob <- y_pred_mean
       residuals <- y01 - y_pred_mean
     } else if (isTRUE(x$task == "multinomial")) {
@@ -1108,13 +1118,7 @@ plot.AddiVortes <- function(x, x_train, y_train, sigma_trace = NULL,
     }
 
     if (isTRUE(x$task == "binary")) {
-      y01 <- if (is.logical(y_train)) {
-        as.numeric(y_train)
-      } else if (is.numeric(y_train) && all(y_train %in% c(0, 1))) {
-        as.numeric(y_train)
-      } else {
-        as.numeric(as.character(y_train) == x$classLevels[2])
-      }
+      y01 <- binaryObservedResponse_internal(y_train, x$classLevels)
       plot(y01, y_pred_prob,
         xlab = "Observed Class (0/1)",
         ylab = "Predicted Probability",

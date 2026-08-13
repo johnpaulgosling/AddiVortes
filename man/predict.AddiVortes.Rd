@@ -25,7 +25,8 @@ columns must match the original training data.}
 the mean prediction (class probabilities for classification). \code{"quantile"}
 returns the quantiles specified by \code{quantiles}. \code{"class"} returns predicted
 class labels (classification only). \code{"link"} returns the latent sum of
-tessellations \eqn{G(x)}{G(x)}.}
+tessellations \eqn{G(x)}{G(x)} on the model scale before any response
+unscaling.}
 
 \item{quantiles}{A numeric vector of probabilities to
 compute for the predictions when \code{type = "quantile"}.}
@@ -47,7 +48,8 @@ or binary classification, or an \eqn{n \times K}{n x K} probability matrix
 for multinomial classification. If \code{type = "quantile"}, a matrix of quantiles
 (binary/regression) or a named list of such matrices (multinomial). If
 \code{type = "class"}, a factor of predicted labels. If \code{type = "link"}, the
-latent function \eqn{G(x)}{G(x)}.
+latent function \eqn{G(x)}{G(x)} on the model scale before response
+unscaling.
 }
 \description{
 Predicts outcomes for new data using a fitted \code{AddiVortes} model object.
@@ -70,6 +72,10 @@ predictions, not just uncertainty in the mean function. The noise is added
 in the scaled space before unscaling predictions. Classification uses a
 probit link with residual variance fixed at 1, so prediction intervals are
 not defined; use \code{type = "quantile"} for credible intervals on probabilities.
+
+For regression, \code{"response"} unscales predictions back to the original
+response units, while \code{"link"} returns the posterior mean of the latent
+scaled function \eqn{G(x)}{G(x)}.
 
 For binary classification, \code{"response"} is the posterior mean of
 \eqn{\Phi(G^{(s)}(x))}{Phi(G^(s)(x))}. For multinomial classification, class

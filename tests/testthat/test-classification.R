@@ -61,6 +61,18 @@ test_that("binary classification probabilities are in [0, 1] and beat chance", {
   expect_length(link, n)
 })
 
+test_that("regression link predictions stay on the latent model scale", {
+  skip_on_cran()
+  withr::local_seed(21)
+  x <- matrix(rnorm(80), 20, 4)
+  y <- 10 + 4 * x[, 1] - 2 * x[, 2] + rnorm(20, sd = 0.2)
+  fit <- AddiVortes(y, x, m = 4, totalMCMCIter = 30, mcmcBurnIn = 10,
+                    showProgress = FALSE)
+  response <- predict(fit, x, type = "response", showProgress = FALSE)
+  link <- predict(fit, x, type = "link", showProgress = FALSE)
+  expect_equal(link, (response - fit$yCentre) / fit$yRange)
+})
+
 test_that("binary classification works with a two-level factor", {
   skip_on_cran()
   withr::local_seed(7)
@@ -99,6 +111,23 @@ test_that("multinomial classification returns probabilities that sum to 1", {
   expect_gt(fit$inSampleAccuracy, 1 / 3)
   link <- predict(fit, x, type = "link", showProgress = FALSE)
   expect_equal(dim(link), c(n, 2))
+})
+
+test_that("binary diagnostic plots accept numeric 0/1 responses", {
+  skip_on_cran()
+  withr::local_seed(8)
+  n <- 40
+  x <- matrix(rnorm(n * 3), n, 3)
+  y <- as.integer(x[, 1] + x[, 2] > 0)
+  fit <- AddiVortes(y, x, m = 4, totalMCMCIter = 30, mcmcBurnIn = 10,
+                    showProgress = FALSE)
+  plot_file <- tempfile(fileext = ".pdf")
+  grDevices::pdf(plot_file)
+  on.exit({
+    grDevices::dev.off()
+    unlink(plot_file)
+  }, add = TRUE)
+  expect_silent(plot(fit, x_train = x, y_train = y, which = c(1, 4)))
 })
 
 test_that("type = 'class' errors on a regression fit", {
