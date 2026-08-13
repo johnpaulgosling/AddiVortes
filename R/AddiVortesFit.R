@@ -24,7 +24,8 @@
 #' @param classLevels Character vector of class labels for classification fits,
 #'   or `NULL` for regression.
 #' @param nLatents Number of latent probit dimensions. 1 for regression and
-#'   binary classification; \(K-1\) for \(K\)-class multinomial models.
+#'   binary classification; \eqn{K-1}{K-1} for \eqn{K}{K}-class multinomial
+#'   models.
 #' @param mPerLatent Number of tessellations per latent ensemble.
 #' @param inSampleAccuracy In-sample classification accuracy, or `NA` for
 #'   regression.
@@ -300,7 +301,7 @@ summary.AddiVortes <- function(object, ...) {
 #'   the mean prediction (class probabilities for classification). `"quantile"`
 #'   returns the quantiles specified by `quantiles`. `"class"` returns predicted
 #'   class labels (classification only). `"link"` returns the latent sum of
-#'   tessellations \(G(x)\).
+#'   tessellations \eqn{G(x)}{G(x)}.
 #' @param quantiles A numeric vector of probabilities to
 #'   compute for the predictions when `type = "quantile"`.
 #' @param interval The type of interval calculation. The default `"credible"`
@@ -314,11 +315,11 @@ summary.AddiVortes <- function(object, ...) {
 #'
 #' @return
 #' If `type = "response"`, a numeric vector of mean predictions for regression
-#' or binary classification, or an \(n \times K\) probability matrix for
-#' multinomial classification. If `type = "quantile"`, a matrix of quantiles
+#' or binary classification, or an \eqn{n \times K}{n x K} probability matrix
+#' for multinomial classification. If `type = "quantile"`, a matrix of quantiles
 #' (binary/regression) or a named list of such matrices (multinomial). If
 #' `type = "class"`, a factor of predicted labels. If `type = "link"`, the
-#' latent function \(G(x)\).
+#' latent function \eqn{G(x)}{G(x)}.
 #'
 #' @details
 #' This function relies on the internal helper function `applyScaling_internal`
@@ -337,9 +338,9 @@ summary.AddiVortes <- function(object, ...) {
 #' not defined; use `type = "quantile"` for credible intervals on probabilities.
 #'
 #' For binary classification, `"response"` is the posterior mean of
-#' \(\Phi(G^{(s)}(x))\). For multinomial classification, class probabilities
-#' are estimated from independent \(N(G, I)\) latents, with the first class
-#' as the reference.
+#' \eqn{\Phi(G^{(s)}(x))}{Phi(G^(s)(x))}. For multinomial classification, class
+#' probabilities are estimated from independent \eqn{N(G, I)}{N(G, I)} latents,
+#' with the first class as the reference.
 #'
 #' @examples
 #' \donttest{

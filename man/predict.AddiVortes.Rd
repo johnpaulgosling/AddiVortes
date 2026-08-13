@@ -25,7 +25,7 @@ columns must match the original training data.}
 the mean prediction (class probabilities for classification). \code{"quantile"}
 returns the quantiles specified by \code{quantiles}. \code{"class"} returns predicted
 class labels (classification only). \code{"link"} returns the latent sum of
-tessellations \(G(x)\).}
+tessellations \eqn{G(x)}{G(x)}.}
 
 \item{quantiles}{A numeric vector of probabilities to
 compute for the predictions when \code{type = "quantile"}.}
@@ -43,11 +43,11 @@ unused).}
 }
 \value{
 If \code{type = "response"}, a numeric vector of mean predictions for regression
-or binary classification, or an \(n \times K\) probability matrix for
-multinomial classification. If \code{type = "quantile"}, a matrix of quantiles
+or binary classification, or an \eqn{n \times K}{n x K} probability matrix
+for multinomial classification. If \code{type = "quantile"}, a matrix of quantiles
 (binary/regression) or a named list of such matrices (multinomial). If
 \code{type = "class"}, a factor of predicted labels. If \code{type = "link"}, the
-latent function \(G(x)\).
+latent function \eqn{G(x)}{G(x)}.
 }
 \description{
 Predicts outcomes for new data using a fitted \code{AddiVortes} model object.
@@ -72,9 +72,9 @@ probit link with residual variance fixed at 1, so prediction intervals are
 not defined; use \code{type = "quantile"} for credible intervals on probabilities.
 
 For binary classification, \code{"response"} is the posterior mean of
-\(\Phi(G^{(s)}(x))\). For multinomial classification, class probabilities
-are estimated from independent \(N(G, I)\) latents, with the first class
-as the reference.
+\eqn{\Phi(G^{(s)}(x))}{Phi(G^(s)(x))}. For multinomial classification, class
+probabilities are estimated from independent \eqn{N(G, I)}{N(G, I)} latents,
+with the first class as the reference.
 }
 \examples{
 \donttest{

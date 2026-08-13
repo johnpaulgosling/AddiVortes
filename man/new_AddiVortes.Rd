@@ -68,7 +68,8 @@ were present.}
 or \code{NULL} for regression.}
 
 \item{nLatents}{Number of latent probit dimensions. 1 for regression and
-binary classification; \(K-1\) for \(K\)-class multinomial models.}
+binary classification; \eqn{K-1}{K-1} for \eqn{K}{K}-class multinomial
+models.}
 
 \item{mPerLatent}{Number of tessellations per latent ensemble.}
 

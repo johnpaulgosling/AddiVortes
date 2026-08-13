@@ -39,8 +39,8 @@ are treated as categorical variables and automatically converted to d-1 binary
 indicator variables via one-hot encoding (with the first level as reference).}
 
 \item{m}{The number of tessellations. For multinomial classification this is
-the number of tessellations \strong{per latent dimension} (there are \(K-1\)
-latents for \(K\) classes).}
+the number of tessellations \strong{per latent dimension} (there are
+\eqn{K-1}{K-1} latents for \eqn{K}{K} classes).}
 
 \item{totalMCMCIter}{The number of iterations.}
 
@@ -54,8 +54,10 @@ fixed at 1.}
 variance. Ignored for classification.}
 
 \item{k}{Prior scale for tessellation output values. For regression,
-\(\sigma_\mu = 0.5/(k\sqrt{m})\) on the scaled response. For classification,
-\(\sigma_\mu = 3/(k\sqrt{m})\) on the latent probit scale.}
+\eqn{\sigma_\mu = 0.5/(k\sqrt{m})}{sigma_mu = 0.5/(k sqrt(m))} on the scaled
+response. For classification,
+\eqn{\sigma_\mu = 3/(k\sqrt{m})}{sigma_mu = 3/(k sqrt(m))} on the latent
+probit scale.}
 
 \item{sd}{The standard deviation used in centre proposals.}
 

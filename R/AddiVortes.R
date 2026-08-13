@@ -33,8 +33,8 @@
 #'   are treated as categorical variables and automatically converted to d-1 binary
 #'   indicator variables via one-hot encoding (with the first level as reference).
 #' @param m The number of tessellations. For multinomial classification this is
-#'   the number of tessellations **per latent dimension** (there are \(K-1\)
-#'   latents for \(K\) classes).
+#'   the number of tessellations **per latent dimension** (there are
+#'   \eqn{K-1}{K-1} latents for \eqn{K}{K} classes).
 #' @param totalMCMCIter The number of iterations.
 #' @param mcmcBurnIn The number of burn in iterations.
 #' @param nu The degrees of freedom for the inverse-gamma prior on the residual
@@ -43,8 +43,10 @@
 #' @param q The quantile used to set the inverse-gamma prior on the residual
 #'   variance. Ignored for classification.
 #' @param k Prior scale for tessellation output values. For regression,
-#'   \(\sigma_\mu = 0.5/(k\sqrt{m})\) on the scaled response. For classification,
-#'   \(\sigma_\mu = 3/(k\sqrt{m})\) on the latent probit scale.
+#'   \eqn{\sigma_\mu = 0.5/(k\sqrt{m})}{sigma_mu = 0.5/(k sqrt(m))} on the scaled
+#'   response. For classification,
+#'   \eqn{\sigma_\mu = 3/(k\sqrt{m})}{sigma_mu = 3/(k sqrt(m))} on the latent
+#'   probit scale.
 #' @param sd The standard deviation used in centre proposals.
 #' @param Omega Omega/(number of covariates) is the prior probability of
 #'   adding a dimension.
