@@ -53,9 +53,9 @@ y <- factor(ifelse(x$x1 + x$x2 > 0, "active", "inactive"),
 
 fit_bin <- AddiVortes(
   y, x,
-  m = 20,
-  totalMCMCIter = 150,
-  mcmcBurnIn = 50,
+  m = 200,
+  totalMCMCIter = 2000,
+  mcmcBurnIn = 200,
   showProgress = FALSE
 )
 
@@ -106,9 +106,9 @@ y3 <- cut(x3$x1, breaks = c(-Inf, -0.5, 0.5, Inf), labels = c("low", "mid", "hig
 
 fit_multi <- AddiVortes(
   y3, x3,
-  m = 12,
-  totalMCMCIter = 120,
-  mcmcBurnIn = 40,
+  m = 200,
+  totalMCMCIter = 2000,
+  mcmcBurnIn = 200,
   showProgress = FALSE
 )
 
