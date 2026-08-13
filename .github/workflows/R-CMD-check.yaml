@@ -27,6 +27,15 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
+      # Distro/toolchain flags from the runner's R Makeconf, not from this
+      # package (there is no src/Makevars). Treat them as known so
+      # "checking compilation flags used" does not NOTE on GHA.
+      _R_CHECK_COMPILATION_FLAGS_KNOWN_: >-
+        -Werror=format-security -Wformat -Wdate-time
+        -Wp,-D_FORTIFY_SOURCE=3 -Wp,-D_GLIBCXX_ASSERTIONS
+        -march=x86-64-v3 -mpclmul -mno-omit-leaf-frame-pointer
+        -fno-omit-frame-pointer -fstack-protector-strong
+        -fstack-clash-protection -fcf-protection
 
     steps:
       - uses: actions/checkout@v4

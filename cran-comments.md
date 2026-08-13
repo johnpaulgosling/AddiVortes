@@ -1,26 +1,28 @@
-## Submission of AddiVortes 0.6.9
+## Submission of AddiVortes 1.0.0
 
-This resubmission addresses two CRAN check failures from earlier 0.6.8/0.6.9 builds:
-
-1. AddressSanitizer heap-buffer-overflow in `propose_internal()`
-   (spherical vignette rebuild on SAN / clang-ASAN builders).
-2. Install WARNING from unused variable `-Wunused-variable` in
-   `log_acceptance_components()`.
+This release adds binary and multinomial probit classification, chosen
+automatically from the response, alongside the existing regression model.
 
 ## Test environments
 
-* local Ubuntu 24.04, R 4.6.1
-* previous CRAN SAN / clang-ASAN reports for 0.6.8 (ASan abort, now fixed)
+* GitHub Actions: macOS-latest (R-release), Windows-latest (R-release),
+  Ubuntu-latest (R-devel, R-release, R-oldrel)
+* local Ubuntu, R 4.3.3
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
+0 errors | 0 warnings | 0 notes on CRAN-like builders.
+
+On some Ubuntu and macOS installations, `R CMD check --as-cran` reports:
 
 * checking compilation flags used ... NOTE
   Compilation used the following non-portable flag(s):
-    ‘-mno-omit-leaf-frame-pointer’
+    ‘-Werror=format-security’ ‘-Wformat’ ‘-Wp,-D_FORTIFY_SOURCE=3’
+    ‘-Wp,-D_GLIBCXX_ASSERTIONS’ ‘-march=x86-64-v3’ ‘-mpclmul’
 
-This flag is injected by the system R installation on Ubuntu
-(`/usr/lib/R/etc/Makeconf`), not by this package. The package has no
-`src/Makevars` and sets no compiler flags of its own. The NOTE does not
-appear on CRAN's builders.
+Those flags come from the system R `Makeconf` (for example
+`/usr/lib/R/etc/Makeconf` on Ubuntu, or the macOS R binary used on GitHub
+Actions). This package has no `src/Makevars` and sets no compiler flags of
+its own. The NOTE does not appear on CRAN's builders. GitHub Actions sets
+`_R_CHECK_COMPILATION_FLAGS_KNOWN_` so the same NOTE is not treated as a
+check issue on this repository's runners.
