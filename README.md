@@ -1,4 +1,4 @@
-# AddiVortes: Bayesian Additive Voronoi Tessellations
+# AddiVortes: (Bayesian) Additive Voronoi Tessellations
 
 ## Overview
 
@@ -7,7 +7,7 @@ AddiVortes implements the **Bayesian Additive Voronoi Tessellation** model for m
 ## Key Features
 
 - **Machine Learning Regression**: Advanced Bayesian regression modelling for complex datasets
-- **Alternative to BART**: Uses Voronoi tessellations instead of trees for more flexible spatial modeling
+- **Alternative to BART**: Uses Voronoi tessellations instead of trees for more flexible spatial modelling
 - **Spatial Data Analysis**: Excellent for geographic and spatial datasets
 - **Non-parametric Modelling**: No assumptions about functional form
 - **Bayesian Framework**: Full posterior inference with uncertainty quantification
@@ -42,7 +42,7 @@ library(AddiVortes)
 # y <- your_response
 
 # Fit the AddiVortes model
-# model <- AddiVortes(X, y)
+# model <- AddiVortes(y, X)
 
 # Make predictions
 # predictions <- predict(model, newdata = X_test)
@@ -73,7 +73,7 @@ citation("AddiVortes")
 
 ## References
 
-Stone, A. and Gosling, J.P. (2025). AddiVortes: (Bayesian) additive Voronoi tessellations. Journal of Computational and Graphical Statistics.
+Stone, A. and Gosling, J.P. (2025). AddiVortes: (Bayesian) additive Voronoi tessellations. *Journal of Computational and Graphical Statistics*, **34**, 859–71. [doi](https://doi.org/10.1080/10618600.2024.2414104)
 
 ## Keywords
 
