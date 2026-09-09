@@ -1,4 +1,4 @@
-
+#devtools::install()
 devtools::load_all()
 
 #Friedman dataset (Works except Soft)
@@ -324,7 +324,7 @@ alpha_val<-1
 cat("Fitting local update algorithm...\n")
 time_local <- system.time({
   set.seed(78)
-  Model_AddiVortes_local<- AddiVortes:::AddiVortes(training_data$Y, X_train,m=200,thinning = 2,varSelMode = 1,totalMCMCIter = 500, mcmcBurnIn = 250,dirichletWarmup = 100,nu=6,q=0.9,updateAlpha = TRUE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = 0.6,numChains = 1,IntialSigma = "LASSO",tau=50,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
+  Model_AddiVortes_local<- AddiVortes(training_data$Y, X_train,m=200,thinning = 1,varSelMode = 2,totalMCMCIter = 5000, mcmcBurnIn = 2500,dirichletWarmup = 1000,nu=6,q=0.9,updateAlpha = TRUE,alpha=alpha_val,a_alpha = a_alpha_val,b_alpha=b_alpha_val,adaptBoost = boost_val, adaptPenalty = penalty_val, momentumDecay = decay_val, kappa = 0.6,numChains = 1,IntialSigma = "LASSO",tau=50,splitMode =1)#,rho_alpha = 1)#,power = p_init_val, p_shape = p_shape_val, p_rate = p_rate_val, p_sd = p_sd_val)
 })
 
 time_local <- system.time({

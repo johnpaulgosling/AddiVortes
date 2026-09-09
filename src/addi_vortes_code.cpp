@@ -367,14 +367,10 @@ bool in_vector(int value, const std::vector<int>& vec) {
                               double omega,
                               double lambda,
                               int p,
-                              double sum_notin_old,
-                              double sum_notin_new,
                               int var_sel_mode,
                               double log_varsel_struct_ratio) {
     (void)new_centres;
     (void)d_new;
-    (void)sum_notin_old;
-    (void)sum_notin_new;
     
     double sum_log_old = 0.0;
     double sum_log_new = 0.0;
@@ -1476,9 +1472,10 @@ extern "C" {
     SEXP out_dim = PROTECT(Rf_allocVector(VECSXP, num_stored));
     SEXP out_pred = PROTECT(Rf_allocVector(VECSXP, num_stored));
     SEXP out_sigma = PROTECT(Rf_allocVector(REALSXP, num_stored));
-    SEXP out_pred_mat = PROTECT(Rf_allocMatrix(REALSXP, n_obs, num_stored));
     
-    double* p_out_mat = REAL(out_pred_mat);
+    SEXP out_pred_sum = PROTECT(Rf_allocVector(REALSXP, n_obs));
+    double* p_out_sum = REAL(out_pred_sum);
+    std::memset(p_out_sum, 0, n_obs * sizeof(double));
     
     SEXP s_weights_sexp = PROTECT(Rf_allocVector(REALSXP, p));
     double* p_s_weights = REAL(s_weights_sexp);
@@ -1492,7 +1489,6 @@ extern "C" {
     SEXP out_alpha = PROTECT(Rf_allocVector(REALSXP, num_stored));
     SEXP out_aug_counts = PROTECT(Rf_allocMatrix(REALSXP, p, num_stored));
     
-    // Allocate a custom size specifically for momentum
     int num_momentum_stored = std::max(0, (total_iter - dirichlet_warmup) / thinning);
     SEXP out_momentum = PROTECT(Rf_allocMatrix(REALSXP, p, num_momentum_stored));
     
@@ -1606,7 +1602,7 @@ extern "C" {
     }
     
     int store_idx = 0;
-    int mom_store_idx = 0; // New tracker for momentum
+    int mom_store_idx = 0; 
     
     for (int iter = 0; iter < total_iter; ++iter) {
       std::vector<double> current_m_counts(p, 0.0);
@@ -1835,8 +1831,6 @@ extern "C" {
               hypers.omega,
               hypers.lambda_poisson,
               p,
-              sum_notin_old,
-              sum_notin_new,
               var_sel_mode,
               log_varsel_struct_ratio
             );
@@ -1912,14 +1906,10 @@ extern "C" {
         
         double acceptance_prob = exp(fmin(0.0, log_prob));
         
-        if (var_sel_mode == 2) {
-          double adaptation_scale = 1.0;
-          
-          if (iter > dirichlet_warmup) {
-            double t = iter - dirichlet_warmup + 1.0;
-            adaptation_scale =
-              pow((1.0 + tau) / (t + tau), kappa);
-          }
+        if (var_sel_mode == 2 && iter > dirichlet_warmup) {
+          double t = iter - dirichlet_warmup + 1.0;
+          double adaptation_scale =
+            pow((1.0 + tau) / (t + tau), kappa);
           
           double current_boost = adapt_boost * adaptation_scale;
           double current_penalty = adapt_penalty * adaptation_scale;
@@ -2113,12 +2103,6 @@ extern "C" {
       }
       
       if (var_sel_mode > 0 && iter > dirichlet_warmup) {
-        /*
-         Linero-style geometric-multinomial augmentation for Model B.
-         
-         Stored dim_j is treated as an unordered active set.
-         A latent order is sampled conditional on the unordered active set.
-         */
         
         std::fill(current_m_counts.begin(), current_m_counts.end(), 0.0);
         
@@ -2127,17 +2111,10 @@ extern "C" {
           int d_len = Rf_length(dim_j_sexp);
           const int* p_dim_j = INTEGER(dim_j_sexp);
           
-          /*
-           Count observed successful dimension selections.
-           */
           for (int k = 0; k < d_len; ++k) {
             current_m_counts[p_dim_j[k] - 1] += 1.0;
           }
           
-          /*
-           Model B: sample a latent ordered history conditional on the unordered
-           active dimension set.
-           */
           std::vector<int> latent_order =
             sample_order_given_unordered_set(p_dim_j, d_len, p_s_weights);
           
@@ -2204,9 +2181,6 @@ extern "C" {
           }
         }
         
-        /*
-         Update alpha before drawing s.
-         */
         if (update_alpha == 1) {
           double alpha_star =
             exp(norm_rand() * 0.5 + log(alpha));
@@ -2249,10 +2223,6 @@ extern "C" {
           }
         }
         
-        /*
-         Draw s from the Dirichlet full conditional.
-         */
-        
         double sum_s_prop = 0.0;
         
         for (int i = 0; i < p; ++i) {
@@ -2262,9 +2232,6 @@ extern "C" {
           double raw_shape = base_shape;
           
           if (var_sel_mode == 2) {
-            /*
-             Prevent invalid Dirichlet shapes due to negative momentum.
-             */
             double safe_momentum =
               fmax(adaptive_momentum[i], -0.95 * base_shape);
             
@@ -2371,39 +2338,33 @@ extern "C" {
           UNPROTECT(4);
           
         } else {
-          SET_VECTOR_ELT(
-            out_tess,
-            store_idx,
-            Rf_duplicate(return_tess)
-          );
+          SEXP tl = PROTECT(Rf_allocVector(VECSXP, m));
+          SEXP dl = PROTECT(Rf_allocVector(VECSXP, m));
+          SEXP pl = PROTECT(Rf_allocVector(VECSXP, m));
           
-          SET_VECTOR_ELT(
-            out_dim,
-            store_idx,
-            Rf_duplicate(return_dim)
-          );
+          for(int k = 0; k < m; ++k) {
+            SET_VECTOR_ELT(tl, k, VECTOR_ELT(return_tess, k));
+            SET_VECTOR_ELT(dl, k, VECTOR_ELT(return_dim, k));
+            SET_VECTOR_ELT(pl, k, VECTOR_ELT(return_pred, k));
+          }
           
-          SET_VECTOR_ELT(
-            out_pred,
-            store_idx,
-            Rf_duplicate(return_pred)
-          );
+          SET_VECTOR_ELT(out_tess, store_idx, tl);
+          SET_VECTOR_ELT(out_dim, store_idx, dl);
+          SET_VECTOR_ELT(out_pred, store_idx, pl);
+          
+          UNPROTECT(3);
         }
         
         REAL(out_sigma)[store_idx] = hypers.sigma2;
         
         if (split_mode == 1) {
-          std::memcpy(
-            p_out_mat + store_idx * n_obs,
-            p_sum,
-            n_obs * sizeof(double)
-          );
+          for (int i = 0; i < n_obs; ++i) {
+            p_out_sum[i] += p_sum[i];
+          }
         } else {
-          std::memcpy(
-            p_out_mat + store_idx * n_obs,
-            Y_hat.data(),
-            n_obs * sizeof(double)
-          );
+          for (int i = 0; i < n_obs; ++i) {
+            p_out_sum[i] += Y_hat[i];
+          }
         }
         
         for (int i = 0; i < p; ++i) {
@@ -2463,7 +2424,7 @@ extern "C" {
     SET_VECTOR_ELT(return_list, 1, out_dim);
     SET_VECTOR_ELT(return_list, 2, out_pred);
     SET_VECTOR_ELT(return_list, 3, out_sigma);
-    SET_VECTOR_ELT(return_list, 4, out_pred_mat);
+    SET_VECTOR_ELT(return_list, 4, out_pred_sum);
     SET_VECTOR_ELT(return_list, 5, out_dirichlet);
     SET_VECTOR_ELT(return_list, 6, out_var_sel);
     SET_VECTOR_ELT(return_list, 7, out_alpha);
@@ -2478,7 +2439,7 @@ extern "C" {
     SET_STRING_ELT(list_names, 1, Rf_mkChar("posteriorDim"));
     SET_STRING_ELT(list_names, 2, Rf_mkChar("posteriorPred"));
     SET_STRING_ELT(list_names, 3, Rf_mkChar("posteriorSigma"));
-    SET_STRING_ELT(list_names, 4, Rf_mkChar("predictionMatrix"));
+    SET_STRING_ELT(list_names, 4, Rf_mkChar("predictionSum"));
     SET_STRING_ELT(list_names, 5, Rf_mkChar("posteriorDirichletWeights"));
     SET_STRING_ELT(list_names, 6, Rf_mkChar("posteriorVariableSelection"));
     SET_STRING_ELT(list_names, 7, Rf_mkChar("posteriorAlpha"));

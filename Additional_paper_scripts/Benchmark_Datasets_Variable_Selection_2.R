@@ -2,6 +2,19 @@ benchmark_datasets<-list()
 
 ### Regression datasets
 {
+  
+  # 2. Triazines (mlbench) - 186 obs, 60 covariates
+  {
+    triazines_data <- read.csv("https://raw.githubusercontent.com/s3628730/datasets/master/triazines.csv")
+    
+    benchmark_datasets$Triazines <- list(
+      X <- triazines_data[,c(1:42,45:60)],
+      Y <- triazines_data[,61]
+    )
+    
+    rm(triazines_data)
+  }
+  
   # Mice # N = 1814, P = 10345
   {
   # install.packages("BGLR")

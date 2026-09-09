@@ -8,6 +8,7 @@
 #' the test samples.
 #'
 #' @importFrom stats var lm optim quantile runif dbinom dpois
+#' @importFrom glmnet cv.glmnet
 #' @export
 
 qinvgamma_internal <- function(p, shape, rate) {
@@ -33,13 +34,13 @@ scaleData_internal <- function(data) {
   list(scaledData = as.matrix(scaledData), centres = centres, ranges = ranges)
 }
 
-AddiVortes <- function (y, x, m = 200, totalMCMCIter = 2500, mcmcBurnIn = 1000,
-                        nu = 6, q = 0.85, k = 3, sd = 0.8, Omega = 1.5,
+AddiVortes <- function (y, x, m = 200, totalMCMCIter = 2500, mcmcBurnIn = 1000, 
+                        nu = 6, q = 0.85, k = 3, sd = 0.8, Omega = 1.5, 
                         LambdaRate = 4, IntialSigma = "LASSO", thinning = 1, showProgress = TRUE,
                         alpha = 1, updateAlpha = TRUE, a_alpha = 0.5, b_alpha = 1, rho_alpha = ncol(x), dirichletWarmup = NULL,
-                        adaptBoost = 1, adaptPenalty = 1, momentumDecay = 0.90, kappa = 0.60, tau = 0,
+                        adaptBoost = 1, adaptPenalty = 1, momentumDecay = 0.90, kappa = 0.80, tau = 0,
                         varSelMode = 0, numChains = 4,
-                        splitMode = 1, power = 2.0, p_shape = 2.0, p_rate = 2.0, p_sd = 1)
+                        splitMode = 1, power = 2.0, p_shape = 2.0, p_rate = 2.0, p_sd = 1) 
 {
   if (is.null(dirichletWarmup)) {
     dirichletWarmup <- floor(mcmcBurnIn / 2)
@@ -93,15 +94,15 @@ AddiVortes <- function (y, x, m = 200, totalMCMCIter = 2500, mcmcBurnIn = 1000,
     
     if (is_classification) {
       p_hat <- mean(yScaled)
-      latent_offset <- qnorm(max(0.01, min(0.99, p_hat)))
+      latent_offset <- qnorm(max(0.01, min(0.99, p_hat))) 
       
       pred <- rep(list(matrix(latent_offset / m)), m)
       sumOfAllTess <- rep(latent_offset, length(yScaled))
       
-      SigmaSquaredMu <- (3.0 / (k * sqrt(m)))^2
+      SigmaSquaredMu <- (3.0 / (k * sqrt(m)))^2 
       
       SigmaSquaredHat <- 1.0
-      lambda_invgamma <- 1.0
+      lambda_invgamma <- 1.0 
     } else {
       pred <- rep(list(matrix(mean(yScaled) / m)), m)
       sumOfAllTess <- rep(mean(yScaled), length(yScaled))
@@ -150,39 +151,54 @@ AddiVortes <- function (y, x, m = 200, totalMCMCIter = 2500, mcmcBurnIn = 1000,
                                as.numeric(kappa),
                                as.numeric(tau),
                                as.integer(varSelMode),
-                               splitMode_int,   
-                               as.numeric(p_vec), 
-                               as.numeric(p_shape),
-                               as.numeric(p_rate), 
+                               splitMode_int,        
+                               as.numeric(p_vec),    
+                               as.numeric(p_shape),  
+                               as.numeric(p_rate),   
                                as.numeric(p_sd),
-                               is_class_int)    
+                               is_class_int)         
     
+    if (!is.null(super_call_result$posteriorTess)) {
+      super_call_result$posteriorTess <- memCompress(serialize(super_call_result$posteriorTess, NULL), "gzip")
+    }
+    if (!is.null(super_call_result$posteriorDim)) {
+      super_call_result$posteriorDim <- memCompress(serialize(super_call_result$posteriorDim, NULL), "gzip")
+    }
+    if (!is.null(super_call_result$posteriorPred)) {
+      super_call_result$posteriorPred <- memCompress(serialize(super_call_result$posteriorPred, NULL), "gzip")
+    }
+    if (!is.null(super_call_result$posteriorMu)) {
+      super_call_result$posteriorMu <- memCompress(serialize(super_call_result$posteriorMu, NULL), "gzip")
+    }
+    
+    gc() 
     return(super_call_result)
   })
   
-  posteriorTessCombined <- do.call(c, lapply(chain_results, function(res) res$posteriorTess))
-  posteriorDimCombined <- do.call(c, lapply(chain_results, function(res) res$posteriorDim))
+  posteriorTessCombined <- lapply(chain_results, function(res) res$posteriorTess)
+  posteriorDimCombined <- lapply(chain_results, function(res) res$posteriorDim)
+  posteriorPredCombined <- lapply(chain_results, function(res) res$posteriorPred)
+  posteriorMuCombined <- lapply(chain_results, function(res) res$posteriorMu)
+  
   posteriorSigmaCombined <- do.call(c, lapply(chain_results, function(res) res$posteriorSigma))
-  posteriorPredCombined <- do.call(c, lapply(chain_results, function(res) res$posteriorPred))
   
-  posteriorPowerCombined <- do.call(cbind, lapply(chain_results, function(res) res$posteriorPower))
-  posteriorMuCombined <- do.call(c, lapply(chain_results, function(res) res$posteriorMu))
+  predictionSumCombined <- Reduce("+", lapply(chain_results, function(res) res$predictionSum))
   
-  predictionMatrixCombined <- do.call(cbind, lapply(chain_results, function(res) res$predictionMatrix))
   dirichletWeightsCombined <- do.call(cbind, lapply(chain_results, function(res) res$posteriorDirichletWeights))
   variableSelectionCombined <- do.call(cbind, lapply(chain_results, function(res) res$posteriorVariableSelection))
   posteriorAlphaCombined <- do.call(c, lapply(chain_results, function(res) res$posteriorAlpha))
   posteriorAugmentedCountsCombined <- do.call(cbind, lapply(chain_results, function(res) res$posteriorAugmentedCounts))
   posteriorMomentumCombined <- do.call(cbind, lapply(chain_results, function(res) res$posteriorMomentum))
+  posteriorPowerCombined <- do.call(cbind, lapply(chain_results, function(res) res$posteriorPower))
   
   posteriorSamplesPerChain <- floor((totalMCMCIter - mcmcBurnIn)/thinning)
   totalPosteriorSamples <- posteriorSamplesPerChain * numChains
   
   if (is_classification) {
-    meanYhat <- pnorm(rowSums(predictionMatrixCombined)/totalPosteriorSamples)
+    meanYhat <- pnorm(predictionSumCombined/totalPosteriorSamples)
     in_sample_error <- mean((meanYhat > 0.5) != y)
   } else {
-    meanYhat <- (rowSums(predictionMatrixCombined)/totalPosteriorSamples) * yRange + yCentre
+    meanYhat <- (predictionSumCombined/totalPosteriorSamples) * yRange + yCentre
     in_sample_error <- sqrt(mean((y - meanYhat)^2))
   }
   
@@ -194,22 +210,21 @@ AddiVortes <- function (y, x, m = 200, totalMCMCIter = 2500, mcmcBurnIn = 1000,
   dirichlet_weights_upper <- apply(dirichletWeightsCombined, 1, quantile, probs = 0.975)
   
   unscaledPosteriorSigmaSquared <- posteriorSigmaCombined * (yRange^2)
-  posteriorPowerCombined <- do.call(cbind, lapply(chain_results, function(res) res$posteriorPower))
   
   final_result <- new_AddiVortesFit(
-    posteriorTess = posteriorTessCombined,
-    posteriorDim = posteriorDimCombined,
-    posteriorSigma = unscaledPosteriorSigmaSquared,
-    posteriorPred = if(splitMode == 1) posteriorPredCombined else posteriorMuCombined,
+    posteriorTess = posteriorTessCombined, 
+    posteriorDim = posteriorDimCombined, 
+    posteriorSigma = unscaledPosteriorSigmaSquared, 
+    posteriorPred = if(splitMode == 1) posteriorPredCombined else posteriorMuCombined, 
     posteriorDirichletWeights = dirichletWeightsCombined,
     posteriorVariableSelection = variableSelectionCombined,
     posteriorAugmentedCounts = posteriorAugmentedCountsCombined,
     posteriorMomentum = posteriorMomentumCombined,
     posteriorAlpha = posteriorAlphaCombined,
-    predictionMatrix = predictionMatrixCombined,
+    predictionMatrix = NULL, 
     posteriorPower = posteriorPowerCombined,
     splitMode = splitMode,
-    xCentres = xCentres, xRanges = xRanges, yCentre = yCentre, yRange = yRange,
+    xCentres = xCentres, xRanges = xRanges, yCentre = yCentre, yRange = yRange, 
     inSampleRmse = in_sample_error,
     posteriorDirichletWeightsMean = dirichlet_weights_mean,
     posteriorDirichletWeightsLower = dirichlet_weights_lower,

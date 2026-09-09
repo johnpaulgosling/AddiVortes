@@ -1,9 +1,7 @@
 #' @title Create an AddiVortesFit Object
-#'
 #' @description A constructor for the AddiVortesFit class.
-#'
 #' @export
-new_AddiVortesFit <- function(posteriorTess, posteriorDim,
+new_AddiVortesFit <- function(posteriorTess, posteriorDim, 
                               posteriorSigma, posteriorPred,
                               posteriorDirichletWeights = NULL,
                               posteriorVariableSelection = NULL,
@@ -49,6 +47,36 @@ new_AddiVortesFit <- function(posteriorTess, posteriorDim,
   )
 }
 
+#' @export
+`$.AddiVortesFit` <- function(x, name) {
+  val <- unclass(x)[[name]]
+  compressed_fields <- c("posteriorTess", "posteriorDim", "posteriorPred")
+  
+  if (name %in% compressed_fields && is.list(val) && length(val) > 0 && is.raw(val[[1]])) {
+    decompressed_list <- lapply(val, function(raw_chain) {
+      unserialize(memDecompress(raw_chain, "gzip"))
+    })
+    return(do.call(c, decompressed_list))
+  }
+  
+  return(val)
+}
+
+#' @export
+`[[.AddiVortesFit` <- function(x, i, exact = TRUE) {
+  val <- unclass(x)[[i, exact = exact]]
+  compressed_fields <- c("posteriorTess", "posteriorDim", "posteriorPred")
+  
+  if (i %in% compressed_fields && is.list(val) && length(val) > 0 && is.raw(val[[1]])) {
+    decompressed_list <- lapply(val, function(raw_chain) {
+      unserialize(memDecompress(raw_chain, "gzip"))
+    })
+    return(do.call(c, decompressed_list))
+  }
+  
+  return(val)
+}
+
 #' @title Print Method for AddiVortesFit
 #'
 #' @description
@@ -89,14 +117,14 @@ print.AddiVortesFit <- function(x, ...) {
   num_tessellations <- if (num_samples > 0) length(x$posteriorTess[[1]]) else 0
   
   cat("Model Information:\n")
-  cat("Number of covariates:  ", num_covariates, "\n")
-  cat("Number of tessellations: ", num_tessellations, "\n")
-  cat("Posterior samples:    ", num_samples, "\n")
+  cat("Number of covariates:     ", num_covariates, "\n")
+  cat("Number of tessellations:  ", num_tessellations, "\n")
+  cat("Posterior samples:        ", num_samples, "\n")
   
   if (isTRUE(x$isClassification)) {
-    cat("In-sample Error Rate:  ", round(x$inSampleRmse, 4), "\n\n")
+    cat("In-sample Error Rate:     ", round(x$inSampleRmse, 4), "\n\n")
   } else {
-    cat("In-sample RMSE:     ", round(x$inSampleRmse, 4), "\n\n")
+    cat("In-sample RMSE:           ", round(x$inSampleRmse, 4), "\n\n")
   }
   
   invisible(x)
@@ -125,7 +153,7 @@ summary.AddiVortesFit <- function(object, ...) {
       sapply(sample, function(tess) nrow(tess))
     })
     
-    cat(sprintf("Average cells per tessellation: %.2f (SD: %.2f)\n",
+    cat(sprintf("Average cells per tessellation: %.2f (SD: %.2f)\n", 
                 mean(all_tess_sizes), sd(as.vector(all_tess_sizes))))
     
     if (!is.null(object$posteriorDirichletWeights)) {
@@ -160,10 +188,10 @@ summary.AddiVortesFit <- function(object, ...) {
 #' Predicts outcomes for new data using a fitted AddiVortesFit model object.
 #'
 #' @param object An object of class AddiVortesFit.
-#' @param newdata A matrix of covariates for the new test set.
-#' @param type The type of prediction required ("response", "quantile", "prob", "class", or "matrix").
+#' @param newdata A matrix of covariates for the new test set. 
+#' @param type The type of prediction required ("response", "quantile", "prob", "class", or "matrix"). 
 #' @param quantiles A numeric vector of probabilities to compute.
-#' @param interval The type of interval calculation.
+#' @param interval The type of interval calculation. 
 #' @param showProgress Logical indicator for a progress bar.
 #' @param parallel Logical indicator for parallel processing.
 #' @param cores The number of CPU cores to use.
@@ -189,14 +217,14 @@ predict.AddiVortesFit <- function(object, newdata,
   if (!is.matrix(newdata)) stop("newdata must be a matrix.")
   if (ncol(newdata) != length(object$xCentres)) stop("Number of columns does not match.")
   
-  posteriorTessSamples <- object$posteriorTess
-  posteriorDimSamples <- object$posteriorDim
-  posteriorPredSamples <- object$posteriorPred
+  posteriorTessSamples  <- object$posteriorTess
+  posteriorDimSamples   <- object$posteriorDim
+  posteriorPredSamples  <- object$posteriorPred
   posteriorSigmaSamples <- object$posteriorSigma
   
   splitMode <- object$splitMode
-  if (is.null(splitMode)) splitMode <- 1
-  posteriorPowerSamples <- object$posteriorPower
+  if (is.null(splitMode)) splitMode <- 1 
+  posteriorPowerSamples <- object$posteriorPower 
   isClassification <- isTRUE(object$isClassification)
   
   numStoredSamples <- length(posteriorTessSamples)
@@ -251,7 +279,7 @@ predict.AddiVortesFit <- function(object, newdata,
     X = 1:numStoredSamples,
     FUN = function(sIdx) {
       current_tess <- posteriorTessSamples[[sIdx]]
-      current_dim <- posteriorDimSamples[[sIdx]]
+      current_dim  <- posteriorDimSamples[[sIdx]]
       current_pred <- posteriorPredSamples[[sIdx]]
       
       pred_list <- lapply(seq_len(mTessellations), function(j) {
@@ -261,10 +289,10 @@ predict.AddiVortesFit <- function(object, newdata,
           if (n_tess == 1L) {
             NewTessIndexes <- rep.int(1L, nObs)
           } else {
-            NewTessIndexes <- .Call("knnx_index_predict_cpp",
-                                    current_tess[[j]],
-                                    xNewScaled,
-                                    k_int,
+            NewTessIndexes <- .Call("knnx_index_predict_cpp", 
+                                    current_tess[[j]], 
+                                    xNewScaled, 
+                                    k_int, 
                                     as.integer(current_dim[[j]]))
             NewTessIndexes <- as.vector(NewTessIndexes)
           }
@@ -274,12 +302,12 @@ predict.AddiVortesFit <- function(object, newdata,
           if (n_tess == 1L) {
             return(rep(current_pred[[j]][1], nObs))
           } else {
-            current_p <- posteriorPowerSamples[j, sIdx]
-            pred_vals <- .Call("soft_predict_cpp",
-                               current_tess[[j]],
-                               xNewScaled,
+            current_p <- posteriorPowerSamples[j, sIdx] 
+            pred_vals <- .Call("soft_predict_cpp", 
+                               current_tess[[j]], 
+                               xNewScaled, 
                                as.integer(current_dim[[j]]),
-                               as.numeric(current_pred[[j]]),
+                               as.numeric(current_pred[[j]]), 
                                as.numeric(current_p))
             return(as.vector(pred_vals))
           }
@@ -293,7 +321,7 @@ predict.AddiVortesFit <- function(object, newdata,
       } else {
         model_predictions <- model_predictions * object$yRange + object$yCentre
         if (interval == "prediction" && type == "quantile") {
-          current_sigma <- posteriorSigmaSamples[sIdx]
+          current_sigma <- posteriorSigmaSamples[sIdx] 
           model_predictions <- model_predictions + stats::rnorm(nObs, mean = 0, sd = sqrt(current_sigma))
         }
       }
@@ -338,10 +366,10 @@ predict.AddiVortesFit <- function(object, newdata,
 #' @param x_train A matrix of the original training covariates.
 #' @param y_train A numeric vector of the original training true outcomes.
 #' @param which A numeric vector specifying which plots to generate:
-#' 1 = Residuals plot, 2 = Sigma trace, 3 = Tessellation complexity trace,
-#' 4 = Predicted vs Observed, 5 = Variable Importance, 6 = Alpha Trace,
-#' 7 = Augmented Counts Summary, 8 = Sigma ACF, 9 = Alpha ACF, 10 = Adaptive Momentum.
-#' Default is c(1:10).
+#'   1 = Residuals plot, 2 = Sigma trace, 3 = Tessellation complexity trace,
+#'   4 = Predicted vs Observed, 5 = Variable Importance, 6 = Alpha Trace,
+#'   7 = Augmented Counts Summary, 8 = Sigma ACF, 9 = Alpha ACF, 10 = Adaptive Momentum. 
+#'   Default is c(1:10).
 #' @param ask Logical; if TRUE, the user is asked to press Enter before each plot.
 #' @param ... Additional arguments passed to plotting functions.
 #'
@@ -349,7 +377,7 @@ predict.AddiVortesFit <- function(object, newdata,
 #' @importFrom stats lowess residuals fitted predict sd
 #' @export
 #' @method plot AddiVortesFit
-plot.AddiVortesFit <- function(x, x_train = NULL, y_train = NULL,
+plot.AddiVortesFit <- function(x, x_train = NULL, y_train = NULL, 
                                which = c(1:10), ask = FALSE, ...) {
   
   if (!inherits(x, "AddiVortesFit")) stop("`x` must be an object of class 'AddiVortesFit'.")
@@ -366,8 +394,8 @@ plot.AddiVortesFit <- function(x, x_train = NULL, y_train = NULL,
   on.exit(par(old_par))
   
   n_plots <- length(which)
-  if (n_plots == 1) { par(mfrow = c(1, 1)) }
-  else if (n_plots == 2) { par(mfrow = c(1, 2)) }
+  if (n_plots == 1) { par(mfrow = c(1, 1)) } 
+  else if (n_plots == 2) { par(mfrow = c(1, 2)) } 
   else if (n_plots <= 4) { par(mfrow = c(2, 2)) }
   else if (n_plots <= 6) { par(mfrow = c(2, 3)) }
   else if (n_plots <= 9) { par(mfrow = c(3, 3)) }
@@ -421,8 +449,8 @@ plot.AddiVortesFit <- function(x, x_train = NULL, y_train = NULL,
   if (4 %in% which) {
     if (ask && n_plots > 1) { cat("Press [Enter] to see predicted vs observed plot: "); readline() }
     if (isClassification) {
-      plot(jitter(y_train, factor = 0.5), y_pred_mean, xlab = "Observed Class (Jittered)",
-           ylab = "Predicted Probability", main = "Predicted vs Observed",
+      plot(jitter(y_train, factor = 0.5), y_pred_mean, xlab = "Observed Class (Jittered)", 
+           ylab = "Predicted Probability", main = "Predicted vs Observed", 
            pch = 19, col = rgb(0, 0, 0.5, 0.3), ...)
       abline(h = 0.5, col = "red", lty = 2)
     } else {
@@ -440,8 +468,8 @@ plot.AddiVortesFit <- function(x, x_train = NULL, y_train = NULL,
   if (5 %in% which) {
     if (ask && n_plots > 1) { cat("Press [Enter] to see variable importance plot: "); readline() }
     
-    if (!is.null(x$posteriorDirichletWeightsMean) &&
-        !is.null(x$posteriorDirichletWeightsLower) &&
+    if (!is.null(x$posteriorDirichletWeightsMean) && 
+        !is.null(x$posteriorDirichletWeightsLower) && 
         !is.null(x$posteriorDirichletWeightsUpper)) {
       
       old_mar <- par("mar")
@@ -467,19 +495,19 @@ plot.AddiVortesFit <- function(x, x_train = NULL, y_train = NULL,
       
       bp <- barplot(mean_weights[ord], horiz = TRUE, names.arg = cov_names[ord], las = 1,
                     col = "steelblue", border = NA, xlab = "Posterior Inclusion Weight",
-                    main = main_title, cex.names = 0.8,
+                    main = main_title, cex.names = 0.8, 
                     xlim = c(0, max(upper_weights[ord]) * 1.05))
       
-      segments(x0 = lower_weights[ord], y0 = bp, x1 = upper_weights[ord], y1 = bp,
+      segments(x0 = lower_weights[ord], y0 = bp, x1 = upper_weights[ord], y1 = bp, 
                col = "black", lwd = 1.5)
       
       epsilon <- 0.15
-      segments(x0 = lower_weights[ord], y0 = bp - epsilon, x1 = lower_weights[ord], y1 = bp + epsilon,
+      segments(x0 = lower_weights[ord], y0 = bp - epsilon, x1 = lower_weights[ord], y1 = bp + epsilon, 
                col = "black", lwd = 1.5)
-      segments(x0 = upper_weights[ord], y0 = bp - epsilon, x1 = upper_weights[ord], y1 = bp + epsilon,
+      segments(x0 = upper_weights[ord], y0 = bp - epsilon, x1 = upper_weights[ord], y1 = bp + epsilon, 
                col = "black", lwd = 1.5)
       
-      abline(v = 1/length(mean_weights), col = "red", lty = 2, lwd = 1.5)
+      abline(v = 1/length(mean_weights), col = "red", lty = 2, lwd = 1.5) 
       
       par(mar = old_mar)
       
@@ -529,7 +557,7 @@ plot.AddiVortesFit <- function(x, x_train = NULL, y_train = NULL,
       
       par(mar = old_mar)
       
-    }
+    } 
     
     if (8 %in% which) {
       if (ask && n_plots > 1) { cat("Press [Enter] to see ACF for Error Variance: "); readline() }
@@ -538,7 +566,7 @@ plot.AddiVortesFit <- function(x, x_train = NULL, y_train = NULL,
         plot(1, type = "n", axes = FALSE, xlab = "", ylab = "", main = "ACF: Error Variance")
         text(1, 1, "Sigma is fixed\n(Probit Classification Mode)")
       } else if (!is.null(x$posteriorSigma)) {
-        acf(x$posteriorSigma,
+        acf(x$posteriorSigma, 
             main = expression(paste("ACF: Error Variance (", sigma^2, ")")),
             lwd = 2, col = "darkgreen", ylab = "Autocorrelation", xlab = "Lag")
       } else {
@@ -551,7 +579,7 @@ plot.AddiVortesFit <- function(x, x_train = NULL, y_train = NULL,
       if (ask && n_plots > 1) { cat("Press [Enter] to see ACF for Dirichlet Concentration: "); readline() }
       
       if (!is.null(x$posteriorAlpha)) {
-        acf(x$posteriorAlpha,
+        acf(x$posteriorAlpha, 
             main = expression(paste("ACF: Dirichlet Concentration (", alpha, ")")),
             lwd = 2, col = "darkorange", ylab = "Autocorrelation", xlab = "Lag")
       } else {
