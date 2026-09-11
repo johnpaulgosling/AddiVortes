@@ -35,8 +35,8 @@
 #' @param m The number of tessellations. For multinomial classification this is
 #'   the number of tessellations **per latent dimension** (there are
 #'   \eqn{K-1}{K-1} latents for \eqn{K}{K} classes).
-#' @param totalMCMCIter The number of iterations.
-#' @param mcmcBurnIn The number of burn in iterations.
+#' @param totalMCMCIter The number of MCMC iterations. Default `2000`.
+#' @param mcmcBurnIn The number of burn-in iterations. Default `500`.
 #' @param nu The degrees of freedom for the inverse-gamma prior on the residual
 #'   variance. Ignored for classification, where the latent residual variance is
 #'   fixed at 1.
@@ -149,8 +149,8 @@
 #' @importFrom stats var lm optim quantile runif rnorm dbinom dpois qnorm uniroot pnorm
 #' @export
 AddiVortes <- function(y, x, m = 200,
-                       totalMCMCIter = 1200,
-                       mcmcBurnIn = 200,
+                       totalMCMCIter = 2000,
+                       mcmcBurnIn = 500,
                        nu = 6, q = 0.85,
                        k = 3, sd = 0.8,
                        Omega = min(3, ncol(x)),

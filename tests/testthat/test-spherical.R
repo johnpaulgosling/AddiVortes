@@ -72,7 +72,7 @@ test_that("cellIndices remaps permuted active dimensions to global columns", {
   ), ncol = 2)
   dim <- c(2L, 1L)
 
-  idx <- cellIndices(x, tess, dim, metric = 0L, members = 2L)
+  idx <- AddiVortes:::cellIndices(x, tess, dim, metric = 0L, members = 2L)
 
   brute <- apply(x, 1, function(row) {
     dists <- apply(tess, 1, function(cen) {

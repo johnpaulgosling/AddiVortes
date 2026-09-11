@@ -8,8 +8,8 @@ AddiVortes(
   y,
   x,
   m = 200,
-  totalMCMCIter = 1200,
-  mcmcBurnIn = 200,
+  totalMCMCIter = 2000,
+  mcmcBurnIn = 500,
   nu = 6,
   q = 0.85,
   k = 3,
@@ -42,9 +42,9 @@ indicator variables via one-hot encoding (with the first level as reference).}
 the number of tessellations \strong{per latent dimension} (there are
 \eqn{K-1}{K-1} latents for \eqn{K}{K} classes).}
 
-\item{totalMCMCIter}{The number of iterations.}
+\item{totalMCMCIter}{The number of MCMC iterations. Default \code{2000}.}
 
-\item{mcmcBurnIn}{The number of burn in iterations.}
+\item{mcmcBurnIn}{The number of burn-in iterations. Default \code{500}.}
 
 \item{nu}{The degrees of freedom for the inverse-gamma prior on the residual
 variance. Ignored for classification, where the latent residual variance is

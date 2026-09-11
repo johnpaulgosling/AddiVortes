@@ -1,5 +1,16 @@
 # AddiVortes News
 
+## AddiVortes 1.0.1
+
+* `cellIndices()` is now an internal helper and is no longer exported.
+* Default MCMC settings are 2000 iterations with 500 burn-in (previously
+  1200 iterations with 200 burn-in).
+* Added Leo Thomson as an author.
+* Fixed a clang `-Wabsolute-value` warning in the spherical distance kernel
+  by using `std::fabs` for floating-point absolute values.
+* Removed the duplicate `traceplots` help-index entry; the topic is now
+  only `traceplots.AddiVortes`, matching the other S3 methods.
+
 ## AddiVortes 1.0.0
 
 * Added binary and multi-category classification. `AddiVortes()` chooses

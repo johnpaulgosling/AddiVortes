@@ -1,7 +1,10 @@
-## Submission of AddiVortes 1.0.0
+## Submission of AddiVortes 1.0.1
 
-This release adds binary and multinomial probit classification, chosen
-automatically from the response, alongside the existing regression model.
+This is a patch release. It hides the internal `cellIndices()` helper,
+updates the default MCMC settings to 2000 iterations with 500 burn-in,
+adds Leo Thomson as an author, and addresses the clang
+`-Wabsolute-value` WARNING reported on CRAN's
+`r-devel-linux-x86_64-debian-clang` builder.
 
 ## Test environments
 

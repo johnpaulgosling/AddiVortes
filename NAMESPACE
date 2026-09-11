@@ -6,7 +6,6 @@ S3method(print,AddiVortes)
 S3method(summary,AddiVortes)
 S3method(traceplots,AddiVortes)
 export(AddiVortes)
-export(cellIndices)
 export(new_AddiVortes)
 export(traceplots)
 importFrom(graphics,

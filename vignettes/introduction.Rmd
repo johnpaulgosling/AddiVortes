@@ -59,7 +59,7 @@ results <- AddiVortes(
   x = X_Boston[TrainSet, ],
   m = 200,
   totalMCMCIter = 2000,
-  mcmcBurnIn = 200,
+  mcmcBurnIn = 500,
   nu = 6,
   q = 0.85,
   k = 3,

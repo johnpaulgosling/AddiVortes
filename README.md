@@ -54,10 +54,15 @@ library(AddiVortes)
 
 ## Documentation
 
-- [Getting Started Guide](https://johnpaulgosling.github.io/AddiVortes/articles/introduction.html)
-- [Prediction Examples](https://johnpaulgosling.github.io/AddiVortes/articles/prediction.html)
-- [Classification](https://johnpaulgosling.github.io/AddiVortes/articles/classification.html)
-- [Function Reference](https://johnpaulgosling.github.io/AddiVortes/reference/)
+Vignettes:
+
+- [Machine Learning with AddiVortes](https://johnpaulgosling.github.io/AddiVortes/articles/introduction.html)
+- [Bayesian Regression and Prediction](https://johnpaulgosling.github.io/AddiVortes/articles/prediction.html)
+- [Modelling Spherical Data with AddiVortes](https://johnpaulgosling.github.io/AddiVortes/articles/spherical.html)
+- [Using Categorical Covariates with AddiVortes](https://johnpaulgosling.github.io/AddiVortes/articles/categorical.html)
+- [Classification with AddiVortes](https://johnpaulgosling.github.io/AddiVortes/articles/classification.html)
+
+See also the [function reference](https://johnpaulgosling.github.io/AddiVortes/reference/).
 
 ## Comparison with BART
 

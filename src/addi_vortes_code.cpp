@@ -89,7 +89,8 @@ static double spherical_distance(std::span<const double> p1,
     Rf_error("Points have incompatible dimensions.");
   }
   if (p1.size() == 1) {
-    double a1 = std::fabs(p1[0] - p2[0]);
+    const double delta = p1[0] - p2[0];
+    double a1 = std::fabs(delta);
     double a2 = 2 * M_PI - a1;
     return (a1 < a2) ? (a1 * a1) : (a2 * a2);
   }

@@ -790,9 +790,6 @@ plotBurnInTrace_internal <- function(trace_data, y, ylab, main, col, legend_digi
 #'
 #' @importFrom graphics plot abline legend par text
 #' @importFrom stats sd
-#' @name traceplots.AddiVortes
-#' @aliases traceplots
-#' @usage \method{traceplots}{AddiVortes}(x, ask = FALSE, ...)
 #' @export
 #' @method traceplots AddiVortes
 #'
@@ -864,8 +861,7 @@ traceplots.AddiVortes <- function(x, ask = FALSE, ...) {
 
 # S3 generic for dispatch; documented only via the AddiVortes method.
 #' @export
-#' @rdname traceplots.AddiVortes
-#' @usage NULL
+#' @noRd
 traceplots <- function(x, ...) {
   UseMethod("traceplots")
 }

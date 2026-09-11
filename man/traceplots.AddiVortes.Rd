@@ -2,7 +2,6 @@
 % Please edit documentation in R/AddiVortesFit.R
 \name{traceplots.AddiVortes}
 \alias{traceplots.AddiVortes}
-\alias{traceplots}
 \title{Trace Plot Method for AddiVortes}
 \usage{
 \method{traceplots}{AddiVortes}(x, ask = FALSE, ...)

@@ -55,7 +55,7 @@ fit_bin <- AddiVortes(
   y, x,
   m = 200,
   totalMCMCIter = 2000,
-  mcmcBurnIn = 200,
+  mcmcBurnIn = 500,
   showProgress = FALSE
 )
 
@@ -108,7 +108,7 @@ fit_multi <- AddiVortes(
   y3, x3,
   m = 200,
   totalMCMCIter = 2000,
-  mcmcBurnIn = 200,
+  mcmcBurnIn = 500,
   showProgress = FALSE
 )
 

@@ -353,7 +353,7 @@ test_that("compiled ensemble predict matches the per-tessellation R reference", 
   for (s in seq_along(fit$posteriorTess)) {
     draw_pred <- numeric(nObs)
     for (j in seq_len(m)) {
-      idx <- cellIndices(
+      idx <- AddiVortes:::cellIndices(
         xNewScaled,
         fit$posteriorTess[[s]][[j]],
         fit$posteriorDim[[s]][[j]],
