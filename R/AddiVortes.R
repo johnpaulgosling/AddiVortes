@@ -81,7 +81,7 @@
 #'
 #' @return An AddiVortes object containing the posterior samples of the
 #' tessellations, dimensions and predictions, plus per-iteration trace
-#' statistics used by `traceplots.AddiVortes()`. Classification fits also store `task`,
+#' statistics used by `traceplots()`. Classification fits also store `task`,
 #' `classLevels`, `nLatents` and in-sample accuracy.
 #'
 #' @references

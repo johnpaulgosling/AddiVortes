@@ -4,7 +4,7 @@
 \alias{traceplots.AddiVortes}
 \title{Trace Plot Method for AddiVortes}
 \usage{
-traceplots.AddiVortes(x, ask = FALSE, ...)
+\method{traceplots}{AddiVortes}(x, ask = FALSE, ...)
 }
 \arguments{
 \item{x}{An object of class \code{AddiVortes}, typically the result of a
@@ -40,6 +40,6 @@ component at the end of each MCMC iteration.
 \examples{
 \dontrun{
 # Assuming 'fit' is a trained AddiVortes object
-traceplots.AddiVortes(fit)
+traceplots(fit)
 }
 }

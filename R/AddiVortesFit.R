@@ -791,11 +791,12 @@ plotBurnInTrace_internal <- function(trace_data, y, ylab, main, col, legend_digi
 #' @importFrom graphics plot abline legend par text
 #' @importFrom stats sd
 #' @export
+#' @method traceplots AddiVortes
 #'
 #' @examples
 #' \dontrun{
 #' # Assuming 'fit' is a trained AddiVortes object
-#' traceplots.AddiVortes(fit)
+#' traceplots(fit)
 #' }
 traceplots.AddiVortes <- function(x, ask = FALSE, ...) {
   if (!inherits(x, "AddiVortes")) {
@@ -856,6 +857,22 @@ traceplots.AddiVortes <- function(x, ask = FALSE, ...) {
   )
 
   invisible(NULL)
+}
+
+#' Trace plots
+#'
+#' S3 generic for MCMC trace plots of fitted AddiVortes models. Users should
+#' call `traceplots(fit)`; see [traceplots.AddiVortes()] for the method
+#' documentation.
+#'
+#' @param x An object.
+#' @param ... Additional arguments passed to methods.
+#'
+#' @seealso [traceplots.AddiVortes()]
+#' @keywords internal
+#' @export
+traceplots <- function(x, ...) {
+  UseMethod("traceplots")
 }
 
 #' @title Plot Method for AddiVortes

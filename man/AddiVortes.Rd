@@ -103,7 +103,7 @@ for a comparison and guidance on which to use.}
 \value{
 An AddiVortes object containing the posterior samples of the
 tessellations, dimensions and predictions, plus per-iteration trace
-statistics used by \code{traceplots.AddiVortes()}. Classification fits also store \code{task},
+statistics used by \code{traceplots()}. Classification fits also store \code{task},
 \code{classLevels}, \code{nLatents} and in-sample accuracy.
 }
 \description{

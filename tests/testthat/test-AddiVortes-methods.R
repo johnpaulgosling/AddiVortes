@@ -576,6 +576,6 @@ test_that("traceplots.AddiVortes creates trace plots", {
     unlink(trace_file)
   }, add = TRUE)
 
-  expect_silent(result <- traceplots.AddiVortes(obj))
+  expect_silent(result <- traceplots(obj))
   expect_null(result)
 })
