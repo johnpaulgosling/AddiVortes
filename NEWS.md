@@ -8,8 +8,8 @@
 * Added Leo Thomson as an author.
 * Fixed a clang `-Wabsolute-value` warning in the spherical distance kernel
   by using `std::fabs` for floating-point absolute values.
-* Removed the duplicate `traceplots` help-index entry; the topic is now
-  only `traceplots.AddiVortes`, matching the other S3 methods.
+* Removed the `traceplots()` S3 generic. Use `traceplots.AddiVortes()`
+  to draw MCMC trace plots.
 
 ## AddiVortes 1.0.0
 

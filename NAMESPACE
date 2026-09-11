@@ -4,10 +4,9 @@ S3method(plot,AddiVortes)
 S3method(predict,AddiVortes)
 S3method(print,AddiVortes)
 S3method(summary,AddiVortes)
-S3method(traceplots,AddiVortes)
 export(AddiVortes)
 export(new_AddiVortes)
-export(traceplots)
+export(traceplots.AddiVortes)
 importFrom(graphics,
   abline,
   layout,

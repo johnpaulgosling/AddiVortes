@@ -562,7 +562,7 @@ test_that("traceplots.AddiVortes handles empty posterior samples", {
   )
 
   expect_error(
-    traceplots(obj),
+    traceplots.AddiVortes(obj),
     "No posterior samples available"
   )
 })
@@ -576,6 +576,6 @@ test_that("traceplots.AddiVortes creates trace plots", {
     unlink(trace_file)
   }, add = TRUE)
 
-  expect_silent(result <- traceplots(obj))
+  expect_silent(result <- traceplots.AddiVortes(obj))
   expect_null(result)
 })
