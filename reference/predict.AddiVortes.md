@@ -1,8 +1,9 @@
 # Predict Method for AddiVortes
 
 Predicts outcomes for new data using a fitted `AddiVortes` model object.
-It can return mean predictions, quantiles and optionally calculate the
-Root Mean Squared Error (RMSE) if true outcomes are provided.
+Regression fits return means or quantiles of the response.
+Classification fits return class probabilities, class labels,
+latent-scale values, or quantiles of the class probabilities.
 
 ## Usage
 
@@ -11,7 +12,7 @@ Root Mean Squared Error (RMSE) if true outcomes are provided.
 predict(
   object,
   newdata,
-  type = c("response", "quantile"),
+  type = c("response", "quantile", "class", "link"),
   quantiles = c(0.025, 0.975),
   interval = c("credible", "prediction"),
   showProgress = interactive(),
@@ -34,8 +35,11 @@ predict(
 - type:
 
   The type of prediction required. The default `"response"` gives the
-  mean prediction. The alternative `"quantile"` returns the quantiles
-  specified by the `quantiles` argument.
+  mean prediction (class probabilities for classification). `"quantile"`
+  returns the quantiles specified by `quantiles`. `"class"` returns
+  predicted class labels (classification only). `"link"` returns the
+  latent sum of tessellations \\G(x)\\ on the model scale before any
+  response unscaling.
 
 - quantiles:
 
@@ -48,7 +52,7 @@ predict(
   only for uncertainty in the mean (similar to `lm`'s confidence
   interval). The alternative `"prediction"` also includes the model's
   error variance, producing wider intervals (similar to `lm`'s
-  prediction interval).
+  prediction interval). Not used for classification models.
 
 - showProgress:
 
@@ -60,9 +64,13 @@ predict(
 
 ## Value
 
-If `type = "response"`, a numeric vector of mean predictions. If
-`type = "quantile"`, a matrix where each row corresponds to an
-observation in `newdata` and each column to a quantile.
+If `type = "response"`, a numeric vector of mean predictions for
+regression or binary classification, or an \\n \times K\\ probability
+matrix for multinomial classification. If `type = "quantile"`, a matrix
+of quantiles (binary/regression) or a named list of such matrices
+(multinomial). If `type = "class"`, a factor of predicted labels. If
+`type = "link"`, the latent function \\G(x)\\ on the model scale before
+response unscaling.
 
 ## Details
 
@@ -78,7 +86,18 @@ samples additional Gaussian noise with variance equal to the sampled
 sigma squared from the posterior. This accounts for the inherent
 variability in individual predictions, not just uncertainty in the mean
 function. The noise is added in the scaled space before unscaling
-predictions.
+predictions. Classification uses a probit link with residual variance
+fixed at 1, so prediction intervals are not defined; use
+`type = "quantile"` for credible intervals on probabilities.
+
+For regression, `"response"` unscales predictions back to the original
+response units, while `"link"` returns the posterior mean of the latent
+scaled function \\G(x)\\.
+
+For binary classification, `"response"` is the posterior mean of
+\\\Phi(G^{(s)}(x))\\. For multinomial classification, class
+probabilities are estimated from independent \\N(G, I)\\ latents, with
+the first class as the reference.
 
 ## Examples
 

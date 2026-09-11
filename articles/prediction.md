@@ -97,6 +97,12 @@ preds <- predict(AModel, testX,
   showProgress = FALSE
 )
 
+# Predict the latent sum of tessellations on the model scale
+preds_link <- predict(AModel, testX,
+  type = "link",
+  showProgress = FALSE
+)
+
 # Predict the 90% credible interval (from 0.05 to 0.95 quantiles)
 # By default, this uses interval = "credible" which only accounts for
 # uncertainty in the mean function
@@ -112,6 +118,10 @@ preds_q <- predict(AModel, testX,
 #                         interval = "prediction",
 #                         showProgress = FALSE)
 ```
+
+`type = "response"` returns predictions in the original response units.
+`type = "link"` returns the latent model-scale function $`G(x)`$ before
+that final unscaling step.
 
 ### 4. Visualising Prediction Performance
 

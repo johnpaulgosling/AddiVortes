@@ -20,7 +20,13 @@ new_AddiVortes(
   metric_aug = "E",
   member_aug = rep(1, length(xCentres)),
   catEncoding = NULL,
-  traceStats = NULL
+  traceStats = NULL,
+  task = "regression",
+  classLevels = NULL,
+  nLatents = 1L,
+  mPerLatent = NA_integer_,
+  inSampleAccuracy = NA_real_,
+  inSampleBrier = NA_real_
 )
 ```
 
@@ -88,6 +94,32 @@ new_AddiVortes(
 - traceStats:
 
   Optional data frame of per-iteration MCMC trace statistics.
+
+- task:
+
+  The modelling task: `"regression"`, `"binary"` or `"multinomial"`.
+
+- classLevels:
+
+  Character vector of class labels for classification fits, or `NULL`
+  for regression.
+
+- nLatents:
+
+  Number of latent probit dimensions. 1 for regression and binary
+  classification; \\K-1\\ for \\K\\-class multinomial models.
+
+- mPerLatent:
+
+  Number of tessellations per latent ensemble.
+
+- inSampleAccuracy:
+
+  In-sample classification accuracy, or `NA` for regression.
+
+- inSampleBrier:
+
+  In-sample Brier score for binary classification, or `NA` otherwise.
 
 ## Value
 

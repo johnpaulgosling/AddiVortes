@@ -1,22 +1,25 @@
 # AddiVortes: Bayesian Additive Voronoi Tessellations for Machine Learning
 
 AddiVortes implements Bayesian Additive Voronoi Tessellation models for
-machine learning regression and non-parametric statistical modeling.
-This package provides a flexible alternative to BART (Bayesian Additive
-Regression Trees), using Voronoi tessellations instead of trees for
-spatial partitioning. The method is particularly effective for spatial
-data analysis, complex function approximation, and Bayesian regression
-modeling.
+machine learning regression, classification and non-parametric
+statistical modelling. This package provides a flexible alternative to
+BART (Bayesian Additive Regression Trees), using Voronoi tessellations
+instead of trees for spatial partitioning. The method is particularly
+effective for spatial data analysis, complex function approximation, and
+Bayesian regression and classification.
 
 ## Details
 
 Key features include:
 
-- Machine learning regression with Bayesian inference
+- Machine learning regression and classification with Bayesian inference
+
+- Binary and multinomial probit models with latent-variable data
+  augmentation
 
 - Alternative to BART using Voronoi tessellations
 
-- Spatial data analysis and modeling
+- Spatial data analysis and modelling
 
 - Non-parametric regression capabilities
 
@@ -29,6 +32,17 @@ Key features include:
 Stone, A. and Gosling, J.P. (2025). AddiVortes: (Bayesian) additive
 Voronoi tessellations. Journal of Computational and Graphical
 Statistics.
+
+Stone, A.J., Ogundimu, E. and Gosling, J.P. (2026). Binary AddiVortes:
+(Bayesian) Additive Voronoi Tessellations for Binary Classification with
+an application to Predicting Home Mortgage Application Outcomes.
+
+Albert, J.H. and Chib, S. (1993). Bayesian analysis of binary and
+polychotomous response data. Journal of the American Statistical
+Association.
+
+Kindo, B.P., Wang, H. and Peña, E.A. (2016). Multinomial probit Bayesian
+additive regression trees. Stat.
 
 ## See also
 

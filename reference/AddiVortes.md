@@ -1,11 +1,11 @@
-# Fit an AddiVortes regression model
+# Fit an AddiVortes regression or classification model
 
-The AddiVortes model is a Bayesian nonparametric regression model that
-uses a tessellation to model the relationship between the covariates and
-the output values. The model uses a backfitting algorithm to sample from
-the posterior distribution of the output values for each tessellation.
-Alongside fitting details and the posterior sample, the function returns
-the RMSE value for the test samples.
+The AddiVortes model is a Bayesian nonparametric model that uses
+additive Voronoi tessellations to relate covariates to a response. For a
+numeric response the model is Gaussian regression. For a classification
+response it uses a probit link with Albert-Chib latent variables
+(binary) or independent multinomial probit latents (three or more
+classes). The task is chosen automatically from `y`.
 
 The function can handle multiple types of covariates, including
 continuous, spherical and categorical. Categorical covariates are
@@ -51,7 +51,13 @@ AddiVortes(
 
 - y:
 
-  A vector of the output values.
+  A vector of response values. Numeric `y` is treated as regression,
+  except when it has exactly two unique values in `{0, 1}`, which is
+  binary classification. Factor, character and logical vectors are
+  treated as classification: two levels give a binary probit model and
+  three or more levels give a multinomial probit model. The first factor
+  level (or 0 for numeric 0/1 responses) is the reference class. Missing
+  values are not allowed.
 
 - x:
 
@@ -62,7 +68,9 @@ AddiVortes(
 
 - m:
 
-  The number of tessellations.
+  The number of tessellations. For multinomial classification this is
+  the number of tessellations **per latent dimension** (there are
+  \\K-1\\ latents for \\K\\ classes).
 
 - totalMCMCIter:
 
@@ -74,15 +82,21 @@ AddiVortes(
 
 - nu:
 
-  The degrees of freedom.
+  The degrees of freedom for the inverse-gamma prior on the residual
+  variance. Ignored for classification, where the latent residual
+  variance is fixed at 1.
 
 - q:
 
-  The quantile.
+  The quantile used to set the inverse-gamma prior on the residual
+  variance. Ignored for classification.
 
 - k:
 
-  The number of centres.
+  Prior scale for tessellation output values. For regression,
+  \\\sigma\_\mu = 0.5/(k\sqrt{m})\\ on the scaled response. For
+  classification, \\\sigma\_\mu = 3/(k\sqrt{m})\\ on the latent probit
+  scale.
 
 - sd:
 
@@ -99,7 +113,8 @@ AddiVortes(
 
 - InitialSigma:
 
-  The method used to calculate the initial variance.
+  The method used to calculate the initial residual variance for
+  regression (`"Linear"` or `"Naive"`). Ignored for classification.
 
 - thinning:
 
@@ -150,6 +165,25 @@ An AddiVortes object containing the posterior samples of the
 tessellations, dimensions and predictions, plus per-iteration trace
 statistics used by
 [`traceplots()`](https://johnpaulgosling.github.io/AddiVortes/reference/traceplots.AddiVortes.md).
+Classification fits also store `task`, `classLevels`, `nLatents` and
+in-sample accuracy.
+
+## References
+
+Stone, A. and Gosling, J.P. (2025). AddiVortes: (Bayesian) additive
+Voronoi tessellations. *Journal of Computational and Graphical
+Statistics*.
+
+Stone, A.J., Ogundimu, E. and Gosling, J.P. (2026). Binary AddiVortes:
+(Bayesian) Additive Voronoi Tessellations for Binary Classification with
+an application to Predicting Home Mortgage Application Outcomes.
+
+Albert, J.H. and Chib, S. (1993). Bayesian analysis of binary and
+polychotomous response data. *Journal of the American Statistical
+Association*, 88(422), 669–679.
+
+Kindo, B.P., Wang, H. and Peña, E.A. (2016). Multinomial probit Bayesian
+additive regression trees. *Stat*, 5(1), 171–181.
 
 ## Examples
 
@@ -189,5 +223,14 @@ y_test <- x_test$x1 + ifelse(x_test$grp2 == "B", 1, 0) + rnorm(n_test, sd = 0.5)
 
 preds <- predict(fit2, x_test, showProgress = FALSE)
 test_rmse <- sqrt(mean((y_test - preds)^2))
+
+# Binary classification is selected automatically from a 0/1 or factor y
+set.seed(789)
+x_clf <- matrix(runif(80), 40, 2)
+y_clf <- factor(ifelse(x_clf[, 1] + x_clf[, 2] > 1, "yes", "no"))
+fit_clf <- AddiVortes(y_clf, x_clf, m = 8, totalMCMCIter = 80,
+                      mcmcBurnIn = 20, showProgress = FALSE)
+p_clf <- predict(fit_clf, x_clf, type = "response", showProgress = FALSE)
+cls_clf <- predict(fit_clf, x_clf, type = "class", showProgress = FALSE)
 # }
 ```

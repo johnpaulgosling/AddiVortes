@@ -29,11 +29,12 @@ plot(
 
 - x_train:
 
-  A matrix of the original training covariates.
+  A matrix or data frame of the original training covariates.
 
 - y_train:
 
-  A numeric vector of the original training true outcomes.
+  The original training response. Numeric for regression; factor,
+  character, logical or 0/1 numeric for classification.
 
 - sigma_trace:
 
