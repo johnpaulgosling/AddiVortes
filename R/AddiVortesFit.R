@@ -20,6 +20,17 @@
 #'   \code{encodeCategories_internal}, or \code{NULL} if no categorical covariates
 #'   were present.
 #' @param traceStats Optional data frame of per-iteration MCMC trace statistics.
+#' @param task The modelling task: `"regression"`, `"binary"` or `"multinomial"`.
+#' @param classLevels Character vector of class labels for classification fits,
+#'   or `NULL` for regression.
+#' @param nLatents Number of latent probit dimensions. 1 for regression and
+#'   binary classification; \eqn{K-1}{K-1} for \eqn{K}{K}-class multinomial
+#'   models.
+#' @param mPerLatent Number of tessellations per latent ensemble.
+#' @param inSampleAccuracy In-sample classification accuracy, or `NA` for
+#'   regression.
+#' @param inSampleBrier In-sample Brier score for binary classification, or `NA`
+#'   otherwise.
 #'
 #' @return An object of class AddiVortes.
 #' @export
@@ -31,9 +42,19 @@ new_AddiVortes <- function(posteriorTess, posteriorDim,
                            metric_aug = "E",
                            member_aug = rep(1, length(xCentres)),
                            catEncoding = NULL,
-                           traceStats = NULL) {
+                           traceStats = NULL,
+                           task = "regression",
+                           classLevels = NULL,
+                           nLatents = 1L,
+                           mPerLatent = NA_integer_,
+                           inSampleAccuracy = NA_real_,
+                           inSampleBrier = NA_real_) {
   member_length <- sapply(unique(member_aug), function(x) sum(member_aug == x))
   metric_type <- sapply(unique(member_aug), function(x) metric_aug[which(member_aug == x)[1]])
+  if (is.na(mPerLatent)) {
+    n_tess <- if (length(posteriorTess) > 0) length(posteriorTess[[1]]) else 0L
+    mPerLatent <- as.integer(n_tess / max(1L, nLatents))
+  }
   structure(
     list(
       posteriorTess = posteriorTess,
@@ -50,7 +71,13 @@ new_AddiVortes <- function(posteriorTess, posteriorDim,
       metric_red = metric_type,
       member_red = member_length,
       catEncoding = catEncoding,
-      traceStats = traceStats
+      traceStats = traceStats,
+      task = task,
+      classLevels = classLevels,
+      nLatents = as.integer(nLatents),
+      mPerLatent = as.integer(mPerLatent),
+      inSampleAccuracy = inSampleAccuracy,
+      inSampleBrier = inSampleBrier
     ),
     class = "AddiVortes"
   )
@@ -88,7 +115,14 @@ print.AddiVortes <- function(x, ...) {
     stop("`x` must be an object of class 'AddiVortes'.")
   }
 
-  cat("AddiVortes Model\n")
+  is_class <- isClassification_internal(x)
+  if (isTRUE(x$task == "binary")) {
+    cat("AddiVortes Binary Classification Model\n")
+  } else if (isTRUE(x$task == "multinomial")) {
+    cat("AddiVortes Multinomial Classification Model\n")
+  } else {
+    cat("AddiVortes Model\n")
+  }
   cat("================\n\n")
 
   # Model equation representation
@@ -120,7 +154,22 @@ print.AddiVortes <- function(x, ...) {
   cat("Number of covariates:     ", num_covariates, "\n")
   cat("Number of tessellations:  ", num_tessellations, "\n")
   cat("Posterior samples:        ", num_samples, "\n")
-  cat("In-sample RMSE:           ", round(x$inSampleRmse, 4), "\n\n")
+  if (is_class) {
+    cat("Task:                     ", x$task, "\n")
+    cat("Classes:                  ", paste(x$classLevels, collapse = ", "), "\n")
+    if (!is.null(x$nLatents) && x$nLatents > 1L) {
+      cat("Latent dimensions:        ", x$nLatents, "\n")
+    }
+    if (!is.na(x$inSampleAccuracy)) {
+      cat("In-sample accuracy:       ", round(x$inSampleAccuracy, 4), "\n")
+    }
+    if (!is.na(x$inSampleBrier)) {
+      cat("In-sample Brier score:    ", round(x$inSampleBrier, 4), "\n")
+    }
+    cat("\n")
+  } else {
+    cat("In-sample RMSE:           ", round(x$inSampleRmse, 4), "\n\n")
+  }
 
   # Scaling information
   cat("Covariate Scaling:\n")
@@ -131,9 +180,13 @@ print.AddiVortes <- function(x, ...) {
   )
   print(scaling_df, row.names = FALSE)
 
-  cat("\nOutput Scaling:\n")
-  cat("Centre: ", round(x$yCentre, 4), "\n")
-  cat("Range:  ", round(x$yRange, 4), "\n\n")
+  if (is_class) {
+    cat("\nLatent scale: probit (sigma = 1; response is not scaled)\n\n")
+  } else {
+    cat("\nOutput Scaling:\n")
+    cat("Centre: ", round(x$yCentre, 4), "\n")
+    cat("Range:  ", round(x$yRange, 4), "\n\n")
+  }
 
   # Additional model information
   if (num_samples > 0) {
@@ -236,30 +289,39 @@ summary.AddiVortes <- function(object, ...) {
 #'
 #' @description
 #' Predicts outcomes for new data using a fitted `AddiVortes` model object.
-#' It can return mean predictions, quantiles and optionally calculate the
-#' Root Mean Squared Error (RMSE) if true outcomes are provided.
+#' Regression fits return means or quantiles of the response. Classification
+#' fits return class probabilities, class labels, latent-scale values, or
+#' quantiles of the class probabilities.
 #'
 #' @param object An object of class `AddiVortes`, typically the result of a
 #'   call to `AddiVortes()`.
 #' @param newdata A matrix of covariates for the new test set. The number of
 #'   columns must match the original training data.
 #' @param type The type of prediction required. The default `"response"` gives
-#'   the mean prediction. The alternative `"quantile"` returns the quantiles
-#'   specified by the `quantiles` argument.
+#'   the mean prediction (class probabilities for classification). `"quantile"`
+#'   returns the quantiles specified by `quantiles`. `"class"` returns predicted
+#'   class labels (classification only). `"link"` returns the latent sum of
+#'   tessellations \eqn{G(x)}{G(x)} on the model scale before any response
+#'   unscaling.
 #' @param quantiles A numeric vector of probabilities to
 #'   compute for the predictions when `type = "quantile"`.
 #' @param interval The type of interval calculation. The default `"credible"`
 #'   accounts only for uncertainty in the mean (similar to `lm`'s confidence interval).
 #'   The alternative `"prediction"` also includes the model's error variance,
-#'   producing wider intervals (similar to `lm`'s prediction interval).
+#'   producing wider intervals (similar to `lm`'s prediction interval). Not used
+#'   for classification models.
 #' @param showProgress Logical; if TRUE, a progress bar is shown during prediction.
 #' @param ... Further arguments passed to or from other methods (currently
 #' unused).
 #'
 #' @return
-#' If `type = "response"`, a numeric vector of mean predictions.
-#' If `type = "quantile"`, a matrix where each row corresponds to an observation
-#' in `newdata` and each column to a quantile.
+#' If `type = "response"`, a numeric vector of mean predictions for regression
+#' or binary classification, or an \eqn{n \times K}{n x K} probability matrix
+#' for multinomial classification. If `type = "quantile"`, a matrix of quantiles
+#' (binary/regression) or a named list of such matrices (multinomial). If
+#' `type = "class"`, a factor of predicted labels. If `type = "link"`, the
+#' latent function \eqn{G(x)}{G(x)} on the model scale before response
+#' unscaling.
 #'
 #' @details
 #' This function relies on the internal helper function `applyScaling_internal`
@@ -273,7 +335,18 @@ summary.AddiVortes <- function(object, ...) {
 #' additional Gaussian noise with variance equal to the sampled sigma squared
 #' from the posterior. This accounts for the inherent variability in individual
 #' predictions, not just uncertainty in the mean function. The noise is added
-#' in the scaled space before unscaling predictions.
+#' in the scaled space before unscaling predictions. Classification uses a
+#' probit link with residual variance fixed at 1, so prediction intervals are
+#' not defined; use `type = "quantile"` for credible intervals on probabilities.
+#'
+#' For regression, `"response"` unscales predictions back to the original
+#' response units, while `"link"` returns the posterior mean of the latent
+#' scaled function \eqn{G(x)}{G(x)}.
+#'
+#' For binary classification, `"response"` is the posterior mean of
+#' \eqn{\Phi(G^{(s)}(x))}{Phi(G^(s)(x))}. For multinomial classification, class
+#' probabilities are estimated from independent \eqn{N(G, I)}{N(G, I)} latents,
+#' with the first class as the reference.
 #'
 #' @examples
 #' \donttest{
@@ -307,11 +380,11 @@ summary.AddiVortes <- function(object, ...) {
 #' mean(pred_pred[, 2] - pred_pred[, 1]) > mean(pred_conf[, 2] - pred_conf[, 1])
 #' }
 #'
-#' @importFrom stats rnorm quantile
+#' @importFrom stats rnorm quantile pnorm
 #' @export
 #' @method predict AddiVortes
 predict.AddiVortes <- function(object, newdata,
-                               type = c("response", "quantile"),
+                               type = c("response", "quantile", "class", "link"),
                                quantiles = c(0.025, 0.975),
                                interval = c("credible", "prediction"),
                                showProgress = interactive(),
@@ -327,6 +400,19 @@ predict.AddiVortes <- function(object, newdata,
     stop("`newdata` must be a matrix or data frame.")
   }
 
+  is_class <- isClassification_internal(object)
+  if (type == "class" && !is_class) {
+    stop("`type = \"class\"` is only valid for classification models.",
+         call. = FALSE)
+  }
+  if (is_class && interval == "prediction") {
+    stop(
+      "Prediction intervals are not used for classification models; ",
+      "use type = \"quantile\" for credible intervals on class probabilities.",
+      call. = FALSE
+    )
+  }
+
   # Apply categorical encoding if the model was trained with categorical covariates
   if (!is.null(object$catEncoding)) {
     if (ncol(newdata) != object$catEncoding$origNCols) {
@@ -337,9 +423,6 @@ predict.AddiVortes <- function(object, newdata,
     encResult <- encodeCategories_internal(newdata, encoding = object$catEncoding)
     newdata <- encResult$encoded
   } else {
-    # if (!is.matrix(newdata)) {
-    #   stop("`newdata` must be a matrix.")
-    # }
     if (ncol(newdata) != length(object$xCentres)) {
       stop("Number of columns in `newdata` does not match the original training data.")
     }
@@ -400,6 +483,14 @@ predict.AddiVortes <- function(object, newdata,
     )
   }
 
+  if (is_class) {
+    G_list <- latentLinkMatrices_internal(object, xNewScaled, showProgress)
+    if (showProgress) cat("Done.\n\n")
+    return(summariseClassificationPredictions_internal(
+      object, G_list, type, quantiles
+    ))
+  }
+
   # Single compiled pass over all draws and tessellations
   newTestDataPredictionsMatrix <- .Call(
     "addi_vortes_predict_cpp",
@@ -426,7 +517,9 @@ predict.AddiVortes <- function(object, newdata,
   if (showProgress) cat("Done.\n\n")
 
   # --- Unscale and summarise predictions ---
-  if (type == "response") {
+  if (type == "link") {
+    predictions <- rowMeans(newTestDataPredictionsMatrix)
+  } else if (type == "response") {
     predictions <- rowMeans(newTestDataPredictionsMatrix) * object$yRange + object$yCentre
   } else if (type == "quantile") {
     quantileYhatNewScaled <- apply(newTestDataPredictionsMatrix, 1, quantile,
@@ -436,6 +529,74 @@ predict.AddiVortes <- function(object, newdata,
   }
 
   return(predictions)
+}
+
+#' @title Summarise classification predictions from latent G draws
+#'
+#' @keywords internal
+#' @noRd
+summariseClassificationPredictions_internal <- function(object, G_list, type,
+                                                        quantiles) {
+  class_levels <- object$classLevels
+  if (object$task == "binary") {
+    g_mat <- G_list[[1]]
+    p_mat <- stats::pnorm(g_mat)
+    mean_p <- rowMeans(p_mat)
+    if (type == "link") {
+      return(rowMeans(g_mat))
+    }
+    if (type == "response") {
+      return(mean_p)
+    }
+    if (type == "class") {
+      idx <- ifelse(mean_p > 0.5, 2L, 1L)
+      return(factor(class_levels[idx], levels = class_levels))
+    }
+    quantile_p <- apply(p_mat, 1, stats::quantile, probs = quantiles, na.rm = TRUE)
+    return(t(quantile_p))
+  }
+
+  n_latents <- length(G_list)
+  if (type == "link") {
+    link_mat <- vapply(G_list, rowMeans, numeric(nrow(G_list[[1]])))
+    colnames(link_mat) <- paste0("latent", seq_len(n_latents))
+    return(link_mat)
+  }
+
+  probs <- multinomialProbabilities_internal(
+    G_list,
+    nMC = 32L,
+    perDraw = type == "quantile"
+  )
+  colnames(probs$mean) <- class_levels
+  if (type == "response") {
+    return(probs$mean)
+  }
+  if (type == "class") {
+    idx <- max.col(probs$mean, ties.method = "first")
+    return(factor(class_levels[idx], levels = class_levels))
+  }
+
+  quantile_list <- vector("list", length(class_levels))
+  names(quantile_list) <- class_levels
+  n_draw <- dim(probs$draw)[3]
+  n_obs <- nrow(probs$mean)
+  for (k in seq_along(class_levels)) {
+    draw_k <- matrix(probs$draw[, k, ], nrow = n_obs, ncol = n_draw)
+    quantile_list[[k]] <- t(apply(draw_k, 1, stats::quantile,
+                                  probs = quantiles, na.rm = TRUE))
+  }
+  quantile_list
+}
+
+binaryObservedResponse_internal <- function(y, class_levels) {
+  if (is.logical(y)) {
+    return(as.numeric(y))
+  }
+  if (is.numeric(y) && all(y %in% c(0, 1))) {
+    return(as.numeric(y))
+  }
+  as.numeric(as.character(y) == class_levels[2])
 }
 
 extractErrorStandardDeviationTrace_internal <- function(x, sigma_trace = NULL,
@@ -718,8 +879,9 @@ traceplots <- function(x, ...) {
 #'
 #' @param x An object of class `AddiVortes`, typically the result of a
 #'   call to `AddiVortes()`.
-#' @param x_train A matrix of the original training covariates.
-#' @param y_train A numeric vector of the original training true outcomes.
+#' @param x_train A matrix or data frame of the original training covariates.
+#' @param y_train The original training response. Numeric for regression;
+#'   factor, character, logical or 0/1 numeric for classification.
 #' @param sigma_trace An optional numeric vector of sigma values from MCMC samples.
 #'   If not provided, the method will attempt to extract the posterior error
 #'   standard deviation from the model object.
@@ -770,13 +932,14 @@ plot.AddiVortes <- function(x, x_train, y_train, sigma_trace = NULL,
   if (missing(x_train) || missing(y_train)) {
     stop("`x_train` and `y_train` must be provided for diagnostic plots.")
   }
-  if (!is.matrix(x_train)) {
-    stop("`x_train` must be a matrix.")
+  if (!is.matrix(x_train) && !is.data.frame(x_train)) {
+    stop("`x_train` must be a matrix or data frame.")
   }
-  if (!is.numeric(y_train)) {
+  is_class <- isClassification_internal(x)
+  if (!is_class && !is.numeric(y_train)) {
     stop("`y_train` must be a numeric vector.")
   }
-  if (nrow(x_train) != length(y_train)) {
+  if (NROW(x_train) != length(y_train)) {
     stop("The number of rows in `x_train` must match the length of `y_train`.")
   }
   if (length(x$posteriorTess) == 0) {
@@ -785,6 +948,9 @@ plot.AddiVortes <- function(x, x_train, y_train, sigma_trace = NULL,
 
   # Validate which parameter
   which <- intersect(which, 1:4)
+  if (is_class) {
+    which <- setdiff(which, 2L)
+  }
   if (length(which) == 0) {
     stop("`which` must contain values between 1 and 4.")
   }
@@ -804,9 +970,24 @@ plot.AddiVortes <- function(x, x_train, y_train, sigma_trace = NULL,
   }
 
   # Generate predictions for residuals analysis
+  y_pred_prob <- NULL
   if (any(which %in% c(1, 4))) {
-    y_pred_mean <- predict(x, newdata = x_train, type = "response")
-    residuals <- y_train - y_pred_mean
+    y_pred_mean <- predict(x, newdata = x_train, type = "response",
+                           showProgress = FALSE)
+    if (isTRUE(x$task == "binary")) {
+      y01 <- binaryObservedResponse_internal(y_train, x$classLevels)
+      y_pred_prob <- y_pred_mean
+      residuals <- y01 - y_pred_mean
+    } else if (isTRUE(x$task == "multinomial")) {
+      y_pred_prob <- y_pred_mean
+      true_idx <- match(as.character(y_train), x$classLevels)
+      if (anyNA(true_idx)) {
+        true_idx <- as.integer(factor(y_train, levels = x$classLevels))
+      }
+      residuals <- y_pred_mean[cbind(seq_len(nrow(y_pred_mean)), true_idx)]
+    } else {
+      residuals <- y_train - y_pred_mean
+    }
   }
 
   # Calculate tessellation statistics across samples
@@ -823,26 +1004,43 @@ plot.AddiVortes <- function(x, x_train, y_train, sigma_trace = NULL,
       readline()
     }
 
-    plot(y_pred_mean, residuals,
-      xlab = "Fitted Values",
-      ylab = "Residuals",
-      main = "Residuals vs Fitted",
-      pch = 19, col = "darkblue", cex = 0.8,
-      ...
-    )
+    if (isTRUE(x$task == "multinomial")) {
+      plot(seq_along(residuals), residuals,
+        xlab = "Observation",
+        ylab = "Predicted Probability of True Class",
+        main = "Probability of Observed Class",
+        pch = 19, col = "darkblue", cex = 0.8,
+        ylim = c(0, 1),
+        ...
+      )
+      abline(h = 1 / length(x$classLevels), col = "red", lty = 2, lwd = 2)
+    } else {
+      plot(y_pred_mean, residuals,
+        xlab = if (is_class) "Fitted Probability" else "Fitted Values",
+        ylab = if (is_class) "Observed minus Probability" else "Residuals",
+        main = "Residuals vs Fitted",
+        pch = 19, col = "darkblue", cex = 0.8,
+        ...
+      )
 
-    # Add horizontal line at y = 0
-    abline(h = 0, col = "red", lty = 2, lwd = 2)
+      # Add horizontal line at y = 0
+      abline(h = 0, col = "red", lty = 2, lwd = 2)
 
-    # Add smoothed trend line
-    if (length(y_pred_mean) > 3) {
-      smooth_line <- lowess(y_pred_mean, residuals)
-      lines(smooth_line, col = "orange", lwd = 2)
+      # Add smoothed trend line
+      if (length(y_pred_mean) > 3) {
+        smooth_line <- lowess(y_pred_mean, residuals)
+        lines(smooth_line, col = "orange", lwd = 2)
+      }
     }
 
-    # Add RMSE annotation
-    rmse_text <- paste("RMSE =", round(x$inSampleRmse, 4))
-    legend("topright", legend = rmse_text, bty = "n", cex = 0.9)
+    # Add RMSE or accuracy annotation
+    if (is_class) {
+      acc_text <- paste("Accuracy =", round(x$inSampleAccuracy, 4))
+      legend("topright", legend = acc_text, bty = "n", cex = 0.9)
+    } else {
+      rmse_text <- paste("RMSE =", round(x$inSampleRmse, 4))
+      legend("topright", legend = rmse_text, bty = "n", cex = 0.9)
+    }
   }
 
   # --- Plot 2: Sigma Trace ---
@@ -919,56 +1117,82 @@ plot.AddiVortes <- function(x, x_train, y_train, sigma_trace = NULL,
       readline()
     }
 
-    # Get quantile predictions for uncertainty
-    y_pred_quantiles <- predict(x,
-      newdata = x_train, type = "quantile",
-      quantiles = c(0.025, 0.975)
-    )
+    if (isTRUE(x$task == "binary")) {
+      y01 <- binaryObservedResponse_internal(y_train, x$classLevels)
+      plot(y01, y_pred_prob,
+        xlab = "Observed Class (0/1)",
+        ylab = "Predicted Probability",
+        main = "Predicted Probability vs Observed",
+        pch = 19, col = "darkblue", cex = 0.8,
+        ylim = c(0, 1),
+        ...
+      )
+      abline(h = 0.5, col = "red", lty = 2, lwd = 2)
+    } else if (isTRUE(x$task == "multinomial")) {
+      true_idx <- match(as.character(y_train), x$classLevels)
+      p_true <- y_pred_prob[cbind(seq_len(nrow(y_pred_prob)), true_idx)]
+      plot(seq_along(p_true), p_true,
+        xlab = "Observation",
+        ylab = "Predicted Probability of True Class",
+        main = "Probability of Observed Class",
+        pch = 19, col = "darkblue", cex = 0.8,
+        ylim = c(0, 1),
+        ...
+      )
+      abline(h = 1 / length(x$classLevels), col = "red", lty = 2, lwd = 2)
+    } else {
+      # Get quantile predictions for uncertainty
+      y_pred_quantiles <- predict(x,
+        newdata = x_train, type = "quantile",
+        quantiles = c(0.025, 0.975),
+        showProgress = FALSE
+      )
 
-    # Create the scatter plot
-    plot(y_train, y_pred_mean,
-      xlab = "Observed Values",
-      ylab = "Predicted Values",
-      main = "Predicted vs Observed",
-      pch = 19, col = "darkblue", cex = 0.8,
-      xlim = range(c(y_train, y_pred_mean)),
-      ylim = range(c(y_train, y_pred_mean)),
-      ...
-    )
+      # Create the scatter plot
+      plot(y_train, y_pred_mean,
+        xlab = "Observed Values",
+        ylab = "Predicted Values",
+        main = "Predicted vs Observed",
+        pch = 19, col = "darkblue", cex = 0.8,
+        xlim = range(c(y_train, y_pred_mean)),
+        ylim = range(c(y_train, y_pred_mean)),
+        ...
+      )
 
-    # Add the line of equality (perfect prediction)
-    abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
+      # Add the line of equality (perfect prediction)
+      abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
 
-    # Add uncertainty intervals
-    for (i in seq_along(y_train)) {
-      segments(y_train[i], y_pred_quantiles[i, 1],
-        y_train[i], y_pred_quantiles[i, 2],
-        col = "lightblue", lwd = 1
+      # Add uncertainty intervals
+      for (i in seq_along(y_train)) {
+        segments(y_train[i], y_pred_quantiles[i, 1],
+          y_train[i], y_pred_quantiles[i, 2],
+          col = "lightblue", lwd = 1
+        )
+      }
+
+      # Calculate and display R-squared
+      ss_res <- sum(residuals^2)
+      ss_tot <- sum((y_train - mean(y_train))^2)
+      r_squared <- 1 - (ss_res / ss_tot)
+
+      legend("topleft",
+        legend = c(
+          "Perfect Prediction",
+          "95% Prediction Intervals"
+        ),
+        col = c("red", "lightblue"),
+        lty = c(2, 1),
+        lwd = c(2, 1),
+        pch = c(NA, NA), cex = 0.9, bty = "n"
+      )
+      legend("bottomright",
+        legend = c(paste("R^2 =", round(r_squared, 3))),
+        col = c("black"),
+        lty = c(NA),
+        lwd = c(NA),
+        pch = c(NA), cex = 0.9, bty = "n"
       )
     }
-
-    # Calculate and display R-squared
-    ss_res <- sum(residuals^2)
-    ss_tot <- sum((y_train - mean(y_train))^2)
-    r_squared <- 1 - (ss_res / ss_tot)
-
-    legend("topleft",
-      legend = c(
-        "Perfect Prediction",
-        "95% Prediction Intervals"
-      ),
-      col = c("red", "lightblue"),
-      lty = c(2, 1),
-      lwd = c(2, 1),
-      pch = c(NA, NA), cex = 0.9, bty = "n"
-    )
-    legend("bottomright",
-      legend = c(paste("R^2 =", round(r_squared, 3))),
-      col = c("black"),
-      lty = c(NA),
-      lwd = c(NA),
-      pch = c(NA), cex = 0.9, bty = "n"
-    )
   }
 
   # Return invisibly

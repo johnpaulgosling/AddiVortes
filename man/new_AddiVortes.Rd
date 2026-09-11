@@ -19,7 +19,13 @@ new_AddiVortes(
   metric_aug = "E",
   member_aug = rep(1, length(xCentres)),
   catEncoding = NULL,
-  traceStats = NULL
+  traceStats = NULL,
+  task = "regression",
+  classLevels = NULL,
+  nLatents = 1L,
+  mPerLatent = NA_integer_,
+  inSampleAccuracy = NA_real_,
+  inSampleBrier = NA_real_
 )
 }
 \arguments{
@@ -55,6 +61,23 @@ to one-hot}
 were present.}
 
 \item{traceStats}{Optional data frame of per-iteration MCMC trace statistics.}
+
+\item{task}{The modelling task: \code{"regression"}, \code{"binary"} or \code{"multinomial"}.}
+
+\item{classLevels}{Character vector of class labels for classification fits,
+or \code{NULL} for regression.}
+
+\item{nLatents}{Number of latent probit dimensions. 1 for regression and
+binary classification; \eqn{K-1}{K-1} for \eqn{K}{K}-class multinomial
+models.}
+
+\item{mPerLatent}{Number of tessellations per latent ensemble.}
+
+\item{inSampleAccuracy}{In-sample classification accuracy, or \code{NA} for
+regression.}
+
+\item{inSampleBrier}{In-sample Brier score for binary classification, or \code{NA}
+otherwise.}
 }
 \value{
 An object of class AddiVortes.

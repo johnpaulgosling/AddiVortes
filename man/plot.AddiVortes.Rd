@@ -18,9 +18,10 @@
 \item{x}{An object of class \code{AddiVortes}, typically the result of a
 call to \code{AddiVortes()}.}
 
-\item{x_train}{A matrix of the original training covariates.}
+\item{x_train}{A matrix or data frame of the original training covariates.}
 
-\item{y_train}{A numeric vector of the original training true outcomes.}
+\item{y_train}{The original training response. Numeric for regression;
+factor, character, logical or 0/1 numeric for classification.}
 
 \item{sigma_trace}{An optional numeric vector of sigma values from MCMC samples.
 If not provided, the method will attempt to extract the posterior error

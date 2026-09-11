@@ -1,0 +1,143 @@
+---
+title: "Classification with AddiVortes"
+author: "John Paul Gosling and Adam Stone"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Classification with AddiVortes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 4.5,
+  fig.align = "center"
+)
+```
+
+This vignette shows how `AddiVortes()` fits **binary** and **multi-category** classification models. The task is chosen automatically from the response `y`. Binary classification uses a probit link with Albert-Chib latent variables. Multi-category classification uses the same idea with \(K-1\) independent latent ensembles (the first class is the reference level).
+
+```{r, message=FALSE, warning=FALSE}
+library(AddiVortes)
+```
+
+## How the response is interpreted
+
+`AddiVortes()` looks only at `y`:
+
+- A **factor**, **character** or **logical** vector is classification. Two levels give a binary model; three or more give a multinomial model.
+- A **numeric** vector with exactly two unique values in `{0, 1}` is binary classification (1 is the event class).
+- Any other numeric vector is Gaussian regression, as in previous versions of the package.
+
+The first factor level is the reference class, matching `glm()`. For numeric 0/1 data, 0 is the reference. Character vectors are converted with `factor()`, so levels are alphabetical.
+
+Missing values in `y` are not allowed, and a classification response must have at least two classes.
+
+## Binary classification
+
+We simulate a two-dimensional problem whose labels follow a simple linear boundary.
+
+```{r}
+set.seed(2026)
+n <- 120
+x <- data.frame(
+  x1 = runif(n, -1, 1),
+  x2 = runif(n, -1, 1)
+)
+y <- factor(ifelse(x$x1 + x$x2 > 0, "active", "inactive"),
+            levels = c("inactive", "active"))
+
+fit_bin <- AddiVortes(
+  y, x,
+  m = 200,
+  totalMCMCIter = 2000,
+  mcmcBurnIn = 200,
+  showProgress = FALSE
+)
+
+fit_bin$task
+fit_bin$classLevels
+fit_bin$inSampleAccuracy
+```
+
+`predict(..., type = "response")` returns the posterior mean of \(\Phi(G(x))\), the probability of the event class (`active` here). `type = "class"` returns labels, and `type = "quantile"` gives credible intervals for those probabilities.
+
+```{r}
+p_hat <- predict(fit_bin, x, type = "response", showProgress = FALSE)
+y_hat <- predict(fit_bin, x, type = "class", showProgress = FALSE)
+p_int <- predict(fit_bin, x,
+  type = "quantile",
+  quantiles = c(0.05, 0.95),
+  showProgress = FALSE
+)
+
+mean(y_hat == y)
+range(p_hat)
+head(cbind(prob = round(p_hat, 3), lower = round(p_int[, 1], 3),
+           upper = round(p_int[, 2], 3), class = as.character(y_hat)))
+```
+
+Observations with probability near 0.5 are the most uncertain. The 90% intervals typically cover 0.5 for those points.
+
+```{r}
+plot(p_hat, as.integer(y) - 1,
+     xlab = "Predicted P(active)",
+     ylab = "Observed class",
+     pch = 19, col = "steelblue")
+abline(v = 0.5, lty = 2, col = "grey40")
+```
+
+## Multi-category classification
+
+With three or more classes, AddiVortes fits \(K-1\) latent ensembles. The argument `m` is the number of tessellations **per latent**, so a three-class model with `m = 15` uses 30 tessellations in total.
+
+```{r}
+set.seed(2026)
+n3 <- 90
+x3 <- data.frame(
+  x1 = rnorm(n3),
+  x2 = rnorm(n3)
+)
+y3 <- cut(x3$x1, breaks = c(-Inf, -0.5, 0.5, Inf), labels = c("low", "mid", "high"))
+
+fit_multi <- AddiVortes(
+  y3, x3,
+  m = 200,
+  totalMCMCIter = 2000,
+  mcmcBurnIn = 200,
+  showProgress = FALSE
+)
+
+fit_multi$task
+fit_multi$nLatents
+fit_multi$inSampleAccuracy
+```
+
+`type = "response"` is now an \(n \times K\) matrix of class probabilities. Rows sum to 1. `type = "class"` returns the class with the largest probability.
+
+```{r}
+p3 <- predict(fit_multi, x3, type = "response", showProgress = FALSE)
+cls3 <- predict(fit_multi, x3, type = "class", showProgress = FALSE)
+
+head(round(p3, 3))
+mean(abs(rowSums(p3) - 1) < 1e-8)
+table(predicted = cls3, observed = y3)
+```
+
+## Notes on the classification prior
+
+On the latent probit scale the residual variance is fixed at \(\sigma = 1\), so `nu`, `q` and `InitialSigma` are ignored. Cell means use
+
+\[
+\sigma_\mu = \frac{3}{k\sqrt{m}},
+\]
+
+which keeps \(G(x)\) typically inside \((-3, 3)\) and shrinks class probabilities towards 0.5 (or towards equal class probabilities in the multinomial case). The default `k = 3` is a reasonable starting point.
+
+The response itself is not scaled. Covariates are still centred and scaled exactly as in regression.
+
+For further details of the binary model see Stone, Ogundimu and Gosling (2026). The multi-category construction follows the latent-utility setup of Kindo, Wang and Peña (2016), with independent latents (\(\Sigma = I\)).
