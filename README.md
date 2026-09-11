@@ -1,4 +1,4 @@
-# AddiVortes: Bayesian Additive Voronoi Tessellations
+# AddiVortes: (Bayesian) Additive Voronoi Tessellations
 
 ## Overview
 
@@ -78,7 +78,7 @@ citation("AddiVortes")
 
 ## References
 
-Stone, A. and Gosling, J.P. (2025). AddiVortes: (Bayesian) additive Voronoi tessellations. Journal of Computational and Graphical Statistics.
+Stone, A. and Gosling, J.P. (2025). AddiVortes: (Bayesian) additive Voronoi tessellations. *Journal of Computational and Graphical Statistics*, **34**, 859–71. [doi](https://doi.org/10.1080/10618600.2024.2414104)
 
 ## Keywords
 
