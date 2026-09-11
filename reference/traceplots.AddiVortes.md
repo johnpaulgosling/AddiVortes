@@ -9,7 +9,8 @@ whose differences form the likelihood part of the acceptance ratio.
 ## Usage
 
 ``` r
-traceplots.AddiVortes(x, ask = FALSE, ...)
+# S3 method for class 'AddiVortes'
+traceplots(x, ask = FALSE, ...)
 ```
 
 ## Arguments
@@ -52,6 +53,6 @@ The four trace plots are:
 ``` r
 if (FALSE) { # \dontrun{
 # Assuming 'fit' is a trained AddiVortes object
-traceplots.AddiVortes(fit)
+traceplots(fit)
 } # }
 ```

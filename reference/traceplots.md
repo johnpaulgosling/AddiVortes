@@ -1,6 +1,9 @@
-# Trace Plot Diagnostics
+# Trace plots
 
-Creates trace plots for MCMC diagnostics of a fitted model.
+S3 generic for MCMC trace plots of fitted AddiVortes models. Users
+should call `traceplots(fit)`; see
+[`traceplots.AddiVortes()`](https://johnpaulgosling.github.io/AddiVortes/reference/traceplots.AddiVortes.md)
+for the method documentation.
 
 ## Usage
 
@@ -12,13 +15,12 @@ traceplots(x, ...)
 
 - x:
 
-  A fitted model object.
+  An object.
 
 - ...:
 
-  Further arguments passed to methods.
+  Additional arguments passed to methods.
 
-## Value
+## See also
 
-This function is called for its side effect of creating plots and
-returns `NULL` invisibly.
+[`traceplots.AddiVortes()`](https://johnpaulgosling.github.io/AddiVortes/reference/traceplots.AddiVortes.md)

@@ -27,7 +27,7 @@ Methods for AddiVortes objects
   : Print Method for AddiVortes
 - [`summary(`*`<AddiVortes>`*`)`](https://johnpaulgosling.github.io/AddiVortes/reference/summary.AddiVortes.md)
   : Summary Method for AddiVortes
-- [`traceplots.AddiVortes()`](https://johnpaulgosling.github.io/AddiVortes/reference/traceplots.AddiVortes.md)
+- [`traceplots(`*`<AddiVortes>`*`)`](https://johnpaulgosling.github.io/AddiVortes/reference/traceplots.AddiVortes.md)
   : Trace Plot Method for AddiVortes
 
 ## Datasets

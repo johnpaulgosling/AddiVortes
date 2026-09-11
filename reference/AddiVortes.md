@@ -164,7 +164,7 @@ AddiVortes(
 An AddiVortes object containing the posterior samples of the
 tessellations, dimensions and predictions, plus per-iteration trace
 statistics used by
-[`traceplots.AddiVortes()`](https://johnpaulgosling.github.io/AddiVortes/reference/traceplots.AddiVortes.md).
+[`traceplots()`](https://johnpaulgosling.github.io/AddiVortes/reference/traceplots.md).
 Classification fits also store `task`, `classLevels`, `nLatents` and
 in-sample accuracy.
 
