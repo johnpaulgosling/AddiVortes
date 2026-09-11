@@ -62,7 +62,7 @@ AModel <- AddiVortes(Y, X, m = 50, showProgress = FALSE)
 
 # We can check the in-sample Root Mean Squared Error
 cat("In-sample RMSE:", AModel$inSampleRmse, "\n")
-#> In-sample RMSE: 1.018884
+#> In-sample RMSE: 0.8874636
 ```
 
 The in-sample RMSE gives us an idea of how well the model fits the data
@@ -288,11 +288,11 @@ cred_width <- mean(cred_intervals[, 2] - cred_intervals[, 1])
 pred_width <- mean(pred_intervals[, 2] - pred_intervals[, 1])
 
 cat("Average 95% credible interval width:", round(cred_width, 2), "\n")
-#> Average 95% credible interval width: 3.15
+#> Average 95% credible interval width: 3.07
 cat("Average 95% prediction interval width:", round(pred_width, 2), "\n")
-#> Average 95% prediction interval width: 5.81
+#> Average 95% prediction interval width: 5.31
 cat("Ratio (prediction/credible):", round(pred_width / cred_width, 2), "\n")
-#> Ratio (prediction/credible): 1.85
+#> Ratio (prediction/credible): 1.73
 ```
 
 **When to use each type:**

@@ -29,8 +29,8 @@ AddiVortes(
   y,
   x,
   m = 200,
-  totalMCMCIter = 1200,
-  mcmcBurnIn = 200,
+  totalMCMCIter = 2000,
+  mcmcBurnIn = 500,
   nu = 6,
   q = 0.85,
   k = 3,
@@ -74,11 +74,11 @@ AddiVortes(
 
 - totalMCMCIter:
 
-  The number of iterations.
+  The number of MCMC iterations. Default `2000`.
 
 - mcmcBurnIn:
 
-  The number of burn in iterations.
+  The number of burn-in iterations. Default `500`.
 
 - nu:
 
@@ -163,10 +163,8 @@ AddiVortes(
 
 An AddiVortes object containing the posterior samples of the
 tessellations, dimensions and predictions, plus per-iteration trace
-statistics used by
-[`traceplots()`](https://johnpaulgosling.github.io/AddiVortes/reference/traceplots.AddiVortes.md).
-Classification fits also store `task`, `classLevels`, `nLatents` and
-in-sample accuracy.
+statistics used by `traceplots()`. Classification fits also store
+`task`, `classLevels`, `nLatents` and in-sample accuracy.
 
 ## References
 

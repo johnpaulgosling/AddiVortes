@@ -63,3 +63,5 @@ Authors:
 
 - Andrew Iskauskas <andrew.iskauskas@durham.ac.uk>
   ([ORCID](https://orcid.org/0000-0003-2825-3651))
+
+- Leo Thomson <leo@feasibly.co.uk>

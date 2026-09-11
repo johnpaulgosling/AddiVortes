@@ -55,7 +55,7 @@ fit_bin <- AddiVortes(
   y, x,
   m = 200,
   totalMCMCIter = 2000,
-  mcmcBurnIn = 200,
+  mcmcBurnIn = 500,
   showProgress = FALSE
 )
 
@@ -85,16 +85,16 @@ p_int <- predict(fit_bin, x,
 mean(y_hat == y)
 #> [1] 0.9916667
 range(p_hat)
-#> [1] 0.01845073 0.96984245
+#> [1] 0.01799616 0.96853534
 head(cbind(prob = round(p_hat, 3), lower = round(p_int[, 1], 3),
            upper = round(p_int[, 2], 3), class = as.character(y_hat)))
 #>      prob    lower   upper   class     
-#> [1,] "0.722" "0.454" "0.924" "active"  
-#> [2,] "0.048" "0.004" "0.14"  "inactive"
-#> [3,] "0.09"  "0.011" "0.243" "inactive"
-#> [4,] "0.718" "0.443" "0.922" "active"  
-#> [5,] "0.298" "0.087" "0.566" "inactive"
-#> [6,] "0.032" "0"     "0.129" "inactive"
+#> [1,] "0.724" "0.467" "0.921" "active"  
+#> [2,] "0.048" "0.004" "0.141" "inactive"
+#> [3,] "0.091" "0.011" "0.243" "inactive"
+#> [4,] "0.713" "0.438" "0.92"  "active"  
+#> [5,] "0.3"   "0.088" "0.565" "inactive"
+#> [6,] "0.033" "0"     "0.13"  "inactive"
 ```
 
 Observations with probability near 0.5 are the most uncertain. The 90%
@@ -131,7 +131,7 @@ fit_multi <- AddiVortes(
   y3, x3,
   m = 200,
   totalMCMCIter = 2000,
-  mcmcBurnIn = 200,
+  mcmcBurnIn = 500,
   showProgress = FALSE
 )
 
@@ -154,12 +154,12 @@ cls3 <- predict(fit_multi, x3, type = "class", showProgress = FALSE)
 
 head(round(p3, 3))
 #>        low   mid  high
-#> [1,] 0.126 0.400 0.474
-#> [2,] 0.684 0.229 0.087
-#> [3,] 0.125 0.683 0.192
-#> [4,] 0.195 0.672 0.134
-#> [5,] 0.451 0.393 0.156
-#> [6,] 0.845 0.107 0.048
+#> [1,] 0.129 0.400 0.472
+#> [2,] 0.682 0.230 0.088
+#> [3,] 0.126 0.685 0.189
+#> [4,] 0.195 0.671 0.135
+#> [5,] 0.453 0.389 0.158
+#> [6,] 0.843 0.107 0.050
 mean(abs(rowSums(p3) - 1) < 1e-8)
 #> [1] 1
 table(predicted = cls3, observed = y3)

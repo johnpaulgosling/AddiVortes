@@ -43,7 +43,7 @@ using multiple spheres in covariate space."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">AddiVortes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -104,8 +104,8 @@ using multiple spheres in covariate space.</p>
 <span>  <span class="va">y</span>,</span>
 <span>  <span class="va">x</span>,</span>
 <span>  m <span class="op">=</span> <span class="fl">200</span>,</span>
-<span>  totalMCMCIter <span class="op">=</span> <span class="fl">1200</span>,</span>
-<span>  mcmcBurnIn <span class="op">=</span> <span class="fl">200</span>,</span>
+<span>  totalMCMCIter <span class="op">=</span> <span class="fl">2000</span>,</span>
+<span>  mcmcBurnIn <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>  nu <span class="op">=</span> <span class="fl">6</span>,</span>
 <span>  q <span class="op">=</span> <span class="fl">0.85</span>,</span>
 <span>  k <span class="op">=</span> <span class="fl">3</span>,</span>
@@ -149,11 +149,11 @@ the number of tessellations <strong>per latent dimension</strong> (there are
 
 
 <dt id="arg-totalmcmciter">totalMCMCIter<a class="anchor" aria-label="anchor" href="#arg-totalmcmciter"></a></dt>
-<dd><p>The number of iterations.</p></dd>
+<dd><p>The number of MCMC iterations. Default <code>2000</code>.</p></dd>
 
 
 <dt id="arg-mcmcburnin">mcmcBurnIn<a class="anchor" aria-label="anchor" href="#arg-mcmcburnin"></a></dt>
-<dd><p>The number of burn in iterations.</p></dd>
+<dd><p>The number of burn-in iterations. Default <code>500</code>.</p></dd>
 
 
 <dt id="arg-nu">nu<a class="anchor" aria-label="anchor" href="#arg-nu"></a></dt>
@@ -240,7 +240,7 @@ for a comparison and guidance on which to use.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An AddiVortes object containing the posterior samples of the
 tessellations, dimensions and predictions, plus per-iteration trace
-statistics used by <code><a href="traceplots.AddiVortes.html">traceplots()</a></code>. Classification fits also store <code>task</code>,
+statistics used by <code>traceplots()</code>. Classification fits also store <code>task</code>,
 <code>classLevels</code>, <code>nLatents</code> and in-sample accuracy.</p>
     </div>
     <div class="section level2">
@@ -312,7 +312,7 @@ additive regression trees. <em>Stat</em>, 5(1), 171–181.</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Adam Stone, John Paul Gosling, Andrew Iskauskas.</p>
+  <p>Developed by Adam Stone, John Paul Gosling, Andrew Iskauskas, Leo Thomson.</p>
 </div>
 
 <div class="pkgdown-footer-right">

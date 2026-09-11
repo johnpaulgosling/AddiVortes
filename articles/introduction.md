@@ -58,7 +58,7 @@ results <- AddiVortes(
   x = X_Boston[TrainSet, ],
   m = 200,
   totalMCMCIter = 2000,
-  mcmcBurnIn = 200,
+  mcmcBurnIn = 500,
   nu = 6,
   q = 0.85,
   k = 3,
@@ -86,12 +86,12 @@ preds <- predict(results,
 
 # The RMSE is contained in the results object
 cat("In-Sample RMSE:", results$inSampleRmse, "\n")
-#> In-Sample RMSE: 0.7027063
+#> In-Sample RMSE: 0.6772973
 
 # Calculate the Root Mean Squared Error (RMSE) for the test set
 rmse <- sqrt(mean((Y_Boston[TestSet] - preds)^2))
 cat("Test Set RMSE:", rmse, "\n")
-#> Test Set RMSE: 3.361308
+#> Test Set RMSE: 3.388859
 ```
 
 ### 5. Visualising the Results

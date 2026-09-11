@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">AddiVortes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -122,7 +122,7 @@ linear boundary.</p>
 <span>  <span class="va">y</span>, <span class="va">x</span>,</span>
 <span>  m <span class="op">=</span> <span class="fl">200</span>,</span>
 <span>  totalMCMCIter <span class="op">=</span> <span class="fl">2000</span>,</span>
-<span>  mcmcBurnIn <span class="op">=</span> <span class="fl">200</span>,</span>
+<span>  mcmcBurnIn <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>  showProgress <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -151,16 +151,16 @@ probabilities.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">y_hat</span> <span class="op">==</span> <span class="va">y</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.9916667</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="va">p_hat</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.01845073 0.96984245</span></span>
+<span><span class="co">#&gt; [1] 0.01799616 0.96853534</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span>prob <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">p_hat</span>, <span class="fl">3</span><span class="op">)</span>, lower <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">p_int</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span>, <span class="fl">3</span><span class="op">)</span>,</span>
 <span>           upper <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">p_int</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span>, <span class="fl">3</span><span class="op">)</span>, class <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">y_hat</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;      prob    lower   upper   class     </span></span>
-<span><span class="co">#&gt; [1,] "0.722" "0.454" "0.924" "active"  </span></span>
-<span><span class="co">#&gt; [2,] "0.048" "0.004" "0.14"  "inactive"</span></span>
-<span><span class="co">#&gt; [3,] "0.09"  "0.011" "0.243" "inactive"</span></span>
-<span><span class="co">#&gt; [4,] "0.718" "0.443" "0.922" "active"  </span></span>
-<span><span class="co">#&gt; [5,] "0.298" "0.087" "0.566" "inactive"</span></span>
-<span><span class="co">#&gt; [6,] "0.032" "0"     "0.129" "inactive"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1,] "0.724" "0.467" "0.921" "active"  </span></span>
+<span><span class="co">#&gt; [2,] "0.048" "0.004" "0.141" "inactive"</span></span>
+<span><span class="co">#&gt; [3,] "0.091" "0.011" "0.243" "inactive"</span></span>
+<span><span class="co">#&gt; [4,] "0.713" "0.438" "0.92"  "active"  </span></span>
+<span><span class="co">#&gt; [5,] "0.3"   "0.088" "0.565" "inactive"</span></span>
+<span><span class="co">#&gt; [6,] "0.033" "0"     "0.13"  "inactive"</span></span></code></pre></div>
 <p>Observations with probability near 0.5 are the most uncertain. The
 90% intervals typically cover 0.5 for those points.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
@@ -192,7 +192,7 @@ tessellations <strong>per latent</strong>, so a three-class model with
 <span>  <span class="va">y3</span>, <span class="va">x3</span>,</span>
 <span>  m <span class="op">=</span> <span class="fl">200</span>,</span>
 <span>  totalMCMCIter <span class="op">=</span> <span class="fl">2000</span>,</span>
-<span>  mcmcBurnIn <span class="op">=</span> <span class="fl">200</span>,</span>
+<span>  mcmcBurnIn <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>  showProgress <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -213,12 +213,12 @@ probability.</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">p3</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        low   mid  high</span></span>
-<span><span class="co">#&gt; [1,] 0.126 0.400 0.474</span></span>
-<span><span class="co">#&gt; [2,] 0.684 0.229 0.087</span></span>
-<span><span class="co">#&gt; [3,] 0.125 0.683 0.192</span></span>
-<span><span class="co">#&gt; [4,] 0.195 0.672 0.134</span></span>
-<span><span class="co">#&gt; [5,] 0.451 0.393 0.156</span></span>
-<span><span class="co">#&gt; [6,] 0.845 0.107 0.048</span></span>
+<span><span class="co">#&gt; [1,] 0.129 0.400 0.472</span></span>
+<span><span class="co">#&gt; [2,] 0.682 0.230 0.088</span></span>
+<span><span class="co">#&gt; [3,] 0.126 0.685 0.189</span></span>
+<span><span class="co">#&gt; [4,] 0.195 0.671 0.135</span></span>
+<span><span class="co">#&gt; [5,] 0.453 0.389 0.158</span></span>
+<span><span class="co">#&gt; [6,] 0.843 0.107 0.050</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="va">p3</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span> <span class="op">&lt;</span> <span class="fl">1e-8</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span>predicted <span class="op">=</span> <span class="va">cls3</span>, observed <span class="op">=</span> <span class="va">y3</span><span class="op">)</span></span>
@@ -260,7 +260,7 @@ latents
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Adam Stone, John Paul Gosling, Andrew Iskauskas.</p>
+  <p>Developed by Adam Stone, John Paul Gosling, Andrew Iskauskas, Leo Thomson.</p>
 </div>
 
 <div class="pkgdown-footer-right">
