@@ -91,7 +91,7 @@ decrease below 1 to give them less weight. Binary indicator columns are named
 
 \item{cat.onehot}{Should categorical covariates be one-hot encoded? Default
 \code{TRUE}. When \code{TRUE}, each categorical covariate with \emph{d} levels is expanded
-to \emph{d} − 1 binary indicators and distances are Euclidean (weighted by
+to \emph{d} - 1 binary indicators and distances are Euclidean (weighted by
 \code{catScaling}). When \code{FALSE}, categories are kept as a single
 integer-coded column and mismatches use Eskin distance (Eskin et al., 2002),
 with squared cost \eqn{2 / d^2} when levels differ and 0 when they match;

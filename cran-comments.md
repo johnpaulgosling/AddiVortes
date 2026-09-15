@@ -2,9 +2,12 @@
 
 This is a patch release. It hides the internal `cellIndices()` helper,
 updates the default MCMC settings to 2000 iterations with 500 burn-in,
-adds Leo Thomson as an author, and addresses the clang
+adds Leo Thomson as an author, addresses the clang
 `-Wabsolute-value` WARNING reported on CRAN's
-`r-devel-linux-x86_64-debian-clang` builder.
+`r-devel-linux-x86_64-debian-clang` builder, and replaces a Unicode
+minus sign (U+2212) in the `AddiVortes()` help page that caused
+LaTeX errors when building the PDF manual on
+`r-devel-linux-x86_64-debian-gcc` and `r-devel-windows-x86_64`.
 
 ## Test environments
 

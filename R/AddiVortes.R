@@ -71,7 +71,7 @@
 #'   \code{"A"} as the reference level).
 #' @param cat.onehot Should categorical covariates be one-hot encoded? Default
 #'   `TRUE`. When `TRUE`, each categorical covariate with *d* levels is expanded
-#'   to *d* − 1 binary indicators and distances are Euclidean (weighted by
+#'   to *d* - 1 binary indicators and distances are Euclidean (weighted by
 #'   \code{catScaling}). When `FALSE`, categories are kept as a single
 #'   integer-coded column and mismatches use Eskin distance (Eskin et al., 2002),
 #'   with squared cost \eqn{2 / d^2} when levels differ and 0 when they match;
