@@ -224,7 +224,7 @@ decrease below 1 to give them less weight. Binary indicator columns are named
 <dt id="arg-cat-onehot">cat.onehot<a class="anchor" aria-label="anchor" href="#arg-cat-onehot"></a></dt>
 <dd><p>Should categorical covariates be one-hot encoded? Default
 <code>TRUE</code>. When <code>TRUE</code>, each categorical covariate with <em>d</em> levels is expanded
-to <em>d</em> − 1 binary indicators and distances are Euclidean (weighted by
+to <em>d</em> - 1 binary indicators and distances are Euclidean (weighted by
 <code>catScaling</code>). When <code>FALSE</code>, categories are kept as a single
 integer-coded column and mismatches use Eskin distance (Eskin et al., 2002),
 with squared cost \(2 / d^2\) when levels differ and 0 when they match;
