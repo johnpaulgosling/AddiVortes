@@ -39,3 +39,12 @@ test_that("binary classification smoke fit returns probabilities", {
   expect_length(preds, 10)
   expect_true(all(preds >= 0 & preds <= 1))
 })
+
+test_that("Rd help pages do not contain Unicode minus U+2212", {
+  db <- tools::Rd_db("AddiVortes")
+  expect_gt(length(db), 0)
+  for (nm in names(db)) {
+    txt <- paste(as.character(db[[nm]]), collapse = "\n")
+    expect_false(grepl("\u2212", txt, fixed = TRUE), info = nm)
+  }
+})

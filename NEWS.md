@@ -11,6 +11,8 @@
 * Restored `traceplots()` as an S3 generic so the method is listed as
   `traceplots(<AddiVortes>)` with the other S3 methods. The generic is
   documented as an internal topic and does not appear in the package index.
+* Replaced a Unicode minus sign (U+2212) in the `AddiVortes()` help page
+  that caused LaTeX errors when CRAN built the PDF manual.
 
 ## AddiVortes 1.0.0
 
