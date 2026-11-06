@@ -19,6 +19,7 @@ new_AddiVortes(
   metric_aug = "E",
   member_aug = rep(1, length(xCentres)),
   catEncoding = NULL,
+  eskin = NULL,
   traceStats = NULL,
   task = "regression",
   classLevels = NULL,
@@ -59,6 +60,10 @@ to one-hot}
 \item{catEncoding}{Optional list of categorical encoding metadata returned by
 \code{encodeCategories_internal}, or \code{NULL} if no categorical covariates
 were present.}
+
+\item{eskin}{Optional list of training Eskin level counts and weights, or
+\code{NULL} when Eskin distance was not used. \code{predict()} reuses these
+values instead of recomputing them from new data.}
 
 \item{traceStats}{Optional data frame of per-iteration MCMC trace statistics.}
 

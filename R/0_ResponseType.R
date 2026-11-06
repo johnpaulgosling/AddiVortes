@@ -158,6 +158,7 @@ latentLinkMatrices_internal <- function(object, x_scaled, showProgress = FALSE) 
     tess_d <- lapply(object$posteriorTess, function(draw) draw[idx])
     dim_d <- lapply(object$posteriorDim, function(draw) draw[idx])
     pred_d <- lapply(object$posteriorPred, function(draw) draw[idx])
+    eskin_args <- eskinCallArgs_internal(object)
     G_list[[d]] <- .Call(
       "addi_vortes_predict_cpp",
       x_scaled,
@@ -166,7 +167,9 @@ latentLinkMatrices_internal <- function(object, x_scaled, showProgress = FALSE) 
       pred_d,
       as.integer(object$metric_red),
       as.integer(object$member_red),
-      as.logical(showProgress && d == n_latents)
+      as.logical(showProgress && d == n_latents),
+      eskin_args$ncat,
+      eskin_args$weight
     )
   }
   G_list

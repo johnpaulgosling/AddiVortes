@@ -22,6 +22,7 @@ AddiVortes(
   members = NULL,
   catScaling = 1,
   cat.onehot = TRUE,
+  eskinWeight = 1,
   showProgress = interactive()
 )
 }
@@ -94,9 +95,24 @@ decrease below 1 to give them less weight. Binary indicator columns are named
 to \emph{d} - 1 binary indicators and distances are Euclidean (weighted by
 \code{catScaling}). When \code{FALSE}, categories are kept as a single
 integer-coded column and mismatches use Eskin distance (Eskin et al., 2002),
-with squared cost \eqn{2 / d^2} when levels differ and 0 when they match;
+with squared cost \eqn{w \times 2 / d^2}{w * 2 / d^2} when levels differ and
+0 when they match. \eqn{w}{w} is \code{eskinWeight} (default 1) and
 \code{catScaling} is then ignored. See the categorical covariates vignette
 for a comparison and guidance on which to use.}
+
+\item{eskinWeight}{Positive weights for Eskin mismatches when
+\code{cat.onehot = FALSE}. A mismatch on categorical column \eqn{k}{k}
+contributes \eqn{w_k \times 2 / d_k^2}{w_k * 2 / d_k^2}, where
+\eqn{d_k}{d_k} is the largest integer code of that column in the training
+data. The default \code{1} keeps the unweighted Eskin cost
+\eqn{2 / d_k^2}{2 / d_k^2}. Length 1 (recycled across categorical columns)
+or one value per categorical column, in the order those columns appear in
+\code{x}. Setting \eqn{w_k = d_k^2 / 2}{w_k = d_k^2 / 2} makes every mismatch
+contribute 1, the same squared distance as one full-range Euclidean
+covariate, while the factor stays a single column. Non-positive values are
+an error. Ignored when \code{cat.onehot = TRUE}. The weights and training level
+counts are stored on the fit and reused by \code{predict()}, so a test set that
+omits a training level cannot change \eqn{d_k}{d_k} or \eqn{w_k}{w_k}.}
 
 \item{showProgress}{Logical; if TRUE, a progress bar is shown during fitting.}
 }
@@ -104,7 +120,9 @@ for a comparison and guidance on which to use.}
 An AddiVortes object containing the posterior samples of the
 tessellations, dimensions and predictions, plus per-iteration trace
 statistics used by \code{traceplots()}. Classification fits also store \code{task},
-\code{classLevels}, \code{nLatents} and in-sample accuracy.
+\code{classLevels}, \code{nLatents} and in-sample accuracy. Eskin fits
+(\code{cat.onehot = FALSE} with categorical columns) store \code{eskin}, a list of
+the training level counts and the \code{eskinWeight} values used by \code{predict()}.
 }
 \description{
 The AddiVortes model is a Bayesian nonparametric model that uses additive

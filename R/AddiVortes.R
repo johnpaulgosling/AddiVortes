@@ -74,15 +74,31 @@
 #'   to *d* - 1 binary indicators and distances are Euclidean (weighted by
 #'   \code{catScaling}). When `FALSE`, categories are kept as a single
 #'   integer-coded column and mismatches use Eskin distance (Eskin et al., 2002),
-#'   with squared cost \eqn{2 / d^2} when levels differ and 0 when they match;
+#'   with squared cost \eqn{w \times 2 / d^2}{w * 2 / d^2} when levels differ and
+#'   0 when they match. \eqn{w}{w} is `eskinWeight` (default 1) and
 #'   \code{catScaling} is then ignored. See the categorical covariates vignette
 #'   for a comparison and guidance on which to use.
+#' @param eskinWeight Positive weights for Eskin mismatches when
+#'   `cat.onehot = FALSE`. A mismatch on categorical column \eqn{k}{k}
+#'   contributes \eqn{w_k \times 2 / d_k^2}{w_k * 2 / d_k^2}, where
+#'   \eqn{d_k}{d_k} is the largest integer code of that column in the training
+#'   data. The default `1` keeps the unweighted Eskin cost
+#'   \eqn{2 / d_k^2}{2 / d_k^2}. Length 1 (recycled across categorical columns)
+#'   or one value per categorical column, in the order those columns appear in
+#'   `x`. Setting \eqn{w_k = d_k^2 / 2}{w_k = d_k^2 / 2} makes every mismatch
+#'   contribute 1, the same squared distance as one full-range Euclidean
+#'   covariate, while the factor stays a single column. Non-positive values are
+#'   an error. Ignored when `cat.onehot = TRUE`. The weights and training level
+#'   counts are stored on the fit and reused by `predict()`, so a test set that
+#'   omits a training level cannot change \eqn{d_k}{d_k} or \eqn{w_k}{w_k}.
 #' @param showProgress Logical; if TRUE, a progress bar is shown during fitting.
 #'
 #' @return An AddiVortes object containing the posterior samples of the
 #' tessellations, dimensions and predictions, plus per-iteration trace
 #' statistics used by `traceplots()`. Classification fits also store `task`,
-#' `classLevels`, `nLatents` and in-sample accuracy.
+#' `classLevels`, `nLatents` and in-sample accuracy. Eskin fits
+#' (`cat.onehot = FALSE` with categorical columns) store `eskin`, a list of
+#' the training level counts and the `eskinWeight` values used by `predict()`.
 #'
 #' @references
 #' Stone, A. and Gosling, J.P. (2025). AddiVortes: (Bayesian) additive Voronoi
@@ -161,6 +177,7 @@ AddiVortes <- function(y, x, m = 200,
                        members = NULL,
                        catScaling = 1,
                        cat.onehot = TRUE,
+                       eskinWeight = 1,
                        showProgress = interactive()) {
   # Force evaluation of Omega using the *original* x before categorical encoding
   # replaces x with the encoded matrix. Without this, R's lazy evaluation would
@@ -209,12 +226,15 @@ AddiVortes <- function(y, x, m = 200,
 
   san_data <- covariateStructure_internal(x,
                                           metric, members, cat.onehot)
+  eskin <- resolveEskinSpec_internal(san_data$data, san_data$structure,
+                                     eskinWeight, cat.onehot)
   encResult <- encodeCategories_internal(san_data$data, catScaling = catScaling)
   catEncoding <- encResult$encoding
   covariateSummary <- formatCovariateSummary_internal(x,
                                                        metric,
                                                        catEncoding,
-                                                       cat.onehot)
+                                                       cat.onehot,
+                                                       eskin)
   if (cat.onehot)
     x <- encResult$encoded
   else
@@ -453,7 +473,9 @@ AddiVortes <- function(y, x, m = 200,
     as.logical(showProgress),
     as.logical(isClassification),
     if (isClassification) as.integer(yClass) else NULL,
-    as.integer(nLatents)
+    as.integer(nLatents),
+    if (is.null(eskin)) NULL else as.integer(eskin$ncat),
+    if (is.null(eskin)) NULL else as.double(eskin$weight)
   )
   
   if (showProgress) cat("Done.\n\n")
@@ -499,6 +521,7 @@ AddiVortes <- function(y, x, m = 200,
     metric_aug = metric,
     member_aug = members,
     catEncoding = this_enc,
+    eskin = eskin,
     traceStats = traceStats,
     task = task,
     classLevels = classLevels,
@@ -544,8 +567,95 @@ countCovariateTypes_internal <- function(x, metric) {
   )
 }
 
+#' Training Eskin level counts and per-column weights.
+#'
+#' @param data Processed covariate data. Categorical columns are integer codes
+#'   when \code{cat.onehot} is \code{FALSE}.
+#' @param structure Character vector of \code{"E"}, \code{"S"}, \code{"C"}.
+#' @param eskinWeight User weight. Length 1, or one value per categorical column
+#'   in the order those columns appear in the supplied covariates.
+#' @param cat.onehot When \code{TRUE}, the weight is ignored.
+#' @return \code{NULL}, or a list with \code{columns}, \code{ncat} and
+#'   \code{weight}. \code{ncat} is the largest integer code in each training
+#'   categorical column.
+#' @keywords internal
+#' @noRd
+resolveEskinSpec_internal <- function(data, structure, eskinWeight, cat.onehot) {
+  if (isTRUE(cat.onehot)) {
+    return(NULL)
+  }
+  if (!is.numeric(eskinWeight) || length(eskinWeight) == 0 ||
+        any(!is.finite(eskinWeight)) || any(eskinWeight <= 0)) {
+    stop("'eskinWeight' must contain positive finite numbers.", call. = FALSE)
+  }
+
+  cat_idx <- which(structure == "C")
+  n_cat <- length(cat_idx)
+  if (n_cat == 0) {
+    if (length(eskinWeight) != 1) {
+      stop(
+        "'eskinWeight' must be a single positive number when there are no categorical columns.",
+        call. = FALSE
+      )
+    }
+    return(NULL)
+  }
+  if (length(eskinWeight) == 1) {
+    weight <- rep(eskinWeight, n_cat)
+  } else if (length(eskinWeight) == n_cat) {
+    weight <- as.numeric(eskinWeight)
+  } else {
+    stop(
+      "'eskinWeight' must have length 1, or one value per categorical column (",
+      n_cat, ").",
+      call. = FALSE
+    )
+  }
+
+  ncat <- vapply(cat_idx, function(j) {
+    codes <- suppressWarnings(as.integer(data[, j]))
+    codes <- codes[is.finite(codes)]
+    if (length(codes) == 0) 0L else as.integer(max(0L, max(codes)))
+  }, integer(1))
+
+  col_names <- colnames(data)
+  if (is.null(col_names)) {
+    col_names <- rep("", ncol(data))
+  }
+  list(
+    columns = col_names[cat_idx],
+    ncat = as.integer(ncat),
+    weight = as.numeric(weight)
+  )
+}
+
+#' @keywords internal
+#' @noRd
+formatEskinSummaryLine_internal <- function(eskin = NULL) {
+  line <- paste0(
+    "Categorical covariates use Eskin distance (cat.onehot = FALSE): ",
+    "each stays as one integer-coded column, with mismatch cost w * 2/d^2 ",
+    "(default w = 1). Set eskinWeight = d^2/2 so that every mismatch ",
+    "contributes 1."
+  )
+  if (is.null(eskin)) {
+    return(line)
+  }
+  col_names <- eskin$columns
+  if (is.null(col_names) || any(!nzchar(col_names))) {
+    col_names <- paste0("column ", seq_along(eskin$weight))
+  }
+  parts <- sprintf(
+    "%s = %s (d = %d)",
+    col_names,
+    format(eskin$weight, trim = TRUE, scientific = FALSE),
+    eskin$ncat
+  )
+  paste0(line, " Stored Eskin weights: ", paste(parts, collapse = ", "), ".")
+}
+
 formatCovariateSummary_internal <- function(x, metric, catEncoding = NULL,
-                                            coh = TRUE) {
+                                            coh = TRUE, eskin = NULL) {
   counts <- countCovariateTypes_internal(x, metric)
   parts <- character(0)
   
@@ -592,14 +702,7 @@ formatCovariateSummary_internal <- function(x, metric, catEncoding = NULL,
         )
       }
     } else {
-      lines <- c(
-        lines,
-        paste0(
-          "Categorical covariates use Eskin distance (cat.onehot = FALSE): ",
-          "each stays as one integer-coded column, with mismatch cost 2/d^2 ",
-          "for a variable with d levels."
-        )
-      )
+      lines <- c(lines, formatEskinSummaryLine_internal(eskin))
     }
   }
   

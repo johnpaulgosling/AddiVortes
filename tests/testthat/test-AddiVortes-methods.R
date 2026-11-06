@@ -149,11 +149,21 @@ test_that("covariate summary helper reports Eskin distance when cat.onehot is FA
       "Covariate summary: 1 continuous, 1 categorical.",
       paste0(
         "Categorical covariates use Eskin distance (cat.onehot = FALSE): ",
-        "each stays as one integer-coded column, with mismatch cost 2/d^2 ",
-        "for a variable with d levels."
+        "each stays as one integer-coded column, with mismatch cost w * 2/d^2 ",
+        "(default w = 1). Set eskinWeight = d^2/2 so that every mismatch ",
+        "contributes 1."
       )
     )
   )
+
+  weighted <- AddiVortes:::formatCovariateSummary_internal(
+    x,
+    metric = c("E", "E"),
+    catEncoding = NULL,
+    coh = FALSE,
+    eskin = list(columns = "grp", ncat = 3L, weight = 4.5)
+  )
+  expect_match(weighted[2], "Stored Eskin weights: grp = 4.5 (d = 3).", fixed = TRUE)
 })
 
 test_that("AddiVortes startup output reports categorical encoding", {
