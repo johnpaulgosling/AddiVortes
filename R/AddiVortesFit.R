@@ -19,6 +19,9 @@
 #' @param catEncoding Optional list of categorical encoding metadata returned by
 #'   \code{encodeCategories_internal}, or \code{NULL} if no categorical covariates
 #'   were present.
+#' @param eskin Optional list of training Eskin level counts and weights, or
+#'   \code{NULL} when Eskin distance was not used. \code{predict()} reuses these
+#'   values instead of recomputing them from new data.
 #' @param traceStats Optional data frame of per-iteration MCMC trace statistics.
 #' @param task The modelling task: `"regression"`, `"binary"` or `"multinomial"`.
 #' @param classLevels Character vector of class labels for classification fits,
@@ -42,6 +45,7 @@ new_AddiVortes <- function(posteriorTess, posteriorDim,
                            metric_aug = "E",
                            member_aug = rep(1, length(xCentres)),
                            catEncoding = NULL,
+                           eskin = NULL,
                            traceStats = NULL,
                            task = "regression",
                            classLevels = NULL,
@@ -71,6 +75,7 @@ new_AddiVortes <- function(posteriorTess, posteriorDim,
       metric_red = metric_type,
       member_red = member_length,
       catEncoding = catEncoding,
+      eskin = eskin,
       traceStats = traceStats,
       task = task,
       classLevels = classLevels,
@@ -80,6 +85,24 @@ new_AddiVortes <- function(posteriorTess, posteriorDim,
       inSampleBrier = inSampleBrier
     ),
     class = "AddiVortes"
+  )
+}
+
+#' Training Eskin arguments for the compiled predictor.
+#'
+#' @param object An AddiVortes fit.
+#' @return A list with \code{ncat} and \code{weight}, both \code{NULL} when the
+#'   fit has no stored Eskin specification. \code{NULL} makes the compiled code
+#'   infer level counts from the matrix it is given and use weight 1.
+#' @keywords internal
+#' @noRd
+eskinCallArgs_internal <- function(object) {
+  if (is.null(object) || is.null(object$eskin)) {
+    return(list(ncat = NULL, weight = NULL))
+  }
+  list(
+    ncat = as.integer(object$eskin$ncat),
+    weight = as.double(object$eskin$weight)
   )
 }
 
@@ -491,7 +514,9 @@ predict.AddiVortes <- function(object, newdata,
     ))
   }
 
-  # Single compiled pass over all draws and tessellations
+  # Single compiled pass over all draws and tessellations.
+  # Eskin level counts and weights come from the training fit when present.
+  eskin_args <- eskinCallArgs_internal(object)
   newTestDataPredictionsMatrix <- .Call(
     "addi_vortes_predict_cpp",
     xNewScaled,
@@ -500,7 +525,9 @@ predict.AddiVortes <- function(object, newdata,
     posteriorPredSamples,
     as.integer(object$metric_red),
     as.integer(object$member_red),
-    as.logical(showProgress)
+    as.logical(showProgress),
+    eskin_args$ncat,
+    eskin_args$weight
   )
 
   # Add Gaussian noise for prediction intervals when computing quantiles

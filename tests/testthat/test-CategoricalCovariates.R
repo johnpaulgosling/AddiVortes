@@ -414,3 +414,315 @@ test_that("all stored tess centres for binary dimensions lie in [0, catScaling]"
 
   expect_true(all(all_binary_vals >= 0 & all_binary_vals <= cs))
 })
+
+# Nearest centre under Eskin distance. Column layout is given by the reduced
+# metric: one group per entry of `metric`, with sizes in `members`.
+eskin_nearest <- function(query, centres, metric, members, ncat = NULL, weight = NULL) {
+  storage.mode(query) <- "double"
+  storage.mode(centres) <- "double"
+  AddiVortes:::cellIndices(
+    query,
+    centres,
+    dim = seq_len(ncol(query)),
+    metric = as.integer(metric),
+    members = as.integer(members),
+    ncat = ncat,
+    eskinWeight = weight
+  )
+}
+
+# Bracket one categorical mismatch against a Euclidean rival.
+# Query is (0, category 1). Centre 1 mismatches the category at the same
+# Euclidean coordinate. Centre 2 matches the category.
+expect_eskin_cost <- function(ncat, weight, expected) {
+  query <- matrix(c(0, 1), nrow = 1)
+  below <- matrix(c(0, 2, sqrt(expected - 1e-8), 1), nrow = 2, byrow = TRUE)
+  above <- matrix(c(0, 2, sqrt(expected + 1e-8), 1), nrow = 2, byrow = TRUE)
+  expect_equal(
+    eskin_nearest(query, below, c(0L, 2L), c(1L, 1L), ncat, weight),
+    2L
+  )
+  expect_equal(
+    eskin_nearest(query, above, c(0L, 2L), c(1L, 1L), ncat, weight),
+    1L
+  )
+}
+
+expect_eskin_match_is_free <- function(ncat, weight) {
+  query <- matrix(c(0, 1), nrow = 1)
+  centres <- matrix(c(sqrt(1e-6), 1, 0, 2), nrow = 2, byrow = TRUE)
+  expect_equal(
+    eskin_nearest(query, centres, c(0L, 2L), c(1L, 1L), ncat, weight),
+    1L
+  )
+}
+
+minimal_eskin_fit <- function(metric_aug, member_aug, eskin, tess, mu) {
+  p <- length(metric_aug)
+  new_AddiVortes(
+    posteriorTess = list(list(tess)),
+    posteriorDim = list(list(seq_len(ncol(tess)))),
+    posteriorSigma = 1,
+    posteriorPred = list(list(as.numeric(mu))),
+    xCentres = rep(0, p),
+    xRanges = rep(1, p),
+    yCentre = 0,
+    yRange = 1,
+    inSampleRmse = NA_real_,
+    metric = rep(0L, p),
+    members = NULL,
+    metric_aug = as.integer(metric_aug),
+    member_aug = as.integer(member_aug),
+    eskin = eskin
+  )
+}
+
+test_that("default Eskin weight charges 2/d^2 and a match charges 0", {
+  expect_eskin_cost(2L, 1, 0.5)
+  expect_eskin_cost(4L, 1, 0.125)
+  expect_eskin_cost(24L, 1, 2 / 576)
+  expect_eskin_match_is_free(2L, 1)
+  expect_eskin_match_is_free(4L, 1)
+  expect_eskin_match_is_free(24L, 1)
+  # Omitting the weight is the same as weight 1.
+  expect_eskin_cost(2L, NULL, 0.5)
+})
+
+test_that("Eskin weight d^2/2 makes every mismatch contribute 1", {
+  expect_eskin_cost(2L, 2^2 / 2, 1)
+  expect_eskin_cost(4L, 4^2 / 2, 1)
+  expect_eskin_cost(24L, 24^2 / 2, 1)
+  expect_eskin_match_is_free(2L, 2)
+  expect_eskin_match_is_free(4L, 8)
+  expect_eskin_match_is_free(24L, 288)
+})
+
+test_that("two factors use the weight that belongs to each column", {
+  query <- matrix(c(1, 1), nrow = 1)
+  centres <- matrix(c(2, 1, 1, 2), nrow = 2, byrow = TRUE)
+  metric <- c(2L, 2L)
+  members <- c(1L, 1L)
+  # Column 1 (d = 2) costs w1 * 0.5. Column 2 (d = 4) costs w2 * 0.125.
+  expect_equal(
+    eskin_nearest(query, centres, metric, members, c(2L, 4L), c(1, 1)),
+    2L
+  )
+  expect_equal(
+    eskin_nearest(query, centres, metric, members, c(2L, 4L), c(1, 32)),
+    1L
+  )
+  # A scalar is recycled.
+  expect_equal(
+    eskin_nearest(query, centres, metric, members, c(2L, 4L), 8),
+    2L
+  )
+})
+
+test_that("predict uses the training level count and the stored weight", {
+  levs <- paste0("L", 1:4)
+  x_new <- data.frame(
+    cont = c(0, 0),
+    grp = factor(c("L1", "L2"), levels = levs)
+  )
+  tess <- matrix(c(0, 2, sqrt(0.3), 1), nrow = 2, byrow = TRUE)
+  fit <- minimal_eskin_fit(
+    c(0L, 2L),
+    c(1L, 2L),
+    list(columns = "grp", ncat = 4L, weight = 1),
+    tess,
+    c(0, 1)
+  )
+
+  # Training d = 4 costs 0.125, so the mismatch centre wins for L1.
+  # L2 matches that centre. Recomputing d from this hold-out would use d = 2
+  # and cost 0.5, which would send L1 to the other centre.
+  expect_equal(predict(fit, x_new, showProgress = FALSE), c(0, 0))
+
+  fit_recomputed <- fit
+  fit_recomputed$eskin <- NULL
+  expect_equal(predict(fit_recomputed, x_new, showProgress = FALSE), c(1, 0))
+
+  fit$eskin$weight <- 4^2 / 2
+  expect_equal(predict(fit, x_new, showProgress = FALSE), c(1, 0))
+})
+
+test_that("predict applies a different Eskin weight to each column", {
+  x_new <- data.frame(
+    a = factor("A", levels = c("A", "B")),
+    b = factor("A", levels = c("A", "B"))
+  )
+  tess <- matrix(c(2, 1, 1, 2), nrow = 2, byrow = TRUE)
+  fit <- minimal_eskin_fit(
+    c(2L, 2L),
+    c(1L, 2L),
+    list(columns = c("a", "b"), ncat = c(2L, 2L), weight = c(1, 100)),
+    tess,
+    c(10, 20)
+  )
+  expect_equal(predict(fit, x_new, showProgress = FALSE), 10)
+
+  fit$eskin$weight <- c(100, 1)
+  expect_equal(predict(fit, x_new, showProgress = FALSE), 20)
+})
+
+test_that("AddiVortes stores training Eskin level counts and weights", {
+  skip_on_cran()
+  n <- 12
+  x <- data.frame(
+    z = rnorm(n),
+    b = factor(rep(letters[1:4], length.out = n), levels = letters[1:4]),
+    a = factor(rep(c("A", "B"), length.out = n), levels = c("A", "B"))
+  )
+  y <- rnorm(n)
+
+  fit <- AddiVortes(
+    y, x,
+    m = 2, totalMCMCIter = 4, mcmcBurnIn = 1,
+    cat.onehot = FALSE, eskinWeight = c(0.5, 3),
+    showProgress = FALSE
+  )
+  expect_equal(fit$eskin$columns, c("b", "a"))
+  expect_equal(fit$eskin$ncat, c(4L, 2L))
+  expect_equal(fit$eskin$weight, c(0.5, 3))
+  expect_null(fit$catEncoding)
+
+  fit_default <- AddiVortes(
+    y, x,
+    m = 2, totalMCMCIter = 4, mcmcBurnIn = 1,
+    cat.onehot = FALSE, showProgress = FALSE
+  )
+  expect_equal(fit_default$eskin$weight, c(1, 1))
+
+  # The stored count is the largest training code, not an unused tail level.
+  x_partial <- data.frame(
+    grp = factor(rep(c("A", "B"), length.out = n), levels = c("A", "B", "C", "D"))
+  )
+  fit_partial <- AddiVortes(
+    rnorm(n), x_partial,
+    m = 2, totalMCMCIter = 4, mcmcBurnIn = 1,
+    cat.onehot = FALSE, showProgress = FALSE
+  )
+  expect_equal(fit_partial$eskin$ncat, 2L)
+  expect_equal(fit_partial$eskin$columns, "grp")
+})
+
+test_that("eskinWeight rejects non-positive values and the wrong length", {
+  x <- data.frame(z = rnorm(8), g = factor(rep(c("A", "B"), 4)))
+  y <- rnorm(8)
+  expect_error(
+    AddiVortes(
+      y, x,
+      m = 2, totalMCMCIter = 2, mcmcBurnIn = 0,
+      cat.onehot = FALSE, eskinWeight = 0, showProgress = FALSE
+    ),
+    "positive finite"
+  )
+  expect_error(
+    AddiVortes(
+      y, x,
+      m = 2, totalMCMCIter = 2, mcmcBurnIn = 0,
+      cat.onehot = FALSE, eskinWeight = -1, showProgress = FALSE
+    ),
+    "positive finite"
+  )
+  expect_error(
+    AddiVortes(
+      y, x,
+      m = 2, totalMCMCIter = 2, mcmcBurnIn = 0,
+      cat.onehot = FALSE, eskinWeight = NA_real_, showProgress = FALSE
+    ),
+    "positive finite"
+  )
+  expect_error(
+    AddiVortes(
+      y, x,
+      m = 2, totalMCMCIter = 2, mcmcBurnIn = 0,
+      cat.onehot = FALSE, eskinWeight = c(1, 2), showProgress = FALSE
+    ),
+    "one value per categorical column"
+  )
+})
+
+test_that("one-hot and Euclidean fits ignore eskinWeight", {
+  skip_on_cran()
+  x <- data.frame(z = rnorm(20), g = factor(rep(c("A", "B"), 10)))
+  y <- rnorm(20)
+
+  fit_default <- withr::with_seed(7, AddiVortes(
+    y, x,
+    m = 3, totalMCMCIter = 12, mcmcBurnIn = 4, showProgress = FALSE
+  ))
+  fit_ignored <- withr::with_seed(7, AddiVortes(
+    y, x,
+    m = 3, totalMCMCIter = 12, mcmcBurnIn = 4,
+    eskinWeight = 9, showProgress = FALSE
+  ))
+  expect_null(fit_ignored$eskin)
+  expect_identical(fit_default$posteriorTess, fit_ignored$posteriorTess)
+  expect_identical(fit_default$posteriorPred, fit_ignored$posteriorPred)
+  expect_equal(fit_default$inSampleRmse, fit_ignored$inSampleRmse)
+  expect_no_error(withr::with_seed(7, AddiVortes(
+    y, x,
+    m = 3, totalMCMCIter = 12, mcmcBurnIn = 4,
+    eskinWeight = -1, showProgress = FALSE
+  )))
+
+  xm <- matrix(rnorm(40), 20, 2)
+  ym <- rnorm(20)
+  fit_euc <- withr::with_seed(3, AddiVortes(
+    ym, xm,
+    m = 3, totalMCMCIter = 10, mcmcBurnIn = 3, showProgress = FALSE
+  ))
+  fit_euc_weight <- withr::with_seed(3, AddiVortes(
+    ym, xm,
+    m = 3, totalMCMCIter = 10, mcmcBurnIn = 3,
+    eskinWeight = 5, showProgress = FALSE
+  ))
+  expect_null(fit_euc_weight$eskin)
+  expect_identical(fit_euc$posteriorTess, fit_euc_weight$posteriorTess)
+  expect_identical(fit_euc$posteriorPred, fit_euc_weight$posteriorPred)
+})
+
+test_that("an explicit Eskin weight of 1 matches the default", {
+  skip_on_cran()
+  x <- data.frame(
+    z = rnorm(20),
+    g = factor(rep(c("A", "B", "C", "D"), 5))
+  )
+  y <- rnorm(20)
+  fit_default <- withr::with_seed(11, AddiVortes(
+    y, x,
+    m = 3, totalMCMCIter = 12, mcmcBurnIn = 4,
+    cat.onehot = FALSE, showProgress = FALSE
+  ))
+  fit_one <- withr::with_seed(11, AddiVortes(
+    y, x,
+    m = 3, totalMCMCIter = 12, mcmcBurnIn = 4,
+    cat.onehot = FALSE, eskinWeight = 1, showProgress = FALSE
+  ))
+  expect_identical(fit_default$posteriorTess, fit_one$posteriorTess)
+  expect_identical(fit_default$posteriorDim, fit_one$posteriorDim)
+  expect_identical(fit_default$posteriorPred, fit_one$posteriorPred)
+  expect_equal(fit_default$inSampleRmse, fit_one$inSampleRmse)
+  expect_equal(fit_one$eskin$ncat, 4L)
+  expect_equal(fit_one$eskin$weight, 1)
+})
+
+test_that("classification predict reuses the stored Eskin specification", {
+  skip_on_cran()
+  x <- data.frame(
+    z = rnorm(30),
+    g = factor(rep(c("A", "B"), 15))
+  )
+  y <- factor(rep(c("no", "yes"), 15))
+  fit <- AddiVortes(
+    y, x,
+    m = 2, totalMCMCIter = 8, mcmcBurnIn = 2,
+    cat.onehot = FALSE, showProgress = FALSE
+  )
+  expect_equal(fit$eskin$ncat, 2L)
+  expect_equal(fit$eskin$weight, 1)
+  preds <- predict(fit, x[1:4, ], type = "class", showProgress = FALSE)
+  expect_length(preds, 4L)
+  expect_true(all(preds %in% c("no", "yes")))
+})

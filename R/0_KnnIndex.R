@@ -9,6 +9,10 @@
 #' @param k An integer specifying the number of nearest neighbours to find.
 #' @param dim The index susbet of covariates considered.
 #' @param metric Either "Euclidean" or "Spherical".
+#' @param ncat Optional integer vector of training Eskin level counts, one per
+#'   categorical column. \code{NULL} infers each count from \code{query}.
+#' @param eskinWeight Optional positive Eskin mismatch weights, length 1 or one
+#'   per categorical column. \code{NULL} uses weight 1.
 #'
 #' @return A matrix of integers where each row corresponds to a query point and
 #'   contains the row indices of the k nearest neighbours in the data matrix.
@@ -16,7 +20,8 @@
 #'
 #' @keywords internal
 #' @noRd
-knnx_index <- function(data, query, dim, metric, members) {
+knnx_index <- function(data, query, dim, metric, members,
+                       ncat = NULL, eskinWeight = NULL) {
   # Input validation
   if (!is.matrix(data)) data <- as.matrix(data)
   if (!is.matrix(query)) query <- as.matrix(query)
@@ -26,9 +31,13 @@ knnx_index <- function(data, query, dim, metric, members) {
   if (nrow(data) <= 0) {
     stop("data must contain at least one reference point")
   }
+  if (!is.null(ncat)) ncat <- as.integer(ncat)
+  if (!is.null(eskinWeight)) eskinWeight <- as.double(eskinWeight)
 
   # Call C++ implementation
-  result <- .Call("knnx_index_cpp", data, query, dim, metric, members)
+  result <- .Call(
+    "knnx_index_cpp", data, query, dim, metric, members, ncat, eskinWeight
+  )
 
   return(as.vector(result))
 }

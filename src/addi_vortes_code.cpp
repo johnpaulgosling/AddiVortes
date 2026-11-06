@@ -108,18 +108,23 @@ static double spherical_distance(std::span<const double> p1,
 
 static double categorical_distance(std::span<const double> p1,
                                    std::span<const double> p2,
-                                   const std::vector<int>& ncat) {
+                                   const std::vector<int>& ncat,
+                                   const std::vector<double>& weight) {
   if (p1.size() != p2.size()) {
     Rf_error("Points have incompatible dimensions.");
   }
   if (p1.size() != ncat.size()) {
     Rf_error("Point dimension does not match stated number of categorical variables.");
   }
+  if (p1.size() != weight.size()) {
+    Rf_error("Point dimension does not match the number of Eskin weights.");
+  }
   double dist = 0;
   for (size_t i = 0; i < p1.size(); ++i) {
     if (floor(p1[i]) != p1[i]) Rf_error("Not all coordinates in p1 are integer.");
     if (floor(p2[i]) != p2[i]) Rf_error("Not all coordinates in p2 are integer.");
-    if (p1[i] != p2[i]) dist += 2.0 / (ncat[i] * ncat[i]);
+    // w_k * 2 / d_k^2. A weight of 1 leaves the original Eskin term unchanged.
+    if (p1[i] != p2[i]) dist += weight[i] * (2.0 / (ncat[i] * ncat[i]));
   }
   return dist;
 }
@@ -128,7 +133,8 @@ static double categorical_distance(std::span<const double> p1,
 static double calc_distance(const double* vec1, const double* vec2, int p,
                             const std::vector<int>& nvals,
                             const std::vector<int>& type,
-                            const std::vector<int>& cats) {
+                            const std::vector<int>& cats,
+                            const std::vector<double>& cat_weight) {
   int idx = 0;
   double tot = 0;
   int cat_idx = 0;
@@ -141,9 +147,15 @@ static double calc_distance(const double* vec1, const double* vec2, int p,
     } else if (type[i] == 1) {
       tot += spherical_distance(subvec1, subvec2);
     } else if (type[i] == 2) {
+      if (cat_idx + these_vals > static_cast<int>(cats.size()) ||
+          cat_idx + these_vals > static_cast<int>(cat_weight.size())) {
+        Rf_error("Eskin level counts and weights do not cover the categorical columns.");
+      }
       std::vector<int> these_cats(cats.begin() + cat_idx,
                                   cats.begin() + cat_idx + these_vals);
-      tot += categorical_distance(subvec1, subvec2, these_cats);
+      std::vector<double> these_w(cat_weight.begin() + cat_idx,
+                                  cat_weight.begin() + cat_idx + these_vals);
+      tot += categorical_distance(subvec1, subvec2, these_cats, these_w);
       cat_idx += these_vals;
     }
     idx += these_vals;
@@ -308,6 +320,7 @@ static void assign_full_general(const double* x_row, int n, int p,
                                 const std::vector<int>& metric,
                                 const std::vector<int>& members,
                                 const std::vector<int>& cats,
+                                const std::vector<double>& cat_weight,
                                 AssignmentCache& out,
                                 std::vector<double>& synth) {
   out.assignment.resize(n);
@@ -320,7 +333,8 @@ static void assign_full_general(const double* x_row, int n, int p,
     int best_c = 0;
     for (int c = 0; c < nC; ++c) {
       for (int di = 0; di < d; ++di) synth[dim0[di]] = centres[c + di * nC];
-      const double key = calc_distance(row, synth.data(), p, members, metric, cats);
+      const double key = calc_distance(row, synth.data(), p, members, metric,
+                                       cats, cat_weight);
       if (key < best) {
         best = key;
         best_c = c;
@@ -337,6 +351,7 @@ static void reassign_added_general(const double* x_row, int n, int p,
                                    const std::vector<int>& metric,
                                    const std::vector<int>& members,
                                    const std::vector<int>& cats,
+                                   const std::vector<double>& cat_weight,
                                    const AssignmentCache& prev,
                                    AssignmentCache& out,
                                    std::vector<double>& synth) {
@@ -348,7 +363,8 @@ static void reassign_added_general(const double* x_row, int n, int p,
     const double* row = x_row + static_cast<size_t>(obs) * p;
     std::memcpy(synth.data(), row, static_cast<size_t>(p) * sizeof(double));
     for (int di = 0; di < d; ++di) synth[dim0[di]] = centres[added + di * nC];
-    const double key = calc_distance(row, synth.data(), p, members, metric, cats);
+    const double key = calc_distance(row, synth.data(), p, members, metric,
+                                     cats, cat_weight);
     if (key < out.best_keys[obs]) {
       out.best_keys[obs] = key;
       out.assignment[obs] = added;
@@ -363,6 +379,7 @@ static void reassign_moved_general(const double* x_row, int n, int p,
                                    const std::vector<int>& metric,
                                    const std::vector<int>& members,
                                    const std::vector<int>& cats,
+                                   const std::vector<double>& cat_weight,
                                    const AssignmentCache& prev,
                                    AssignmentCache& out,
                                    std::vector<double>& synth) {
@@ -378,7 +395,8 @@ static void reassign_moved_general(const double* x_row, int n, int p,
       int best_c = 0;
       for (int c = 0; c < nC; ++c) {
         for (int di = 0; di < d; ++di) synth[dim0[di]] = centres[c + di * nC];
-        const double key = calc_distance(row, synth.data(), p, members, metric, cats);
+        const double key = calc_distance(row, synth.data(), p, members, metric,
+                                         cats, cat_weight);
         if (key < best) {
           best = key;
           best_c = c;
@@ -388,7 +406,8 @@ static void reassign_moved_general(const double* x_row, int n, int p,
       out.best_keys[obs] = best;
     } else {
       for (int di = 0; di < d; ++di) synth[dim0[di]] = centres[moved + di * nC];
-      const double key = calc_distance(row, synth.data(), p, members, metric, cats);
+      const double key = calc_distance(row, synth.data(), p, members, metric,
+                                       cats, cat_weight);
       if (key < out.best_keys[obs] ||
           (key == out.best_keys[obs] && moved < incumbent)) {
         out.best_keys[obs] = key;
@@ -405,6 +424,7 @@ static void reassign_removed_general(const double* x_row, int n, int p,
                                      const std::vector<int>& metric,
                                      const std::vector<int>& members,
                                      const std::vector<int>& cats,
+                                     const std::vector<double>& cat_weight,
                                      const AssignmentCache& prev,
                                      AssignmentCache& out,
                                      std::vector<double>& synth) {
@@ -420,7 +440,8 @@ static void reassign_removed_general(const double* x_row, int n, int p,
       int best_c = 0;
       for (int c = 0; c < nC; ++c) {
         for (int di = 0; di < d; ++di) synth[dim0[di]] = centres[c + di * nC];
-        const double key = calc_distance(row, synth.data(), p, members, metric, cats);
+        const double key = calc_distance(row, synth.data(), p, members, metric,
+                                         cats, cat_weight);
         if (key < best) {
           best = key;
           best_c = c;
@@ -449,6 +470,7 @@ static void reassign(const double* x_row, int n, int p,
                      const std::vector<int>& metric,
                      const std::vector<int>& members,
                      const std::vector<int>& cats,
+                     const std::vector<double>& cat_weight,
                      const AssignmentCache& prev,
                      AssignmentCache& out,
                      AssignScratch& scratch) {
@@ -463,7 +485,7 @@ static void reassign(const double* x_row, int n, int p,
                             out, scratch.active);
     } else {
       assign_full_general(x_row, n, p, centres, nC, d, scratch.dim0.data(),
-                          metric, members, cats, out, scratch.synth);
+                          metric, members, cats, cat_weight, out, scratch.synth);
     }
     return;
   }
@@ -491,21 +513,22 @@ static void reassign(const double* x_row, int n, int p,
     switch (delta) {
       case AssignmentDelta::CentreAdded:
         reassign_added_general(x_row, n, p, centres, nC, d, scratch.dim0.data(),
-                               metric, members, cats, prev, out, scratch.synth);
+                               metric, members, cats, cat_weight, prev, out,
+                               scratch.synth);
         break;
       case AssignmentDelta::CentreMoved:
         reassign_moved_general(x_row, n, p, centres, nC, d, scratch.dim0.data(),
-                               touched, metric, members, cats, prev, out,
-                               scratch.synth);
+                               touched, metric, members, cats, cat_weight, prev,
+                               out, scratch.synth);
         break;
       case AssignmentDelta::CentreRemoved:
         reassign_removed_general(x_row, n, p, centres, nC, d, scratch.dim0.data(),
-                                 touched, metric, members, cats, prev, out,
-                                 scratch.synth);
+                                 touched, metric, members, cats, cat_weight,
+                                 prev, out, scratch.synth);
         break;
       case AssignmentDelta::FullRecompute:
         assign_full_general(x_row, n, p, centres, nC, d, scratch.dim0.data(),
-                            metric, members, cats, out, scratch.synth);
+                            metric, members, cats, cat_weight, out, scratch.synth);
         break;
     }
   }
@@ -1015,13 +1038,77 @@ static FlatPosterior flatten_posterior(SEXP posteriorTess_sexp,
   return flat;
 }
 
+// Level counts and Eskin weights, one entry per categorical column in column
+// order. A NULL count vector uses the largest integer code in that column of
+// x (column-major). A NULL weight vector uses 1. A length-1 weight is recycled.
+static void categorical_spec(const double* x, int n, int p,
+                             const std::vector<int>& metric_aug,
+                             SEXP ncat_sexp, SEXP weight_sexp,
+                             std::vector<int>& ncats,
+                             std::vector<double>& weights) {
+  int n_cat = 0;
+  for (int m : metric_aug) {
+    if (m == 2) n_cat++;
+  }
+  ncats.clear();
+  weights.clear();
+  if (n_cat == 0) return;
+
+  if (!Rf_isNull(ncat_sexp)) {
+    if (TYPEOF(ncat_sexp) != INTSXP || Rf_length(ncat_sexp) != n_cat) {
+      Rf_error(
+        "Eskin level counts must be an integer vector with one entry per categorical column.");
+    }
+    const int* ptr = INTEGER(ncat_sexp);
+    ncats.assign(ptr, ptr + n_cat);
+  } else {
+    ncats.reserve(n_cat);
+    for (int i = 0; i < p; ++i) {
+      if (metric_aug[i] != 2) continue;
+      int max_val = 0;
+      for (int j = 0; j < n; ++j) {
+        if (x[i * n + j] > max_val)
+          max_val = static_cast<int>(x[i * n + j]);
+      }
+      ncats.push_back(max_val);
+    }
+  }
+
+  if (!Rf_isNull(weight_sexp)) {
+    if (TYPEOF(weight_sexp) != REALSXP) {
+      Rf_error("'eskinWeight' must be a numeric vector.");
+    }
+    const int wlen = Rf_length(weight_sexp);
+    const double* w = REAL(weight_sexp);
+    if (wlen == 1) {
+      if (!(w[0] > 0.0) || !std::isfinite(w[0])) {
+        Rf_error("'eskinWeight' must contain positive finite numbers.");
+      }
+      weights.assign(n_cat, w[0]);
+    } else if (wlen == n_cat) {
+      for (int i = 0; i < n_cat; ++i) {
+        if (!(w[i] > 0.0) || !std::isfinite(w[i])) {
+          Rf_error("'eskinWeight' must contain positive finite numbers.");
+        }
+        weights.push_back(w[i]);
+      }
+    } else {
+      Rf_error(
+        "'eskinWeight' must have length 1 or one value per categorical column.");
+    }
+  } else {
+    weights.assign(n_cat, 1.0);
+  }
+}
+
 extern "C" {
 
   // ---------------------------------------------------------------------------
   // knnx_index_cpp — uses the same active-dim / row-major assign path
   // ---------------------------------------------------------------------------
   SEXP knnx_index_cpp(SEXP tess_sexp, SEXP query_sexp, SEXP dim_sexp,
-                      SEXP dist_sexp, SEXP member_sexp) {
+                      SEXP dist_sexp, SEXP member_sexp,
+                      SEXP ncat_sexp, SEXP eskinWeight_sexp) {
     double* p_tess = REAL(tess_sexp);
     double* p_query = REAL(query_sexp);
     int* dim_p = INTEGER(dim_sexp);
@@ -1068,18 +1155,9 @@ extern "C" {
       for (int j = 0; j < members[i]; ++j) metric_aug.push_back(metric[i]);
     }
     std::vector<int> ncats;
-    if (in_vector(2, metric)) {
-      for (int i = 0; i < static_cast<int>(metric_aug.size()); ++i) {
-        if (metric_aug[i] == 2) {
-          int max_val = 0;
-          for (int j = 0; j < query_rows; ++j) {
-            if (p_query[i * query_rows + j] > max_val)
-              max_val = static_cast<int>(p_query[i * query_rows + j]);
-          }
-          ncats.push_back(max_val);
-        }
-      }
-    }
+    std::vector<double> cat_weight;
+    categorical_spec(p_query, query_rows, query_cols, metric_aug,
+                     ncat_sexp, eskinWeight_sexp, ncats, cat_weight);
 
     // Build reduced centres (active dims only, column-major) and dim1.
     const int d = static_cast<int>(active_dim_idx.size());
@@ -1101,7 +1179,7 @@ extern "C" {
     reassign(x_row.data(), query_rows, query_cols,
              centres.data(), tess_rows, d, dim1,
              AssignmentDelta::FullRecompute, 0, eucl,
-             metric, members, ncats,
+             metric, members, ncats, cat_weight,
              AssignmentCache{}, cache, scratch);
 
     SEXP result = PROTECT(Rf_allocMatrix(INTSXP, query_rows, 1));
@@ -1193,7 +1271,9 @@ extern "C" {
       SEXP showProgress_sexp,
       SEXP isClassification_sexp,
       SEXP yClass_sexp,
-      SEXP nLatents_sexp) {
+      SEXP nLatents_sexp,
+      SEXP eskinNcat_sexp,
+      SEXP eskinWeight_sexp) {
 
     const double* xScaled = REAL(xScaled_sexp);
     const double* yScaled = REAL(yScaled_sexp);
@@ -1253,21 +1333,16 @@ extern "C" {
     }
 
     std::vector<int> ncats;
+    std::vector<double> cat_weight;
     std::vector<int> cat_index_of_col(p, -1);
-    if (in_vector(2, metric_red)) {
+    if (in_vector(2, metric)) {
       int cat_i = 0;
       for (int i = 0; i < p; ++i) {
-        if (metric[i] == 2) {
-          int max_val = 0;
-          for (int j = 0; j < n; ++j) {
-            if (xScaled[i * n + j] > max_val)
-              max_val = static_cast<int>(xScaled[i * n + j]);
-          }
-          ncats.push_back(max_val);
-          cat_index_of_col[i] = cat_i++;
-        }
+        if (metric[i] == 2) cat_index_of_col[i] = cat_i++;
       }
     }
+    categorical_spec(xScaled, n, p, metric, eskinNcat_sexp, eskinWeight_sexp,
+                     ncats, cat_weight);
 
     const bool euclidean = all_euclidean_metric(metric_red);
 
@@ -1301,7 +1376,7 @@ extern "C" {
       reassign(x_row.data(), n, p,
                tess[j].data(), tess_nC[j], tess_d[j], dim_j[j],
                AssignmentDelta::FullRecompute, 0, euclidean,
-               metric_red, member_red, ncats,
+               metric_red, member_red, ncats, cat_weight,
                AssignmentCache{}, caches[j], assign_scratch);
     }
 
@@ -1418,7 +1493,7 @@ extern "C" {
           reassign(x_row.data(), n, p,
                    prop.tess.data(), prop.nC, static_cast<int>(prop.dim.size()),
                    prop.dim, prop.delta, prop.touched, euclidean,
-                   metric_red, member_red, ncats,
+                   metric_red, member_red, ncats, cat_weight,
                    caches[j], prop_cache, assign_scratch);
 
           // Option 5: one pass builds both aggregates; reused for MH and mu draw
@@ -1598,7 +1673,9 @@ extern "C" {
       SEXP posteriorPred_sexp,
       SEXP metric_sexp,
       SEXP member_sexp,
-      SEXP showProgress_sexp) {
+      SEXP showProgress_sexp,
+      SEXP eskinNcat_sexp,
+      SEXP eskinWeight_sexp) {
 
     const double* xNew = REAL(xNew_sexp);
     int n = Rf_nrows(xNew_sexp);
@@ -1634,18 +1711,9 @@ extern "C" {
       for (int j = 0; j < members[i]; ++j) metric_aug.push_back(metric[i]);
     }
     std::vector<int> ncats;
-    if (in_vector(2, metric)) {
-      for (int i = 0; i < p; ++i) {
-        if (metric_aug[i] == 2) {
-          int max_val = 0;
-          for (int j = 0; j < n; ++j) {
-            if (xNew[i * n + j] > max_val)
-              max_val = static_cast<int>(xNew[i * n + j]);
-          }
-          ncats.push_back(max_val);
-        }
-      }
-    }
+    std::vector<double> cat_weight;
+    categorical_spec(xNew, n, p, metric_aug, eskinNcat_sexp, eskinWeight_sexp,
+                     ncats, cat_weight);
 
     const bool euclidean = all_euclidean_metric(metric);
     std::vector<double> x_row;
@@ -1678,7 +1746,7 @@ extern "C" {
 
         reassign(x_row.data(), n, p, centres, nC, d, dim1,
                  AssignmentDelta::FullRecompute, 0, euclidean,
-                 metric, members, ncats,
+                 metric, members, ncats, cat_weight,
                  AssignmentCache{}, cache, assign_scratch);
 
         for (int obs = 0; obs < n; ++obs)

@@ -1,13 +1,10 @@
-## Submission of AddiVortes 1.0.1
+## Submission of AddiVortes 1.0.2
 
-This is a patch release. It hides the internal `cellIndices()` helper,
-updates the default MCMC settings to 2000 iterations with 500 burn-in,
-adds Leo Thomson as an author, addresses the clang
-`-Wabsolute-value` WARNING reported on CRAN's
-`r-devel-linux-x86_64-debian-clang` builder, and replaces a Unicode
-minus sign (U+2212) in the `AddiVortes()` help page that caused
-LaTeX errors when building the PDF manual on
-`r-devel-linux-x86_64-debian-gcc` and `r-devel-windows-x86_64`.
+This is a patch release. `AddiVortes()` gains `eskinWeight`, a positive
+weight on the Eskin mismatch used when `cat.onehot = FALSE`. The default
+weight is 1, so existing Eskin fits are unchanged. Setting the weight to
+`d^2 / 2` makes every categorical mismatch contribute 1. The training
+level counts and weights are stored on the fit and reused by `predict()`.
 
 ## Test environments
 

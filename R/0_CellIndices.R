@@ -13,13 +13,16 @@
 #'   for calculating distance.
 #' @param metric Either "Euclidean" or "Spherical".
 #' @param members A vector indicating covariate membership.
+#' @param ncat Optional integer vector of training Eskin level counts.
+#' @param eskinWeight Optional positive Eskin mismatch weights.
 #'
 #' @return A numeric vector of integers where each element corresponds to a row
 #'   in `x` and its value is the row index of the nearest centre in `tess`.
 #'
 #' @keywords internal
 #' @noRd
-cellIndices <- function(x, tess, dim, metric = "E", members) {
+cellIndices <- function(x, tess, dim, metric = "E", members,
+                        ncat = NULL, eskinWeight = NULL) {
   n_tess <- nrow(tess)
   n_x <- nrow(x)
 
@@ -41,7 +44,8 @@ cellIndices <- function(x, tess, dim, metric = "E", members) {
     CellsForGivenTess <- knnx_index(
       tess,
       x,
-      dim, metric, members
+      dim, metric, members,
+      ncat, eskinWeight
     )
   }
   return(CellsForGivenTess)

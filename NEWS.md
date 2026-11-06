@@ -1,5 +1,18 @@
 # AddiVortes News
 
+## AddiVortes 1.0.2
+
+* `AddiVortes()` gains `eskinWeight` for Eskin distance
+  (`cat.onehot = FALSE`). A mismatch on categorical column k contributes
+  `w_k * 2 / d_k^2`, where `d_k` is the largest integer code of that column
+  in the training data. The default `w_k = 1` keeps the original Eskin cost,
+  so existing Eskin fits are unchanged. `w_k = d_k^2 / 2` makes every mismatch
+  contribute 1, in line with one full-range Euclidean covariate. A scalar is
+  recycled across columns. The weights and the training level counts are
+  stored on the fit and reused by `predict()`, so a test set that omits a
+  training level cannot change `d_k` or `w_k`. `catScaling` remains the
+  one-hot control and is still ignored for Eskin distance.
+
 ## AddiVortes 1.0.1
 
 * `cellIndices()` is now an internal helper and is no longer exported.
