@@ -85,17 +85,48 @@ fit_eskin <- AddiVortes(
 )
 ```
 
-For a categorical variable with *d* levels, the squared Eskin
-contribution between two observations is:
+For a categorical variable with *d* levels and positive weight *w*
+(`eskinWeight`, default 1), the squared Eskin contribution between two
+observations is:
 
 - **0** if the category levels match;
-- **2 / *d*²** if the category levels differ.
+- ***w* × 2 / *d*²** if the category levels differ.
 
-So a mismatch on a binary covariate (*d* = 2) costs 2/4 = 0.5, while a
-mismatch on a four-level covariate costs 2/16 = 0.125. High-cardinality
-categories therefore contribute less to the overall distance when they
-disagree, which reflects the idea that a random mismatch is more likely
-when there are many levels.
+`d` is the largest integer code of that column in the training data. For
+a factor whose last level occurs in the training sample, that is the
+number of levels. With the default weight, a mismatch on a binary
+covariate (*d* = 2) costs 2/4 = 0.5, while a mismatch on a four-level
+covariate costs 2/16 = 0.125. High-cardinality categories therefore
+contribute less to the overall distance when they disagree, which
+reflects the idea that a random mismatch is more likely when there are
+many levels.
+
+`eskinWeight` is a single positive number, recycled across categorical
+columns, or one value per categorical column in the order those columns
+appear in `x`. The weights are fixed before the sampler runs, stored on
+the fit, and reused by
+[`predict()`](https://rdrr.io/r/stats/predict.html). A test set that
+omits a training level does not change `d` or `w`. `catScaling` still
+has no effect on Eskin distance.
+
+A full-range Euclidean covariate contributes 1 to the squared distance
+after the package’s range scaling. The same scale for an Eskin column is
+the overlap weight `w = d^2 / 2`, which makes every mismatch contribute
+1 and keeps the factor as one covariate:
+
+``` r
+
+fit_overlap <- AddiVortes(
+  y = y_train,
+  x = x_train,
+  cat.onehot = FALSE,
+  eskinWeight = c(
+    nlevels(x_train$region)^2 / 2,
+    nlevels(x_train$product)^2 / 2
+  ),
+  showProgress = FALSE
+)
+```
 
 Because the covariate is not expanded, the model dimension stays the
 same as the number of original columns. That can be attractive when
@@ -107,10 +138,10 @@ number of binary columns.
 |  | One-hot (`cat.onehot = TRUE`) | Eskin (`cat.onehot = FALSE`) |
 |----|----|----|
 | Representation | *d* − 1 binary columns per categorical variable | One integer-coded column per categorical variable |
-| Distance | Euclidean on the binary indicators | Eskin: mismatch cost 2/*d*² |
-| Weighting | Controlled by `catScaling` | Built into the 2/*d*² formula; `catScaling` ignored |
-| High cardinality | Creates many columns | Keeps one column; mismatches are down-weighted |
-| Prediction metadata | Encoding stored in `fit$catEncoding` | Categories converted to numeric codes on the fly |
+| Distance | Euclidean on the binary indicators | Eskin: mismatch cost *w* × 2/*d*² |
+| Weighting | Controlled by `catScaling` | Controlled by `eskinWeight` (default *w* = 1). *w* = *d*²/2 makes every mismatch contribute 1. `catScaling` ignored |
+| High cardinality | Creates many columns | Keeps one column; the default weight down-weights mismatches |
+| Prediction metadata | Encoding stored in `fit$catEncoding` | Training level counts and weights stored in `fit$eskin` |
 | Unseen levels | Treated as the reference level | Prefer factors with a fixed level set so codes stay consistent |
 
 **Practical guidance:**
@@ -461,7 +492,9 @@ practical way to choose.
   variable with *d* levels is converted to *d − 1* binary (0/1)
   indicator columns.
 - **Eskin distance** (`cat.onehot = FALSE`): categories stay as one
-  integer-coded column; a mismatch costs 2/*d*² (Eskin et al., 2002).
+  integer-coded column; a mismatch costs *w* × 2/*d*² (Eskin et al.,
+  2002), with default *w* = 1. Set `eskinWeight = d^2/2` so that every
+  mismatch contributes 1.
 - The **reference level** under one-hot is the alphabetically first
   level; all its indicators are zero.
 - Indicator columns are named `<original_column>_<level>`
@@ -469,6 +502,11 @@ practical way to choose.
 - **`catScaling`** (default 1) controls the weight given to categorical
   differences under one-hot encoding. It is ignored when
   `cat.onehot = FALSE`.
+- **`eskinWeight`** (default 1) controls the Eskin mismatch cost *w* ×
+  2/*d*². It is ignored when `cat.onehot = TRUE`. The overlap setting
+  `d^2/2` makes a mismatch contribute 1. Training level counts and
+  weights are stored on the fit and reused by
+  [`predict()`](https://rdrr.io/r/stats/predict.html).
 - One-hot encoding metadata is stored in `fit$catEncoding` and applied
   automatically to new data in
   [`predict()`](https://rdrr.io/r/stats/predict.html).

@@ -43,6 +43,7 @@ AddiVortes(
   members = NULL,
   catScaling = 1,
   cat.onehot = TRUE,
+  eskinWeight = 1,
   showProgress = interactive()
 )
 ```
@@ -151,9 +152,26 @@ AddiVortes(
   *d* - 1 binary indicators and distances are Euclidean (weighted by
   `catScaling`). When `FALSE`, categories are kept as a single
   integer-coded column and mismatches use Eskin distance (Eskin et al.,
-  2002), with squared cost \\2 / d^2\\ when levels differ and 0 when
-  they match; `catScaling` is then ignored. See the categorical
-  covariates vignette for a comparison and guidance on which to use.
+  2002), with squared cost \\w \times 2 / d^2\\ when levels differ and 0
+  when they match. \\w\\ is `eskinWeight` (default 1) and `catScaling`
+  is then ignored. See the categorical covariates vignette for a
+  comparison and guidance on which to use.
+
+- eskinWeight:
+
+  Positive weights for Eskin mismatches when `cat.onehot = FALSE`. A
+  mismatch on categorical column \\k\\ contributes \\w_k \times 2 /
+  d_k^2\\, where \\d_k\\ is the largest integer code of that column in
+  the training data. The default `1` keeps the unweighted Eskin cost \\2
+  / d_k^2\\. Length 1 (recycled across categorical columns) or one value
+  per categorical column, in the order those columns appear in `x`.
+  Setting \\w_k = d_k^2 / 2\\ makes every mismatch contribute 1, the
+  same squared distance as one full-range Euclidean covariate, while the
+  factor stays a single column. Non-positive values are an error.
+  Ignored when `cat.onehot = TRUE`. The weights and training level
+  counts are stored on the fit and reused by
+  [`predict()`](https://rdrr.io/r/stats/predict.html), so a test set
+  that omits a training level cannot change \\d_k\\ or \\w_k\\.
 
 - showProgress:
 
@@ -166,7 +184,10 @@ tessellations, dimensions and predictions, plus per-iteration trace
 statistics used by
 [`traceplots()`](https://johnpaulgosling.github.io/AddiVortes/reference/traceplots.md).
 Classification fits also store `task`, `classLevels`, `nLatents` and
-in-sample accuracy.
+in-sample accuracy. Eskin fits (`cat.onehot = FALSE` with categorical
+columns) store `eskin`, a list of the training level counts and the
+`eskinWeight` values used by
+[`predict()`](https://rdrr.io/r/stats/predict.html).
 
 ## References
 

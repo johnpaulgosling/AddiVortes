@@ -20,6 +20,7 @@ new_AddiVortes(
   metric_aug = "E",
   member_aug = rep(1, length(xCentres)),
   catEncoding = NULL,
+  eskin = NULL,
   traceStats = NULL,
   task = "regression",
   classLevels = NULL,
@@ -90,6 +91,13 @@ new_AddiVortes(
   Optional list of categorical encoding metadata returned by
   `encodeCategories_internal`, or `NULL` if no categorical covariates
   were present.
+
+- eskin:
+
+  Optional list of training Eskin level counts and weights, or `NULL`
+  when Eskin distance was not used.
+  [`predict()`](https://rdrr.io/r/stats/predict.html) reuses these
+  values instead of recomputing them from new data.
 
 - traceStats:
 

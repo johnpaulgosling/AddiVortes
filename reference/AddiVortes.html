@@ -43,7 +43,7 @@ using multiple spheres in covariate space."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">AddiVortes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -118,6 +118,7 @@ using multiple spheres in covariate space.</p>
 <span>  members <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  catScaling <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  cat.onehot <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  eskinWeight <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  showProgress <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -227,9 +228,26 @@ decrease below 1 to give them less weight. Binary indicator columns are named
 to <em>d</em> - 1 binary indicators and distances are Euclidean (weighted by
 <code>catScaling</code>). When <code>FALSE</code>, categories are kept as a single
 integer-coded column and mismatches use Eskin distance (Eskin et al., 2002),
-with squared cost \(2 / d^2\) when levels differ and 0 when they match;
+with squared cost \(w \times 2 / d^2\) when levels differ and
+0 when they match. \(w\) is <code>eskinWeight</code> (default 1) and
 <code>catScaling</code> is then ignored. See the categorical covariates vignette
 for a comparison and guidance on which to use.</p></dd>
+
+
+<dt id="arg-eskinweight">eskinWeight<a class="anchor" aria-label="anchor" href="#arg-eskinweight"></a></dt>
+<dd><p>Positive weights for Eskin mismatches when
+<code>cat.onehot = FALSE</code>. A mismatch on categorical column \(k\)
+contributes \(w_k \times 2 / d_k^2\), where
+\(d_k\) is the largest integer code of that column in the training
+data. The default <code>1</code> keeps the unweighted Eskin cost
+\(2 / d_k^2\). Length 1 (recycled across categorical columns)
+or one value per categorical column, in the order those columns appear in
+<code>x</code>. Setting \(w_k = d_k^2 / 2\) makes every mismatch
+contribute 1, the same squared distance as one full-range Euclidean
+covariate, while the factor stays a single column. Non-positive values are
+an error. Ignored when <code>cat.onehot = TRUE</code>. The weights and training level
+counts are stored on the fit and reused by <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>, so a test set that
+omits a training level cannot change \(d_k\) or \(w_k\).</p></dd>
 
 
 <dt id="arg-showprogress">showProgress<a class="anchor" aria-label="anchor" href="#arg-showprogress"></a></dt>
@@ -241,7 +259,9 @@ for a comparison and guidance on which to use.</p></dd>
     <p>An AddiVortes object containing the posterior samples of the
 tessellations, dimensions and predictions, plus per-iteration trace
 statistics used by <code><a href="traceplots.html">traceplots()</a></code>. Classification fits also store <code>task</code>,
-<code>classLevels</code>, <code>nLatents</code> and in-sample accuracy.</p>
+<code>classLevels</code>, <code>nLatents</code> and in-sample accuracy. Eskin fits
+(<code>cat.onehot = FALSE</code> with categorical columns) store <code>eskin</code>, a list of
+the training level counts and the <code>eskinWeight</code> values used by <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
